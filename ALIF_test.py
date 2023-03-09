@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
-from spiking.torch.layers.linear import LinearLIF, LinearALIF
-from spiking.torch.utils.surrogates import get_spike_fn
+from models.spiking.spiking.torch.layers.linear import LinearLIF, LinearALIF
+from models.spiking.spiking.torch.utils.surrogates import get_spike_fn
 import matplotlib.pyplot as plt
 import numpy as np
 import random
