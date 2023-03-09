@@ -4,11 +4,11 @@
 
 import torch
 import torch.nn as nn
-from Izhikevich import LinearIzhikevich
+from models.Izhikevich import LinearIzhikevich
 from models.spiking.spiking.torch.utils.surrogates import get_spike_fn
 import matplotlib.pyplot as plt
 import numpy as np
-import random
+from Input_current_sim import input_cur
 
 
 a = 0.01
@@ -59,38 +59,10 @@ class Izhikevich_SNN(nn.Module):
 		
 		return outputs, states
 
+
+# Select and simulate input current
 seq_len = int(sim_time/time_step)
-input_cur = 30
-
-# Generate random spike pattern
-# percentage_of_spikes = 0.02
-# spike_list = [0]*int(seq_len*(1-percentage_of_spikes))+[0.1]*int(seq_len*percentage_of_spikes)
-# random.shuffle(spike_list)
-# spike_list = torch.FloatTensor(spike_list)
-# spike_input = torch.reshape(spike_list,(seq_len,1))
-
-# Set constant input current
-const_input = torch.zeros(seq_len,1)
-for i in range(seq_len):
-	# input[i,0]=0.00001*i
-	const_input[i,0]=input_cur
-
-# Set constant input current
-var_input = torch.zeros(seq_len,1)
-for i in range(seq_len):
-	# input[i,0]=0.00001*i
-	if i < (seq_len/2): var_input[i,0]=input_cur*i
-	else: var_input[i,0]=input_cur*(seq_len - i)
-
-step_input = torch.zeros(seq_len,1)
-for i in range(seq_len):
-	# input[i,0]=0.00001*i
-	if i < (seq_len/10): step_input[i,0]=0
-	else: step_input[i,0]=input_cur
-
-
-# Select input type
-input = step_input
+input = input_cur("step",seq_len,30)
 
 #Initialize neuron
 neuron = Izhikevich_SNN()
