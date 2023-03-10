@@ -1,5 +1,5 @@
 # Verified using Figure F (Spike frequency adaption)
-# Input data: http://www.izhikevich.org/publications/figure1.pdf
+# Input data: http://www.izhikevich.org/publications/figure1.m
 # Output data: http://www.izhikevich.org/publications/figure1.pdf
 
 import torch
@@ -8,18 +8,31 @@ from models.Izhikevich import LinearIzhikevich
 from models.spiking.spiking.torch.utils.surrogates import get_spike_fn
 import matplotlib.pyplot as plt
 import numpy as np
-from Input_current_sim import input_cur
+from Coding.Input_current_sim import input_cur
 
+# Proportional
+a = 0.1
+b = 0.222
+c = -61.6
+d = 0
 
-a = 0.01
-b = 0.2
-c = -65
-d = 8
+# # Derivative
+# a = 0.0105
+# b = 0.656
+# c = -55.0
+# d = 1.92
+
+# #integral
+# a = 0.0158
+# b = 0.139
+# c = -70.0
+# d = -1.06
+
 threshold = 30
 weight_syn = 1.
 
-time_step = 0.25 #ms
-sim_time = 85 #ms
+time_step = 0.1 #ms
+sim_time = 2500 #ms
 
 class Izhikevich_SNN(nn.Module):
 	def __init__(self):
@@ -62,7 +75,8 @@ class Izhikevich_SNN(nn.Module):
 
 # Select and simulate input current
 seq_len = int(sim_time/time_step)
-input = input_cur("step",seq_len,30)
+input = input_cur("webb",seq_len,current_value=5,time_step=time_step)
+
 
 #Initialize neuron
 neuron = Izhikevich_SNN()
@@ -74,14 +88,14 @@ states[0]= b * states[1]
 
 # Call forward function
 output, state = neuron(input,states)
-
-
+print(output)
+print(output.shape)
 recovery = state[:,0,0].detach().numpy()
 mem_pot = state[:,1,0].detach().numpy()
 spike = state[:,2,0].detach().numpy()
 input = input.detach().numpy()
 # output = output.detach().numpy()
-t = np.arange(0,seq_len)
+t = np.arange(0,sim_time,time_step)
 
 fig,(ax1,ax2,ax3,ax4) = plt.subplots(4, sharex=True)
 ax1.set_title("Input Current")
