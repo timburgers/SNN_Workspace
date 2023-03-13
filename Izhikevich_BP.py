@@ -4,7 +4,7 @@
 
 import torch
 import torch.nn as nn
-from models.Izhikevich import LinearIzhikevich
+from SNN_Izhickevich import Izhikevich_SNN
 from models.spiking.spiking.torch.utils.surrogates import get_spike_fn
 import matplotlib.pyplot as plt
 import numpy as np
@@ -12,86 +12,36 @@ from Coding.Encoding import input_cur
 from Coding.Decoding import sliding_window
 
 # # Proportional
-# a = 0.1
-# b = 0.222
-# c = -61.6
-# d = 0
+# neuron_par = dict(a = 0.1, b = 0.222, c = -61.6, d = 0, threshold = 30)
 
 # Derivative
-a = 0.0105
-b = 0.656
-c = -55.0
-d = 1.92
+neuron_par = dict(a = 0.0105, b = 0.656, c = -55.0, d = 1.92, threshold = 30)
 
-# #integral
-# a = 0.0158
-# b = 0.139
-# c = -70.0
-# d = -1.06
+# # Integral
+# neuron_par = dict(a = 0.0158, b = 0.139, c = -70.0, d = 1.06, threshold = 30)
 
-threshold = 30
 weight_syn = 1.
-
 time_step = 0.1 #ms
 sim_time = 5000 #ms
 
-class Izhikevich_SNN(nn.Module):
-	def __init__(self):
-		super(Izhikevich_SNN,self).__init__()
-		self.input_f1 = 1
-		self.output_f1 = 1
 
-		params_fixed=dict(
-            thresh= torch.tensor(threshold),
-	    	time_step = torch.tensor(time_step),
-		    a = torch.tensor(a),
-			b = torch.tensor(b),
-			c = torch.tensor(c),
-			d = torch.tensor(d)
-		)
-
-		params_learnable={}
-
-		
-
-		self.f1 = LinearIzhikevich(self.input_f1,self.output_f1,params_fixed,params_learnable,get_spike_fn("ArcTan", 1.0, 10.0))
-		
-		# Set the weights in the torch.nn module
-		weight = torch.tensor([weight_syn])
-		self.f1.ff.weight = torch.nn.parameter.Parameter(weight)
-
-
-	def forward(self,input_batch,state):
-
-		seq_length, n_inputs = input_batch.size()
-		outputs = []
-		states = []
-		for timestep in range(seq_length):
-			input = input_batch[timestep,:]
-			state,output = self.f1(state,input)
-			outputs += [output]
-			states += [state]
-		outputs = torch.stack(outputs)
-		states = torch.stack(states)
-		
-		return outputs, states
-
+#Initialize SNN
+SNN_izhik = Izhikevich_SNN(2,neuron_par,weight_syn,time_step)
 
 # Select and simulate input current
 seq_len = int(sim_time/time_step)
-input = input_cur("webb_advance",seq_len,current_value=5,time_step=time_step)
+input = input_cur("webb_advance",seq_len,current_value=5,time_step=time_step,input_features = SNN_izhik.input_features)
 
-
-#Initialize neuron
-neuron = Izhikevich_SNN()
+# Initialize the states
 states = torch.zeros(3,1)
 states[1]= -70			# To prevent first spike to happen (set v to -82.65)
-states[0]= b * states[1]
+states[0]= neuron_par["b"] * states[1]
 
-
+train_snn(SNN_izhik,train_input)
 
 # Call forward function
-output, state = neuron(input,states)
+output, state = SNN_izhik(input,states)
+
 
 #Set target for the output decoded data, since input.detach.numpy is of shape (x,1) --> axis of diff is 0
 output_target = np.diff(input.detach().numpy(), axis=0)/time_step
@@ -118,7 +68,7 @@ ax1.grid()
 
 ax2.set_title("Membrame potential")
 ax2.plot(t,mem_pot)
-ax2.axhline(threshold, color= 'r')
+ax2.axhline(neuron_par["threshold"], color= 'r')
 ax2.set_ylim(-80,40)
 ax2.grid()
 

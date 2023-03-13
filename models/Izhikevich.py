@@ -8,7 +8,7 @@ from spiking.torch.layers.linear import BaseLinear
 
 class BaseIzhikevich(BaseNeuron):
     """
-    Base LIF neuron with:
+    Base Izhickevich neuron with:
     - stateful mem potential and recovery variable
     - hard reset of membrane potential
     - optionally learnable parameters; either per-neuron or single

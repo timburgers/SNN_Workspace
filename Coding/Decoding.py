@@ -1,5 +1,5 @@
 import torch
-from Input_current_sim import input_cur
+#from Encoding import input_cur
 import numpy as np
 import matplotlib.pyplot as plt
 import math
