@@ -6,7 +6,9 @@ import torch
 import torch.nn as nn
 from models.Izhikevich import LinearIzhikevich
 from models.spiking.spiking.torch.utils.surrogates import get_spike_fn
-from Coding.Decoding import Linear_LI_filter
+from Coding.Encoding import input_cur
+import matplotlib.pyplot as plt
+import numpy as np
 
 
 class Izhikevich_SNN(nn.Module):
@@ -26,19 +28,12 @@ class Izhikevich_SNN(nn.Module):
 			d = torch.ones(self.neurons)*neuron_params["d"]
 		)
 
-		self.decode_leak = dict(
-			leak = torch.ones(1)*0.99
-		)
 
 		self.f1 = LinearIzhikevich(self.input_features,self.neurons,self.params_fixed,self.params_learnable,get_spike_fn("ArcTan", 1.0, 10.0))
-		self.f2 = Linear_LI_filter(self.neurons,1,{},self.decode_leak,get_spike_fn("ArcTan", 1.0, 10.0))
 
 		# Set the weights in the torch.nn module (Linear() expects the weight matrix in shape (output,input))
 		weight_matrix = torch.eye(self.neurons,self.input_features)*weight_syn
 		self.f1.ff.weight = torch.nn.parameter.Parameter(weight_matrix)
-
-		weight_matrix = torch.ones(1,self.neurons)*weight_syn
-		self.f2.ff.weight = torch.nn.parameter.Parameter(weight_matrix)
 
 
 	def forward(self,input_batch,state):
@@ -46,19 +41,58 @@ class Izhikevich_SNN(nn.Module):
 		seq_length, n_inputs = input_batch.size()
 		outputs = []
 		states = []
-		decoded = []
-		decode_mempot = torch.tensor([0])
 		for timestep in range(seq_length):
 			input = input_batch[timestep,:]
 			state,output = self.f1(state,input)
-			decode_mempot, _ = self.f2(decode_mempot,output)
 			outputs += [output]
 			states += [state]
-			decoded += [decode_mempot]
 		
 		outputs = torch.stack(outputs)
 		states = torch.stack(states)
-		decoded = torch.stack(decoded)
-		
-		return outputs, states, decoded
+		return outputs, states
+
+time_step = 0.00025
+
+input = input_cur("step",0.085,time_step,30,1)
+neuron_par = dict(a = 0.01, b = 0.2, c = -65.0, d = 8, threshold = 30)
+states = torch.zeros(3,1)
+states[1]= -70			# To prevent first spike to happen (set v to -82.65)
+states[0]= neuron_par["b"]*states[1]
+
+neuron_F_Izhickevich = Izhikevich_SNN(1,neuron_par,1,time_step)
+spike_snn, state_snn = neuron_F_Izhickevich(input,states)
+
+
+# Convert all torch.tensors to numpu element
+recovery = state_snn[:,0,0].detach().numpy()
+mem_pot = state_snn[:,1,0].detach().numpy()
+spike = state_snn[:,2,0].detach().numpy()
+input = input[:,0].detach().numpy()
+
+time = np.arange(0,len(input)*time_step,time_step)
+
+fig,(ax1,ax2,ax3,ax4) = plt.subplots(4, sharex=True)
+fig.text(0.5, 0.04, 'Time (ms)', ha='center')
+
+ax1.set_title("Input Current")
+ax1.plot(time,input)
+ax1.grid()
+
+ax2.set_title("Membrame potential")
+ax2.plot(time,mem_pot)
+ax2.axhline(neuron_par["threshold"], color= 'r')
+ax2.set_ylim(-80,40)
+ax2.grid()
+
+ax3.set_title("Recovery variable")
+ax3.plot(time,recovery, color = 'orange')
+ax3.grid()
+
+ax4.set_title("Output spikes")
+ax4.plot(time,spike) 
+ax4.grid()
+
+
+plt.show()
+
 

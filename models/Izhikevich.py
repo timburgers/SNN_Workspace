@@ -1,7 +1,6 @@
 import torch
 
 from spiking.torch.neurons.base import BaseNeuron
-from spiking.torch.utils.quantization import quantize
 from spiking.torch.layers.linear import BaseLinear
 
 
@@ -13,7 +12,8 @@ class BaseIzhikevich(BaseNeuron):
     - hard reset of membrane potential
     - optionally learnable parameters; either per-neuron or single
     """
-    # membrane potential (v), recovery variable (u), output spike (s)
+
+    # recovery variable (u), membrane potential (v) output spike (s)
     state_size = 3
     neuron_params = ["a","b","c","d" "thresh","time_step"]
     
@@ -65,11 +65,11 @@ class BaseIzhikevich(BaseNeuron):
 
     @staticmethod
     def update_recov(a,b,d,v,u,reset,dt):
-        return u + dt*a*(b*v - u) + d*reset
+        return u + dt*1000*a*(b*v - u) + d*reset
     
     @staticmethod
     def update_mem(v,u,I,reset,c,dt):
-        return (v + dt*(0.04*v**2 + 5*v + 140 + - u + I))*(1-reset) + reset*c
+        return (v + dt*1000*(0.04*v**2 + 5*v + 140 + - u + I))*(1-reset) + reset*c
 
 
 

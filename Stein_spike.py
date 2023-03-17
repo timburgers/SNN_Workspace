@@ -36,11 +36,11 @@ class ProportionalNeuron(torch.nn.Module):
 
 
         # Tot aan hier om gewoon een neuron proportioneel te laten spiken
-        weight = 0.4
+        weight = 1
         weight_list = []
 
         for i in range(input_groups):
-            weight_list.append(torch.tensor([[1,0],[0,1]]*weight))
+            weight_list.append(torch.tensor([[1.,0.],[0.,1.]]*weight))
 
         new_weights = torch.block_diag(*weight_list)
         self.l1.ff.weight = torch.nn.parameter.Parameter(new_weights)
