@@ -7,58 +7,84 @@ import torch.nn as nn
 from models.Izhikevich import LinearIzhikevich
 from models.spiking.spiking.torch.utils.surrogates import get_spike_fn
 from Coding.Decoding import Linear_LI_filter
+import numpy as np
 
+
+# # Proportional
+# neuron_par = dict(a = 0.1, b = 0.222, c = -61.6, d = 0, threshold = 30)
+
+# Derivative
+# neuron_par = dict(a = 0.0105, b = 0.656, c = -55.0, d = 1.92, threshold = 30)
+# neuron_par = dict(a = 0.0000105, b = 0.000656, c = -0.055, d = 0.00192, threshold = 0.030)
+
+# # Integral
+# neuron_par = dict(a = 0.0158, b = 0.139, c = -70.0, d = 1.06, threshold = 30)
 
 class Izhikevich_SNN(nn.Module):
-	def __init__(self,input_feat, neuron_params, weight_syn, time_step):
+	def __init__(self,input_feat, param_init, time_step, random_init_seed, device):
 		super(Izhikevich_SNN,self).__init__()
 		self.input_features = input_feat
 		self.neurons = self.input_features
+		self.device = device
+		
+		### Set random seed
+		np.random.seed(random_init_seed)
 
-		self.params_fixed=dict(
-			thresh = torch.ones(self.neurons)*neuron_params["threshold"],
-			time_step = torch.ones(self.neurons)*time_step
+		self.params_fixed_l1=dict(
+			time_step = torch.ones(self.neurons)*time_step,
+			d = param_init["l1_d"]
 		)
-		self.params_learnable=dict(
-			a = torch.ones(self.neurons)*neuron_params["a"],
-			b = torch.ones(self.neurons)*neuron_params["b"],
-			c = torch.ones(self.neurons)*neuron_params["c"],
-			d = torch.ones(self.neurons)*neuron_params["d"]
-		)
-
-		self.decode_leak = dict(
-			leak = torch.ones(1)*0.99
+		self.params_learnable_l1=dict(
+			thresh = param_init["l1_thres"],
+			a = param_init["l1_a"],
+			b = param_init["l1_b"],
+			c = param_init["l1_c"]
+			
 		)
 
-		self.f1 = LinearIzhikevich(self.input_features,self.neurons,self.params_fixed,self.params_learnable,get_spike_fn("ArcTan", 1.0, 10.0))
-		self.f2 = Linear_LI_filter(self.neurons,1,{},self.decode_leak,get_spike_fn("ArcTan", 1.0, 10.0))
+		self.params_learnable_l2 = dict(
+			leak = param_init["l2_leak"])
+
+		self.l1 = LinearIzhikevich(self.input_features,self.neurons,self.params_fixed_l1,self.params_learnable_l1,get_spike_fn("ArcTan", 1.0, 20.0))
+		self.l2 = Linear_LI_filter(self.neurons,1,{},self.params_learnable_l2,None)
 
 		# Set the weights in the torch.nn module (Linear() expects the weight matrix in shape (output,input))
-		weight_matrix = torch.eye(self.neurons,self.input_features)*weight_syn
-		self.f1.ff.weight = torch.nn.parameter.Parameter(weight_matrix)
+		self.l1.ff.weight = torch.nn.parameter.Parameter(param_init["l1_weights"])
+		self.l2.ff.weight = torch.nn.parameter.Parameter(param_init["l2_weights"])
 
-		weight_matrix = torch.ones(1,self.neurons)*weight_syn
-		self.f2.ff.weight = torch.nn.parameter.Parameter(weight_matrix)
+	def forward(self,input_batch,state_snn, state_LI):
 
+		batch_size, seq_length, n_inputs = input_batch.size()
+		outputs, states_snn, decoded = [],[],[]
+		
 
-	def forward(self,input_batch,state):
-
-		seq_length, n_inputs = input_batch.size()
-		outputs = []
-		states = []
-		decoded = []
-		decode_mempot = torch.tensor([0])
 		for timestep in range(seq_length):
-			input = input_batch[timestep,:]
-			state,output = self.f1(state,input)
-			decode_mempot, _ = self.f2(decode_mempot,output)
+			input = input_batch[:,timestep,:]
+			state_snn,output = self.l1(state_snn,input)
+			state_LI, _ = self.l2(state_LI,output)
+
 			outputs += [output]
-			states += [state]
-			decoded += [decode_mempot]
+			states_snn += [state_snn]
+			decoded += [state_LI]
 		
 		outputs = torch.stack(outputs)
-		states = torch.stack(states)
+		states_snn = torch.stack(states_snn)
 		decoded = torch.stack(decoded)
 		
-		return outputs, states, decoded
+		return outputs, states_snn, decoded
 
+
+def list_learnable_parameters(network, show_results):
+	if show_results == True:
+		print ("Print the parameters of the network \n")
+	learn_param_dic = {}
+	for name, param in network.named_parameters():
+		if param.requires_grad:
+			if show_results == True:
+				print(name, param.data)	
+			else:
+				learn_param_dic[name] =  param.data.cpu().detach().numpy()
+	if show_results == True:
+		print("\n")
+		return	
+	else: return learn_param_dic

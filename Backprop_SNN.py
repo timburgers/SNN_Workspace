@@ -1,124 +1,110 @@
-from SNN_Izhickevich import Izhikevich_SNN
 import torch
 import numpy as np
 from tqdm import trange
-from torch.utils.data import Dataset,DataLoader
+from torch.utils.data import DataLoader, random_split
 import torch.nn.functional as F 
-import pandas as pd
-import matplotlib.pyplot as plt
-from Coding.Decoding import sliding_window
-import torch.nn as nn
-
-
-class Dataset_derivative(Dataset):
-	# This loads the data and converts it
-	def __init__(self,input_signal, num_input, num_output):
-		df_input = (pd.read_csv(input_signal,usecols=[1], header=0)).to_numpy()
-		df_labels = (pd.read_csv(input_signal,usecols=[2], header=0)).to_numpy()
-
-		# Convert input/output into multiple collomn vector (as many as input/output neurons there are)
-		df_input = np.tile(df_input,(1,num_input))
-		df_labels = np.tile(df_labels,(1,num_output))
-		
-			
-		self.dataset = torch.tensor(df_input).float()
-		self.labels = torch.tensor(df_labels).reshape(-1,1).float()
-	
-	# This returns the total amount of samples in your Dataset
-	def __len__(self):
-		return len(self.dataset)
-	
-	# This returns given an index the i-th sample and label
-	def __getitem__(self, idx):
-		return self.dataset[idx],self.labels[idx]
+from dataset_creation.pytorch_dataset import Dataset_derivative
+import wandb
+from SNN_Izhickevich import list_learnable_parameters
 
 
 
-def train_SNN(network, data_sets, epochs, batch_size, perc_train):
 
-	# Initialize NN and optimizer
-	optimizer = torch.optim.Adam(network.parameters(), lr = 0.001)
+def train_SNN(network, dataset, epochs, percent_train, learning_rate, batch_size, random_seed, device):
 	network.train()
-	data_files = 100
 
-	# Initialize training and test data set in a dictonary
-	d = {}
-	train_ds    = []
-	test_ds     = []
-	val_ds = []
+	### Initialize optimizer
+	optimizer = torch.optim.Adam(network.parameters(), lr = learning_rate)
 
-	# split the NOT training data, into test and validate datasets
-	perc_val = (1-perc_train)/2
-	perc_test = (1-perc_train)/2
+	### Split dataset into training and validation data
+	train_data, val_data = random_split(dataset,[int(len(dataset)*percent_train), len(dataset)- int(len(dataset)*percent_train)], generator=torch.Generator().manual_seed(random_seed))
 
-	for x in range(0,data_files):
-		d["ds{0}".format(x)] = Dataset_derivative(data_sets + "/test_derivative_sin_" + str(x) +".csv",2,2)
+	### Print training batches and iterations per epoch
+	iter_per_epoch = int(len(train_data)/batch_size)
+	print ("Total number of training batches = ", len(train_data), " & Iterations per epoch = ", iter_per_epoch, "\n")
 
-		# Split the dataset in seperate: training, testing and validating sets
-		if x < perc_train*data_files:
-			train_ds.append(d["ds{0}".format(x)])
-		elif x < (perc_test+perc_train)*data_files:
-			test_ds.append(d["ds{0}".format(x)])
-		else:
-			val_ds.append(d["ds{0}".format(x)])
-
-	print ("Training data set contains ", len(train_ds), " files")
-	print ("Test data set contains ", len(test_ds), " files")
-	print ("Validation data set contains ", len(val_ds), " files")
-	
-
-	SNN_layers = 1
+	### Initialize total loss over epoch arrays
+	loss_train_epochs = np.array([])
 
 
-	# Start the training
+	### Start the training
 	for ep in trange(epochs, desc="Training SNN"):
 		loss_train_cum = 0
-		for ds in train_ds :
-			# for data in ds:
-			#     print("Dataset size = ", data)
-			dl_train = DataLoader(ds,batch_size=batch_size)
 
-			snn_states = torch.zeros(3, network.neurons)
+		dl_train = DataLoader(	train_data,
+								batch_size = batch_size,
+								drop_last=True,
+								pin_memory=True,
+								num_workers=0,
+								shuffle=True)
 
-			# for data in dl_train:
-			# 	print(data[0].shape)
-			# 	break
-			for batch_train,label_train in dl_train:					
-				# print("Batch size = ", batch_train.size())
-				# print("Label size = ", label_train.size())
+		### Loop over batches: batchtrain --> (batch_size, seq_length, input neurons), batch label --> (batch_size, seq_length, output neurons)	
+		for batch_train,label_train in dl_train: 
+			batch_train = batch_train.to(device, non_blocking = True)
+			label_train = label_train.to(device, non_blocking = True)
 
-				snn_states = torch.zeros(3, network.neurons)
+			### Convert shape of batch train from (batch_size, seq_len, 1) to (batch_size, seq_len, features)	
+			# batch_train  = torch.Tensor.repeat(batch_train,(1,1,network.neurons))		
 
-				# Forward step
-				optimizer.zero_grad()
-				outp,snn_states = network(batch_train,snn_states)
+			#### Initialize neuron states
+			snn_states = torch.zeros(3, batch_size, network.neurons, device=torch.device(device))
+			LI_state = torch.zeros(1, device=torch.device(device))
 
-				
-
-				# transpose ouptut from (samples, neurons) --> (neurons, samples)
-				outp = torch.transpose(outp,0,1)
-
-				window_size =100
-				stride = 1 
-				decoding_method = nn.AvgPool1d(window_size, stride)
-				decoded_output = decoding_method(outp)
-				decoded_output = torch.transpose(decoded_output,0,1)
-				
+			### Initialize optimizer
+			optimizer.zero_grad(set_to_none=True)
 
 
-				label_train = label_train[int(window_size/2):int(-window_size/2),0]
-				# Calculate the loss
-				loss_train = F.mse_loss(decoded_output, label_train)
-				# print("loss of train data =",loss_train)
-				
-				# Back propagation and update the weights
-				loss_train.backward()
+			#### Forward step (outputs in the shape (seq_len, batch_size, input features))
+			spike_output,snn_states, decoded_output = network(batch_train,snn_states, LI_state) 
 
-				# for p in model.parameters():
-				# 	print("loss = ",p.grad.norm())
-				optimizer.step()
+			### Convert shape of train data from (batch_size, seq_len ,feature) to (seq_len, batch_size, feature) since the underlaying neurons models output in that order
+			label_train = torch.permute(label_train,(1,0,2)) 
 
-				loss_train_cum += loss_train.detach().numpy()
-			#print("loss of train data cum =",loss_train_cum)
+			### Calculate the loss
+			loss_train = F.mse_loss(decoded_output[100:,:,:], label_train[100:,:,:])
+			# loss_train = F.smooth_l1_loss(decoded_output,label_train)
+			# print("loss of train data =",loss_train)
+			
+			### Back propagation (calulate the gradients) and update the weights/parameters
+			loss_train.backward()
 
-	return network
+			# print("\n Print Gradients = ")
+			# for name_, param_ in network.named_parameters():
+			# 	if param_.requires_grad:
+			# 		print (name_, param_.grad)
+			# print("\n")
+
+			optimizer.step()
+
+			list_learnable_parameters(network,True)
+			### Calulate cumulative loss over an epoch
+			loss_train = loss_train.to("cpu").detach().numpy()
+			loss_train_cum += loss_train
+		
+
+		### Check if a NAN is present in the network
+		nan_check_in_parameters(network,ep)
+
+		### Average the loss over the number of iterations of the dataloader and append to list
+		loss_train_cum = loss_train_cum/len(dl_train)
+		loss_train_epochs = np.append(loss_train_epochs,loss_train_cum)
+		wandb.log({"Training Loss": loss_train_cum})
+		wandb.log({"Leak_l2": network.l2.neuron.leak.to("cpu").detach().numpy()})
+	
+
+	return network, loss_train_epochs
+
+
+
+# Function that checks is trainable parameters (weights or network parameters) is a Nan
+def nan_check_in_parameters(network, current_epoch):
+	for name, param in network.named_parameters():
+		if param.requires_grad:
+			if not torch.all(torch.isnan(param.data) == False):
+				for name_, param_ in network.named_parameters():
+					if param_.requires_grad:
+						print (name_, param_.data)
+				print("a NAN ocuurred in epoch ", current_epoch)
+				print("The Nan occurred in ", name)
+				print(torch.isnan(param.data))
+				exit()

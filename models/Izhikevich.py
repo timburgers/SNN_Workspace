@@ -38,11 +38,13 @@ class BaseIzhikevich(BaseNeuron):
         thresh = self.get_thresh()
         dt = self.get_time_step()
 
+
         # voltage update + reset + integrate
         v = self.update_mem(v, u, input_, s, c, dt)
 
         # recovery update + reset
         u = self.update_recov(a, b, d, v, u, s, dt)
+
 
         # spike
         s = self.spike(v - thresh)
@@ -65,11 +67,13 @@ class BaseIzhikevich(BaseNeuron):
 
     @staticmethod
     def update_recov(a,b,d,v,u,reset,dt):
-        return u + dt*1000*a*(b*v - u) + d*reset
+        # The parameters, thres are trained 
+        return u + dt*a*(b*v - u) + d*reset
     
     @staticmethod
     def update_mem(v,u,I,reset,c,dt):
-        return (v + dt*1000*(0.04*v**2 + 5*v + 140 + - u + I))*(1-reset) + reset*c
+        # The parameters, thres are trained. dt is multiplied with 1000 since all parameters are defined in ms
+        return (v + dt*(0.04*v**2 + 5*v + 140 + - u + I))*(1-reset) + reset*c
 
 
 

@@ -1,2 +1,4 @@
 #Ignore files
 __pycache__/
+wandb/
+.vscode/

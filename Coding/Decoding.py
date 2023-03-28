@@ -17,12 +17,14 @@ def sliding_window(spike_train, time_step, window_size, window_step):
     window_size = lenght in ms of the sliding window
     windor_step = stepsize in ms used for sliding the window
     """
-    decoded_output = np.array([])
+    # Shape (num_data_points, neurons)
+    decoded_output = np.zeros([math.trunc(((len(spike_train[:,0])*time_step)-window_size)/window_step),np.size(spike_train,axis=1)])
+    print("decoded output shape = ", np.shape(decoded_output))
     # Loop over number of outpur spike trains
-    for i in range(spike_train.size(dim=1)) :
+    for neuron in range(np.size(spike_train,axis=1)):
 
         # convert to numpy array from torch tensor
-        spike_train_i = spike_train[:,i].detach().numpy()
+        spike_train_i = spike_train[:,neuron]
 
         # Get sequence length (total datapoint in spiketrain) and time in ms
         seq_len = len(spike_train_i)
@@ -42,9 +44,10 @@ def sliding_window(spike_train, time_step, window_size, window_step):
             spike_count = np.sum(spike_train_window)
             spike_count_window = np.append(spike_count_window,spike_count)
 
-        # Calculate the list with the centers of the sliding windows
-        time_window = np.arange(window_size/2,window_size/2+num_data_points*window_step,window_step)
-        decoded_output = np.append(decoded_output,spike_count_window,axis=0)
+       
+        decoded_output[:,neuron] = spike_count_window
+
+    time_window = np.arange(window_size/2,window_size/2+num_data_points*window_step,window_step)
 
     return time_window, decoded_output
 
@@ -94,7 +97,7 @@ class Leaky_integrator_neuron(BaseNeuron):
     
     @staticmethod
     def update_mem(v,leak,input):
-        return v * leak + input
+        return v * leak + (1-leak)*input
 
 
 
