@@ -4,7 +4,7 @@ import math
 import matplotlib.pyplot as plt
 import numpy as np
 
-def input_cur(type, sim_time, time_step, current_value,input_neurons): 
+def input_cur(type, sim_time, time_step, current_value,input_neurons,step_percentage): 
 	"""
 	Type options: spike, constant, triangle, step or webb
 	"""
@@ -34,7 +34,6 @@ def input_cur(type, sim_time, time_step, current_value,input_neurons):
 		return triangle_input
 
 	if (type == "step"):
-		step_percentage = 0.10
 
 		step_input = torch.zeros(data_points,1)
 		for i in range(data_points):

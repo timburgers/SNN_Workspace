@@ -21,32 +21,38 @@ import numpy as np
 # neuron_par = dict(a = 0.0158, b = 0.139, c = -70.0, d = 1.06, threshold = 30)
 
 class Izhikevich_SNN(nn.Module):
-	def __init__(self,input_feat, param_init, time_step, random_init_seed, device):
+	def __init__(self,input_feat, param_init, time_step , device):
 		super(Izhikevich_SNN,self).__init__()
 		self.input_features = input_feat
 		self.neurons = self.input_features
 		self.device = device
 		
-		### Set random seed
-		np.random.seed(random_init_seed)
 
 		self.params_fixed_l1=dict(
 			time_step = torch.ones(self.neurons)*time_step,
-			d = param_init["l1_d"]
+			thresh = param_init["l1_thres"]
+
 		)
 		self.params_learnable_l1=dict(
-			thresh = param_init["l1_thres"],
 			a = param_init["l1_a"],
 			b = param_init["l1_b"],
-			c = param_init["l1_c"]
-			
+			c = param_init["l1_c"],
+			d = param_init["l1_d"],
+			v2 = param_init["l1_v2"],
+			v1 = param_init["l1_v1"],
+			v0 = param_init["l1_v0"],
+			tau_u = param_init["l1_tau_u"],
+
 		)
 
+		self.params_fixed_l2=dict(
+			leak = param_init["l2_leak"]
+		)
 		self.params_learnable_l2 = dict(
-			leak = param_init["l2_leak"])
+		)
 
 		self.l1 = LinearIzhikevich(self.input_features,self.neurons,self.params_fixed_l1,self.params_learnable_l1,get_spike_fn("ArcTan", 1.0, 20.0))
-		self.l2 = Linear_LI_filter(self.neurons,1,{},self.params_learnable_l2,None)
+		self.l2 = Linear_LI_filter(self.neurons,1,self.params_fixed_l2,self.params_learnable_l2,None)
 
 		# Set the weights in the torch.nn module (Linear() expects the weight matrix in shape (output,input))
 		self.l1.ff.weight = torch.nn.parameter.Parameter(param_init["l1_weights"])

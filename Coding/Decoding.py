@@ -19,7 +19,7 @@ def sliding_window(spike_train, time_step, window_size, window_step):
     """
     # Shape (num_data_points, neurons)
     decoded_output = np.zeros([math.trunc(((len(spike_train[:,0])*time_step)-window_size)/window_step),np.size(spike_train,axis=1)])
-    print("decoded output shape = ", np.shape(decoded_output))
+    # print("decoded output shape = ", np.shape(decoded_output))
     # Loop over number of outpur spike trains
     for neuron in range(np.size(spike_train,axis=1)):
 
@@ -93,7 +93,7 @@ class Leaky_integrator_neuron(BaseNeuron):
         return v, None
 
     def get_leak(self):
-        return self.leak
+        return torch.clamp(self.leak, min=0, max=1)
     
     @staticmethod
     def update_mem(v,leak,input):

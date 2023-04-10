@@ -5,7 +5,7 @@ import random
 
 for loop in range(100):
     ###############################################################
-    mu = 0.5
+    mu = 0
     time = 40
     dt = 0.002
 
@@ -17,7 +17,7 @@ for loop in range(100):
     prob_freq_change = 0.3
     prob_constant_line_top_bottom = 0.5
 
-    ROOT_DIR = "Sim_data/derivative/dt0.002_norm"
+    ROOT_DIR = "Sim_data/derivative/dt0.002_norm_neg"
 
     ##############################################################################
     # initialize
@@ -118,7 +118,7 @@ for loop in range(100):
     diff_pos_signal = diff_signal.clip(min=0)
     diff_neg_signal = diff_signal.clip(max=0)
 
-    np.savetxt(ROOT_DIR + "/dataset_"+ str(loop) + ".csv",np.concatenate([t,signal,diff_signal, diff_pos_signal, diff_neg_signal],axis=1),delimiter=',', header="Time (s), Input signal, Derivative, Derivative positive, Derivative negative")
+    # np.savetxt(ROOT_DIR + "/dataset_"+ str(loop) + ".csv",np.concatenate([t,signal,diff_signal, diff_pos_signal, diff_neg_signal],axis=1),delimiter=',', header="Time (s), Input signal, Derivative, Derivative positive, Derivative negative")
 
 
 plt.plot(t,signal)

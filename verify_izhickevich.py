@@ -51,16 +51,28 @@ class Izhikevich_SNN(nn.Module):
 		states = torch.stack(states)
 		return outputs, states
 
-time_step = 0.00025
+time_step = 2
+step_size = 1/20
 
-input = input_cur("step",0.085,time_step,30,1)
-neuron_par = dict(a = 0.01, b = 0.2, c = -65.0, d = 8, threshold = 30)
+input = input_cur("step",2500,time_step,step_size,1, step_percentage=0.3)
+# neuron_par = dict(a = 0.01, b = 0.2, c = -65.0, d = 8, threshold = 30)
+# neuron_par = dict(a = 0.1, b = 0.2, c = -65.0, d = 2, threshold = 30) #FS
+# neuron_par = dict(a = 0.01, b = 0.2, c = -65.0, d = 8, threshold = 30) 	# F spike frequency adaption
+neuron_par = dict(a = 0.02, b = -0.1, c = -55.0, d = 6, threshold = 30) 	# G class 1 excitable
+# neuron_par = dict(a = 0.2, b = 0.26, c = -65.0, d = 0, threshold = 30) 	# H class 2 excitable
+# neuron_par = dict(a = 0.02, b = 1, c = -55.0, d = 4, threshold = 30) 		# R Accomodation
+# neuron_par = dict(a = -0.02, b = -1, c = -60.0, d = 8, threshold = 30) 	# S Inhibition-induced spiking
+
+
 states = torch.zeros(3,1)
 states[1]= -70			# To prevent first spike to happen (set v to -82.65)
 states[0]= neuron_par["b"]*states[1]
 
 neuron_F_Izhickevich = Izhikevich_SNN(1,neuron_par,1,time_step)
 spike_snn, state_snn = neuron_F_Izhickevich(input,states)
+
+
+
 
 
 # Convert all torch.tensors to numpu element

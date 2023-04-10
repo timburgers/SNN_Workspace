@@ -22,7 +22,7 @@ class BaseIzhikevich(BaseNeuron):
         super().__init__(self.state_size, fixed_params, learnable_params)
 
         # check parameters are there
-        for p in ["a","b","c","d", "thresh","time_step"]:
+        for p in ["a","b","c","d", "thresh","time_step","v2", "v1", "v0", "tau_u"]:
             assert hasattr(self, p), f"{p} not found in {self}"
 
         # spike mechanism for back prop
@@ -34,13 +34,13 @@ class BaseIzhikevich(BaseNeuron):
 
         # get parameters
         # TODO: replace with pre-forward hook?
-        a,b,c,d = self.get_param()
+        a,b,c,d,v2,v1,v0,tau_u = self.get_param()
         thresh = self.get_thresh()
         dt = self.get_time_step()
 
 
         # voltage update + reset + integrate
-        v = self.update_mem(v, u, input_, s, c, dt)
+        v = self.update_mem(v, u, input_, s, c, dt, v2, v1, v0, tau_u)
 
         # recovery update + reset
         u = self.update_recov(a, b, d, v, u, s, dt)
@@ -57,7 +57,7 @@ class BaseIzhikevich(BaseNeuron):
         return s
 
     def get_param(self):
-        return self.a, self.b, self.c, self.d
+        return self.a, self.b, self.c, self.d, self.v2, self.v1, self.v0, self.tau_u
 
     def get_thresh(self):
         return self.thresh
@@ -68,12 +68,12 @@ class BaseIzhikevich(BaseNeuron):
     @staticmethod
     def update_recov(a,b,d,v,u,reset,dt):
         # The parameters, thres are trained 
-        return u + dt*a*(b*v - u) + d*reset
+        return u + (dt)*a*(b*v - u) + d*reset
     
     @staticmethod
-    def update_mem(v,u,I,reset,c,dt):
+    def update_mem(v,u,I,reset,c,dt, v2, v1, v0, tau_u):
         # The parameters, thres are trained. dt is multiplied with 1000 since all parameters are defined in ms
-        return (v + dt*(0.04*v**2 + 5*v + 140 + - u + I))*(1-reset) + reset*c
+        return (v + (dt)*(v2*v**2 + v1*v + v0 -tau_u*u + I))*(1-reset) + reset*c
 
 
 
