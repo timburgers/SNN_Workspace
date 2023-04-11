@@ -1,0 +1,63 @@
+### Hyperparameters
+NEURONS: 10
+EPOCHS: 1
+NUM_BATCHES_PER_DATAFILE: 20
+PERCENT_TRAIN: 0.40
+BATCH_SIZE: 128
+
+### Run settings
+WANDB_LOG: True
+SHOW_PLOTS: True
+IZHIK_TIME_STEP: 0.02
+
+### Learning rates
+LEARNING_RATE_DEFAULT: 0
+LR_L1_NEURON: 0.01
+LR_L1_WEIGHTS: 0.01
+LR_L2_NEURON: 0
+LR_L2_WEIGHTS: 0.01
+
+### Dataset parameters
+DATASET_DIR: "Sim_data/derivative/dt0.002_norm_neg"
+INPUT_COLUMN_DATAFILE: [1]
+LABEL_COLUMN_DATAFILE: [1]
+
+### Init settings
+RANDOM_INIT_SEED: 1
+INIT_SETTING: "random"
+HALF_NEGATIVE_WEIGHTS: True
+
+############# Initial conditions #############
+INITIAL_PARAMS_RANDOM:
+# First layer
+ a:         [0.019,        0.021]
+ b:         [0.41,         0.43]
+ c:         [-56,         -54]
+ d:         [0,            0]
+ threshold: [30,           30]
+ v2:        [0.1,          0.15]
+ v1:        [7,            7.5]
+ v0:        [42,           48]
+ tau_u:     [4,            6]
+ weights_1:  [50,           100]
+
+# Second layer
+ leak:      [0.90,         0.90]
+ weights_2: [0.15,         0.15]
+
+
+
+#############  Parameter bounds #############
+PARAMETER_BOUNDS:
+# First layer
+  l1.neuron.a:  [0, 0.5]
+  l1.neuron.b:  [0, 0.35]
+  l1.neuron.c:  [-100,0]
+  l1.neuron.d:  [0, 10]
+  l1.ff.weight: [null,null] #null if None in python
+
+# Second layer
+  # l2.neuron.leak: [0, 1]
+  l2.ff.weight:   [-1, 1]
+
+

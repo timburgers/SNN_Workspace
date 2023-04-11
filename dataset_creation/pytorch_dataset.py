@@ -8,16 +8,16 @@ import numpy as np
 
 class Dataset_derivative(Dataset):
 	# This loads the data and converts it
-	def __init__(self,root_dir,num_batches_per_data, num_input, col_input, col_label):
-		self.root_dir = root_dir
-		self.num_batches_per_data = num_batches_per_data
-		self.input_columns = col_input
-		self.label_columns = col_label
-		self.neurons = num_input
+	def __init__(self,config):
+		self.root_dir = config["DATASET_DIR"]
+		self.num_batches_per_data = config["NUM_BATCHES_PER_DATAFILE"]
+		self.input_columns = config["INPUT_COLUMN_DATAFILE"]
+		self.label_columns = config["LABEL_COLUMN_DATAFILE"]
+		self.neurons = config["NEURONS"]
 
-		self.file_names = [f for f in listdir(root_dir) if f[-4:] == ".csv"]
+		self.file_names = [f for f in listdir(self.root_dir) if f[-4:] == ".csv"]
 		# Get the number of samples in each data file
-		samples_in_data = len(pd.read_csv(root_dir+"/"+self.file_names[0]))
+		samples_in_data = len(pd.read_csv(self.root_dir+"/"+self.file_names[0]))
 		self.samples_per_batch = samples_in_data//self.num_batches_per_data
 		
 		self.input = torch.zeros(len(self.file_names)*self.num_batches_per_data,2)
