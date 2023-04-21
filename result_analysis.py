@@ -3,7 +3,7 @@ import pygad
 import pygad.torchga as torchga
 from SNN_Izh_LI_init import Izhikevich_SNN, initialize_parameters
 import yaml
-from EA_testing_pygad_SNN import get_dataset
+from Izh_LI_EA import get_dataset
 import matplotlib.pyplot as plt
 import numpy as np
 
