@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import time
 from datetime import datetime
+import platform
 
 
 
@@ -48,11 +49,11 @@ def get_dataset(config, dataset_num, sim_time):
         file = "/dataset_"+ str(dataset_num)
     else: file = "/" + config["DATA_FILE"]
 
-    input_data = pd.read_csv(config["DATASET_DIR"]+ file + ".csv", usecols=config["INPUT_COLUMN_DATAFILE"], header=None, skiprows=[0])
+    input_data = pd.read_csv(prefix + config["DATASET_DIR"]+ file + ".csv", usecols=config["INPUT_COLUMN_DATAFILE"], header=None, skiprows=[0])
     input_data = torch.tensor(input_data.values).float().unsqueeze(0) 	# convert from pandas df to torch tensor and floats + shape from (seq_len ,features) to (1, seq, feature)
 
 
-    target_data = pd.read_csv(config["DATASET_DIR"] + file + ".csv", usecols=config["LABEL_COLUMN_DATAFILE"], header=None, skiprows=[0])
+    target_data = pd.read_csv(prefix + config["DATASET_DIR"] + file + ".csv", usecols=config["LABEL_COLUMN_DATAFILE"], header=None, skiprows=[0])
     target_data = torch.tensor(target_data.values).float()
     target_data = target_data[:,0]
 
@@ -247,8 +248,15 @@ def main():
 # that can not be accessed as input variables, thus this part of the code is constantly runned when
 # a new process is spawned
 
+if platform.system() == "Linux":
+    prefix = "/data/tim/SNN_Workspace/"
+
+if platform.system() == "Windows":
+    prefix = ""
+
+
 ### Read config file
-with open("config_Izh_LI_EA.yaml","r") as f:
+with open(prefix + "config_Izh_LI_EA.yaml","r") as f:
     config = yaml.safe_load(f)
 device = "cpu"
 
