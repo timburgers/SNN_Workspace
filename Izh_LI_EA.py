@@ -141,7 +141,7 @@ def save_ga_instance(ga_instance, wandb_mode, save_flag):
             date_time = datetime.fromtimestamp(time.time())  
             file_name = date_time.strftime("%d-%m-%Y_%H-%M-%S")          
 
-        ga_instance.save("results_EA/"+ file_name) 
+        ga_instance.save(prefix + "results_EA/"+ file_name) 
     else: return
     
 
