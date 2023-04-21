@@ -67,7 +67,7 @@ def train_SNN(network,dataset, device, config):
 			snn_states = torch.zeros(3, batch_size, network.neurons, device=torch.device(device))
 			snn_states[1,:,:] = -70			#initialize V
 			snn_states[0,:,:] = -20 		#initialize U
-			LI_state = torch.zeros(1, device=torch.device(device))
+			LI_state = torch.zeros(1, batch_size, device=torch.device(device))
 
 			### Initialize optimizer
 			optimizer.zero_grad(set_to_none=True)

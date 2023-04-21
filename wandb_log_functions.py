@@ -1,5 +1,6 @@
 import wandb
 import numpy as np
+import torch
 
 def create_wandb_summary_table(network,run,spike_train,config):
 	### print total spike count per neuron
@@ -61,4 +62,29 @@ def print_network_training_parameters(config):
 		print(config["INITIAL_PARAMS_RANDOM"])	
 
 
-	
+def create_wandb_summary_table_EA(run,spike_train,config,final_parameters):
+	### print total spike count per neuron
+	spike_count = []
+	for neuron in range(config["NEURONS"]):
+		w1 = torch.flatten(final_parameters["l1.ff.weight"]).detach().numpy()[neuron]
+		w2 = torch.flatten(final_parameters["l2.ff.weight"]).detach().numpy()[neuron]
+		print("Spikecount neuron", neuron, " = ", np.sum(spike_train[:,neuron]), "\t w1 = ", np.round(w1,3), "\t & w2 = ", np.round(w2,3))
+		spike_count.append(float(np.sum(spike_train[:,neuron])))
+
+	data = []
+	names = []
+	for name, param in final_parameters.items():
+		names.append(name)
+		# ravel makes to converts the multi dim ndarrays to a single dimension
+		params = param.detach().numpy().ravel()
+
+		if len(params)==1:
+			params= np.repeat(params,config["NEURONS"])
+		data.append(list(params))
+	names.append("Test Spike Count")
+	data.append(spike_count)
+	data = np.array(data).T.tolist()
+
+
+	summary_table = wandb.Table(rows=np.arange(0,config["NEURONS"]).tolist(), columns=names,data=data)
+	run.log({"Trained parameters overview": summary_table})

@@ -15,16 +15,17 @@ class BaseIzhikevich(BaseNeuron):
 
     # recovery variable (u), membrane potential (v) output spike (s)
     state_size = 3
-    neuron_params = ["a","b","c","d" "thresh","time_step"]
+    neuron_params = ["a","b","c","d" "thresh","v2", "v1", "v0", "tau_u"]
     
 
-    def __init__(self, fixed_params, learnable_params, spike_fn):
+    def __init__(self, fixed_params, learnable_params, spike_fn, *dt):
         super().__init__(self.state_size, fixed_params, learnable_params)
 
         # check parameters are there
-        for p in ["a","b","c","d", "thresh","time_step","v2", "v1", "v0", "tau_u"]:
+        for p in ["a","b","c","d", "thresh","v2", "v1", "v0", "tau_u"]:
             assert hasattr(self, p), f"{p} not found in {self}"
 
+        self.dt =dt[0]
         # spike mechanism for back prop
         self.spike = spike_fn
 
@@ -36,14 +37,13 @@ class BaseIzhikevich(BaseNeuron):
         # TODO: replace with pre-forward hook?
         a,b,c,d,v2,v1,v0,tau_u = self.get_param()
         thresh = self.get_thresh()
-        dt = self.get_time_step()
 
 
         # voltage update + reset + integrate
-        v = self.update_mem(v, u, input_, s, c, dt, v2, v1, v0, tau_u)
+        v = self.update_mem(v, u, input_, s, c, self.dt, v2, v1, v0, tau_u)
 
         # recovery update + reset
-        u = self.update_recov(a, b, d, v, u, s, dt)
+        u = self.update_recov(a, b, d, v, u, s, self.dt)
 
 
         # spike
