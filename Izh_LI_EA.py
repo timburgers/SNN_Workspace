@@ -46,7 +46,7 @@ def get_dataset(config, dataset_num, sim_time):
 
     # Either use one of the standard datasets, or the manual one
     if dataset_num != None:
-        file = "/dataset_"+ str(dataset_num)
+        file = "/dt0.002_norm_neg/dataset_"+ str(dataset_num)
     else: file = "/" + config["DATA_FILE"]
 
     input_data = pd.read_csv(prefix + config["DATASET_DIR"]+ file + ".csv", usecols=config["INPUT_COLUMN_DATAFILE"], header=None, skiprows=[0])
@@ -154,6 +154,7 @@ def main():
         wandb_mode = "disabled"
     
     run = wandb.init(project= "SNN_Izhikevich_EA", mode=wandb_mode, reinit=True, config=config)
+    wandb.config.update({"OS": platform.system()})
 
     global target_data
     # Create an instance of the pygad.torchga.TorchGA class to build the initial population.
