@@ -1,21 +1,25 @@
 ### Hyperparameters
 NEURONS: 10
-GENERATIONS: 2
-INDIVIDUALS: 10
+GENERATIONS: 250
+INDIVIDUALS: 500
 PARENTS_MATING: 5
-PARENT_SELECTION: "sss"
+DATASET_NUMBER: null
+DATA_FILE: "manual_dataset"
+SIM_TIME: 13            # max 40 secs
+NUMBER_PROCESSES: 10
+LABEL_COLUMN_DATAFILE: [2]
+
+
+PARENT_SELECTION: "rank"
 CROSSOVER_TYPE: "single_point"
 CROSSOVER_PROB: null
 MUTATION_TYPE:  "random"
-MUTATION_PERCENT: 10
+MUTATION_PERCENT: 20
 
 
 
 ### Run settings
-DATASET_NUMBER: 3
-DATA_FILE: "manual_dataset"
-SIM_TIME: 13            # max 40 secs
-NUMBER_PROCESSES: 10
+
 WANDB_LOG:          True
 SHOW_PLOTS:         True
 SAVE_LAST_SOLUTION: True
@@ -25,7 +29,7 @@ IZHIK_TIME_STEP: 0.02
 ### Dataset parameters
 DATASET_DIR: "Sim_data/derivative"
 INPUT_COLUMN_DATAFILE: [1]
-LABEL_COLUMN_DATAFILE: [1]
+
 
 ### Init settings
 RANDOM_INIT_SEED: 1

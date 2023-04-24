@@ -1,10 +1,15 @@
 import matplotlib.pyplot as plt
 import numpy as np
+from tqdm import *
+import time
+import datetime
 
-fig, axs = plt.subplots(1, 1)
-data = np.random.random((10, 3))
-columns = ("Column I", "Column II", "Column III")
-axs.axis('tight')
-axs.axis('off')
-the_table = axs.table(cellText=data, colLabels=columns, loc='center')
-plt.show()
+
+# for i in trange(100):
+with tqdm(range(100)) as t:
+    for i in t:
+        remaining = (t.total - t.n- 1)/ t.format_dict["rate"] if t.format_dict["rate"] and t.total else 0  # Seconds
+        remaining = str(datetime.timedelta(seconds=round(remaining))) #Hour:min:sec
+
+
+
