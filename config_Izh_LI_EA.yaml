@@ -45,20 +45,20 @@ HALF_NEGATIVE_WEIGHTS: True
 ############# Initial conditions #############
 INITIAL_PARAMS_RANDOM:
 # First layer
- a:         [0.019,        0.021]
- b:         [0.1,         0.35]
- c:         [-56,         -54]
- d:         [0,            1]
- threshold: [30,           30]
- v2:        [0.1,          0.15]
- v1:        [7,            7.5]
- v0:        [42,           48]
- tau_u:     [4,            6]
- weights_1:  [50,           100]
+ a:         [0.06,        0.17]
+ b:         [0.14,         0.35]
+ c:         [-30,         0]
+ d:         [0,            2]
+ threshold: [0,           30]
+ v2:        [0.001,          0.15]
+ v1:        [3,            7.5]
+ v0:        [42,           200]
+ tau_u:     [4,            80]
+ weights_1:  [100,           200]
 
 # Second layer
  leak:      [0.90,         0.90]
- weights_2: [0.15,         0.15]
+ weights_2: [0.15,         0.20]
 
 
 
@@ -69,12 +69,12 @@ INITIAL_PARAMS_RANDOM:
 PARAMETER_BOUNDS: #null if None in python
 # First layer
   l1.neuron.a:  {"low": 0,"high": 0.2}
-  l1.neuron.b:  {"low": 0,"high": 0.35}
-  l1.neuron.c:  {"low": -100,"high": 0}
-  l1.neuron.d:  {"low": 0,"high": 10}
-  l1.neuron.v2: {"low": 0,"high": 0.5}
-  l1.neuron.v1: {"low": 0,"high": 9}
-  l1.neuron.v0: {"low": 0,"high": 200}
+  l1.neuron.b:  {"low": 0.1,"high": 0.6}
+  l1.neuron.c:  {"low": -50,"high": 0}
+  l1.neuron.d:  {"low": 0,"high": 2}
+  l1.neuron.v2: {"low": 0,"high": 0.4}
+  l1.neuron.v1: {"low": 2,"high": 10}
+  l1.neuron.v0: {"low": 30,"high": 300}
   l1.neuron.tau_u: {"low": 0,"high": 100}
   l1.neuron.thresh: {"low": 0,"high": 30}
   l1.ff.weight: {"low": -200,"high": 200}  #also negative!

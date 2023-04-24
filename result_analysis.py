@@ -9,8 +9,8 @@ import numpy as np
 
 
 sim_time = 13
-dataset_number = None
-filename = "wise-waterfall-100"
+dataset_number = None # None is the self made 13s dataset
+filename = "snowy-dream-129"
 
 ### load the ga_instance of the last generation
 loaded_ga_instance = pygad.load("results_EA/"+ filename)
@@ -48,6 +48,8 @@ izh_output, izh_state, predictions = pygad.torchga.predict(SNN_izhik,
 
 predictions = predictions[:,0,0].detach().numpy()
 target_data = target_data.detach().numpy()
+input_data = input_data.detach().numpy()
+input_data = input_data[0,:,0]
 izh_u = izh_state[:,0,0,:].detach().numpy()
 izh_v = izh_state[:,1,0,:].detach().numpy()
 
@@ -96,10 +98,15 @@ for column in range(2):
     column = 0
 
 ### Plot the lowest figure
-axis1["input"].plot(time_arr,target_data)
-axis1["input"].plot(time_arr,predictions)
+axis1["input"].plot(time_arr,input_data, label = "Input")
+axis1["input"].plot(time_arr,target_data, label = "Target")
+axis1["input"].plot(time_arr,predictions, label = "Output")
 axis1["input"].axhline(0,linestyle="--", color="k")
 axis1["input"].xaxis.grid()
+
+
+plt.legend()
+
 
 
 ######################### plot table ##########################
