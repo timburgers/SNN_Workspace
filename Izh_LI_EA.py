@@ -154,6 +154,13 @@ def main():
         wandb_mode = "disabled"
     
     run = wandb.init(project= "SNN_Izhikevich_EA", mode=wandb_mode, reinit=True, config=config)
+
+    ### Set number first in the wandb name convention
+    name =  wandb.run.name
+    split_name = name.split("-")
+    new_name = split_name[-1]+"-"+ split_name[0]+ "-"+split_name[1]
+    wandb.run.name = new_name
+    
     wandb.config.update({"OS": platform.system()})
 
     global target_data
