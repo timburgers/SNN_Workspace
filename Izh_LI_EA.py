@@ -12,35 +12,32 @@ import time
 from datetime import datetime
 import platform
 
-
+################################################################
+#                      Define functions
+################################################################
 
 def fitness_func(ga_instance, solution, sol_idx):
     global SNN_izhik, input_data, target_data, loss_function
-    
+
     #### Initialize neuron states (u, v, s) 
     snn_states = torch.zeros(3, 1, SNN_izhik.neurons)
     snn_states[1,:,:] = -70			#initialize V
     snn_states[0,:,:] = -20 		#initialize U
     LI_state = torch.zeros(1,1)
 
+
     izh_output, izh_state, predictions = pygad.torchga.predict(SNN_izhik,
                                         solution,
                                         input_data,
                                         snn_states, #(u, v, s) 
                                         LI_state) #data in form: input, state_snn, state LI
+
     predictions = predictions[:,0,0]
 
     abs_error = loss_function(predictions, target_data).detach().numpy() + 0.00000001
 
     solution_fitness = 1.0 / abs_error
     return solution_fitness
-
-
-def callback_generation(ga_instance):
-    generation = ga_instance.generations_completed
-    print("Generation = {generation}".format(generation=generation))
-    # print("Fitness    = {fitness}".format(fitness=ga_instance.best_solution()[1]))
-    
 
 def get_dataset(config, dataset_num, sim_time):
 
@@ -66,8 +63,6 @@ def get_dataset(config, dataset_num, sim_time):
         exit("The dataset is only 40 secs")
 
     return input_data, target_data
-
-
 
 def plot_evolution_parameters(best_solutions):
     generations = np.size(best_solutions,0)
@@ -148,6 +143,7 @@ def save_ga_instance(ga_instance, wandb_mode, save_flag):
 
 def main():
 
+    ###################      Wandb settings     ######################
     if config["WANDB_LOG"]==True:
         wandb_mode = "online"	# "online", "offline" or "disabled"
     else:
@@ -160,9 +156,13 @@ def main():
     split_name = name.split("-")
     new_name = split_name[-1]+"-"+ split_name[0]+ "-"+split_name[1]
     wandb.run.name = new_name
-    
+
     wandb.config.update({"OS": platform.system()})
 
+
+
+
+    ####################    Set up EA and run   #########################
     global target_data
     # Create an instance of the pygad.torchga.TorchGA class to build the initial population.
     torch_ga = torchga.TorchGA(model=SNN_izhik,
@@ -176,7 +176,6 @@ def main():
                         num_parents_mating=config["PARENTS_MATING"],
                         initial_population=torch_ga.population_weights,
                         fitness_func=fitness_func,
-                        # on_generation=callback_generation,
                         gene_space= gene_space,
                         save_best_solutions = True,
                         parallel_processing=["process",config["NUMBER_PROCESSES"]],
@@ -188,6 +187,8 @@ def main():
 
     ga_instance.run()
 
+
+    ###############   Evaluate outcome    #######################
     plot_evolution_parameters(ga_instance.best_solutions)
     save_ga_instance(ga_instance, config["WANDB_LOG"], config["SAVE_LAST_SOLUTION"])
 
@@ -208,8 +209,7 @@ def main():
         print(key, value)
 
 
-    ################# RUN TEST SEQUENCE ############################
-
+    #################    Test sequence       ############################
     #### Initialize neuron states (u, v, s) 
     snn_states = torch.zeros(3, 1, SNN_izhik.neurons)
     snn_states[1,:,:] = -70			#initialize V
@@ -278,25 +278,3 @@ if __name__ == '__main__':
     main()
 
 
-
-
-
-
-
-################
-# Adjustment in torchGA
-# def predict(model, solution, *data):
-#     # Fetch the parameters of the best solution.
-#     model_weights_dict = model_weights_as_dict(model=model,
-#                                                weights_vector=solution)
-
-#     # Use the current solution as the model parameters.
-#     _model = copy.deepcopy(model)
-#     _model.load_state_dict(model_weights_dict)
-
-#     izh_output, izh_state, predictions = _model(*data)
-
-#     return predictions
-
-
-# --> added trange to the run function

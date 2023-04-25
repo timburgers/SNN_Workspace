@@ -48,5 +48,9 @@ plt.show()
 diff_signal.shape   = [len(diff_signal),1]
 man_input.shape     =[len(man_input),1]
 time.shape          =[len(time),1]
+diff_pos_signal = diff_signal.clip(min=0)
+diff_neg_signal = diff_signal.clip(max=0)
 
-np.savetxt(file_name + ".csv",np.concatenate([time,man_input,diff_signal],axis=1),delimiter=',', header="Time (s), Input signal, Derivative")
+
+
+np.savetxt(file_name + ".csv",np.concatenate([time,man_input,diff_signal,diff_pos_signal,diff_neg_signal],axis=1),delimiter=',', header="Time (s), Input signal, Derivative, Pos Derivative, Neg Derivative")
