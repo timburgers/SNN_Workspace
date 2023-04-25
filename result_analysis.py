@@ -10,7 +10,7 @@ import numpy as np
 
 sim_time = 13
 dataset_number = None # None is the self made 13s dataset
-filename = "snowy-dream-129"
+filename = "152-smooth-elevator"
 
 ### load the ga_instance of the last generation
 loaded_ga_instance = pygad.load("results_EA/"+ filename)

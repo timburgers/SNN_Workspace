@@ -1,6 +1,6 @@
 ### Hyperparameters
 NEURONS: 10
-GENERATIONS: 10
+GENERATIONS: 100
 INDIVIDUALS: 10
 PARENTS_MATING: 5
 DATASET_NUMBER: null
@@ -8,22 +8,22 @@ DATA_FILE: "manual_dataset"
 SIM_TIME: 13            # max 40 secs
 NUMBER_PROCESSES: 10
 LABEL_COLUMN_DATAFILE: [2]
+IZHIK_TIME_STEP: 0.1
 
 
-PARENT_SELECTION: "rank"
+PARENT_SELECTION: "sss"
 CROSSOVER_TYPE: "single_point"
 CROSSOVER_PROB: null
-MUTATION_TYPE:  "random"
+MUTATION_TYPE:  "adapt_step_size"  #adapt_step_size is the self made, requires all bound to be defined by low and up only!
 MUTATION_PERCENT: 20
 
 
 
 ### Run settings
-
 WANDB_LOG:          True
 SHOW_PLOTS:         True
 SAVE_LAST_SOLUTION: True
-IZHIK_TIME_STEP: 0.02
+
 
 
 ### Dataset parameters
