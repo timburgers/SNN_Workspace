@@ -17,6 +17,8 @@ class Izhikevich_SNN(nn.Module):
 		self.neurons = self.input_features
 		self.device = device
 		izh_time_step = torch.ones(self.neurons)*config["IZHIK_TIME_STEP"]
+		if param_init == None:
+			param_init = init_empty(config)
 
 		self.params_fixed_l1=dict(
 			thresh = param_init["l1_thres"]
@@ -158,4 +160,26 @@ def init_param_in_torchga_create_pop(config):
 	else: 
 		print("Init setting not found")
 		exit()
+	return init_param
+
+def init_empty(config):
+
+	init_param = {}
+	neurons = config["NEURONS"]
+
+	config_rand = config["INITIAL_PARAMS_RANDOM"]		
+	init_param["l1_a"]		= torch.ones(neurons).float()
+	init_param["l1_b"]		= torch.ones(neurons).float()
+	init_param["l1_c"]		= torch.ones(neurons).float()
+	init_param["l1_d"]		= torch.ones(neurons).float()
+	init_param["l1_thres"]	= torch.ones(neurons).float()
+	init_param["l1_weights"]= torch.ones((neurons,1)).float()
+	init_param["l1_v2"]		= torch.ones(neurons).float()
+	init_param["l1_v1"]		= torch.ones(neurons).float()
+	init_param["l1_v0"]		= torch.ones(neurons).float()
+	init_param["l1_tau_u"]	= torch.ones(neurons).float()
+
+	init_param["l2_leak"] 	= torch.ones(1).float()
+	init_param["l2_weights"]= torch.ones((1,neurons)).float()	# random weights [-1,1]
+		
 	return init_param

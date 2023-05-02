@@ -79,7 +79,7 @@ PARAMETER_BOUNDS: #null if None in python
   l1.ff.weight: {"low": -200,"high": 200}  #also negative!
 
 # Second layer
-  l2.neuron.leak: 0.9
+  l2.neuron.leak: {"low": 0.9,"high": 0.9}
   l2.ff.weight:   {"low": -0.25,"high": 0.25} #also negative!
 
 

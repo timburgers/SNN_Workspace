@@ -3,14 +3,14 @@ import pygad
 import pygad.torchga as torchga
 from SNN_Izh_LI_init import Izhikevich_SNN, initialize_parameters
 import yaml
-from Izh_LI_EA import get_dataset
+from Izh_LI_EA_PYGAD import get_dataset
 import matplotlib.pyplot as plt
 import numpy as np
 
 
-sim_time = 13
-dataset_number = None # None is the self made 13s dataset
-filename = "163-clean-wind"
+sim_time = 30
+dataset_number = 3 # None is the self made 13s dataset
+filename = "181-restful-paper"
 
 ### load the ga_instance of the last generation
 loaded_ga_instance = pygad.load("results_EA/"+ filename)
@@ -108,6 +108,14 @@ axis1["input"].xaxis.grid()
 plt.legend()
 
 
+plt.figure()
+### Plot the lowest figure
+plt.plot(time_arr,input_data, label = "Input")
+plt.plot(time_arr,target_data, label = "Target")
+plt.plot(time_arr,predictions, label = "Output")
+plt.axhline(0,linestyle="--", color="k")
+plt.grid()
+plt.legend()
 
 ######################### plot table ##########################
 # plt.show()
@@ -137,6 +145,9 @@ for neuron in range(config["NEURONS"]):
 data = np.transpose(np.vstack((neurons,spike_count,w1,w2,thres,a,b,c,d,v2,v1,v0,utau)))
 columns = ("Neuron","Spike count","W1", "W2", "Thres","a","b","c","d","v2","v1","v0","u tau")
 
+### Create a matlab file with parameters
+data_mat = np.transpose(np.vstack((w1,w2,thres,a,b,c,d,v2,v1,v0,utau)))
+np.savetxt("test_matlab.csv", data_mat)
 
 plt.figure(linewidth=1,
            tight_layout={"pad":1})
