@@ -40,6 +40,11 @@ def fitness_func(ga_instance, solution, sol_idx):
     return solution_fitness
 
 def get_dataset(config, dataset_num, sim_time):
+    if platform.system() == "Linux":
+        prefix = "/data/tim/SNN_Workspace/"
+
+    if platform.system() == "Windows":
+        prefix = ""
 
     # Either use one of the standard datasets, or the manual one
     if dataset_num != None:

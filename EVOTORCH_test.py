@@ -19,6 +19,7 @@ import ray
 import wandb
 from datetime import datetime
 import time
+import platform
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -26,14 +27,22 @@ ray.init(log_to_driver=False)
 
 class izh_EA_evotorch(Problem):
     def __init__(self):
+        if platform.system() == "Linux":
+            self.prefix = "/data/tim/SNN_Workspace/"
+
+        if platform.system() == "Windows":
+            self.prefix = ""
+
+
         ### Read config file
-        with open("config_EVOTORCH.yaml","r") as f:
+        with open(self.prefix + "config_EVOTORCH.yaml","r") as f:
             self.config = yaml.safe_load(f)
 
         self.SNN_izhik = Izhikevich_SNN(None, "cpu", self.config)
         self.input_data, self.target_data = get_dataset(self.config, self.config["DATASET_NUMBER"], self.config["SIM_TIME"])
         self.loss_function = torch.nn.MSELoss()
         self.bounds = create_bounds(self.SNN_izhik, self.config)
+        self.prefix = ""
 
 
         super().__init__(
@@ -198,7 +207,7 @@ def save_solution(solution, problem):
             date_time = datetime.fromtimestamp(time.time())  
             file_name = date_time.strftime("%d-%m-%Y_%H-%M-%S")      
 
-        pickle_out = open("Results_EA/Evotorch/"+ file_name+ ".pkl","wb")
+        pickle_out = open(problem.prefix + "Results_EA/Evotorch/"+ file_name+ ".pkl","wb")
         pickle.dump(solution, pickle_out)
         pickle_out.close()
 
