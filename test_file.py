@@ -5,8 +5,28 @@ import time
 import datetime
 import random
 from scipy.stats import truncnorm
+import pickle
+
+var = np.array([1,2,3,4,0,0,0,5,6,7,8,0,0,0,9,10,0,0,0,10])
 
 
+pos_start = np.array([])
+pos_end = np.array([])
+
+val=-1
+
+positive = np.where(var!=0)[0]
+for idx in range(len(positive)):
+    if idx == 0:
+        pos_start = np.append(pos_start,idx)
+    elif positive[idx]-val != 1:
+        pos_start = np.append(pos_start,positive[idx])
+        pos_end = np.append(pos_end,positive[idx-1])
+    if idx ==len(positive)-1:
+        pos_end = np.append(pos_end,positive[idx])
+    val = positive[idx]
+    
+print(pos_start, pos_end)
 # # user input
 # lower_bound = 0
 # upper_bound = 0.2
@@ -23,5 +43,5 @@ from scipy.stats import truncnorm
 # plt.show()
 
 
-print([1]*111)
+# print([1]*111)
 

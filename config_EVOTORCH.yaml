@@ -1,8 +1,8 @@
 ### Hyperparameters
 NEURONS: 10
-GENERATIONS: 20
-INDIVIDUALS: 20
-PARENTS_MATING: 2
+GENERATIONS: 50
+INDIVIDUALS: 60
+
 DATASET_NUMBER: null
 DATA_FILE: "manual_dataset"
 SIM_TIME: 13            # max 40 secs
@@ -10,11 +10,13 @@ NUMBER_PROCESSES: 10
 LABEL_COLUMN_DATAFILE: [2]
 IZHIK_TIME_STEP: 0.1
 HALF_NEGATIVE_WEIGHTS: True
+ANTI_OVERFITTING: True
 
 ### Run settings
 WANDB_LOG:          True
+SAVE_LAST_SOLUTION: True
 # SHOW_PLOTS:         True
-# SAVE_LAST_SOLUTION: True
+
 
 
 ### Dataset parameters

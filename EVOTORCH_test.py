@@ -6,13 +6,19 @@ from Izh_LI_EA_PYGAD import get_dataset
 import yaml
 import numpy as np
 import matplotlib.pyplot as plt
+import pickle
 # import os
 # os.environ["RAY_DEDUP_LOGS"]= "0"
+from evotorch import SolutionBatch
+from random import randint
 
 from evotorch import Problem
 from evotorch.algorithms import CMAES, PyCMAES
 from evotorch.logging import StdOutLogger,WandbLogger
 import ray
+import wandb
+from datetime import datetime
+import time
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -96,8 +102,7 @@ def init_conditions(problem):
 def test_solution(problem, solution):
     # Initialize varibales from problem Class
     model = problem.SNN_izhik
-    input_data = problem.input_data
-    target_data = problem.target_data
+    test_input_data, test_target_data = get_dataset(problem.config, problem.config["DATASET_NUMBER"], problem.config["SIM_TIME"])
     solution = solution.values.detach().numpy()
 
     ### Print the final parameters to the terminal
@@ -116,7 +121,7 @@ def test_solution(problem, solution):
     # Make predictions based on the best solution.
     izh_output, izh_state, predictions = torchga.predict(model,
                                         solution,
-                                        input_data,
+                                        test_input_data,
                                         snn_states,
                                         LI_state)
     predictions = predictions[:,0,0]
@@ -124,24 +129,24 @@ def test_solution(problem, solution):
     spike_train = izh_state[:,2,0,:].detach().numpy()
     # create_wandb_summary_table_EA(run, spike_train, config, final_parameters)
 
-    abs_error = problem.loss_function(predictions, target_data)
+    abs_error = problem.loss_function(predictions, test_target_data)
 
     print("\n Predictions : \n", predictions.detach().numpy())
     print("Absolute Error : ", abs_error.detach().numpy())
 
 
     predictions = predictions.detach().numpy()
-    target_data = target_data.detach().numpy()
+    test_target_data = test_target_data.detach().numpy()
     time_test = np.arange(0,np.size(predictions)*0.002,0.002)
 
     plt.plot(time_test, predictions,label="Prediction")
-    plt.plot(time_test,target_data,'r',label="Target")
+    plt.plot(time_test,test_target_data,'r',label="Target")
     plt.grid()
     plt.legend()
     
 
-    # if config["WANDB_LOG"] == True:
-    #     wandb.log({"Test sequence": plt})
+    if problem.config["WANDB_LOG"] == True:
+        wandb.log({"Test sequence": plt})
 
     plt.show()
 
@@ -180,17 +185,46 @@ def create_bounds(model,config):
 
     return (lower_bounds , upper_bounds)
 
+def save_solution(solution, problem):
+    wandb_mode = problem.config["WANDB_LOG"]
+    save_flag = problem.config["SAVE_LAST_SOLUTION"]
+    
+    if save_flag == True:
+        if wandb_mode == True: 
+            file_name =  wandb.run.name
+
+        # IF wandb is not logging --> use date and time as file saving
+        else:     
+            date_time = datetime.fromtimestamp(time.time())  
+            file_name = date_time.strftime("%d-%m-%Y_%H-%M-%S")      
+
+        pickle_out = open("Results_EA/Evotorch/"+ file_name+ ".pkl","wb")
+        pickle.dump(solution, pickle_out)
+        pickle_out.close()
+
+def create_new_training_set(batch: SolutionBatch):
+    dataset = randint(0,99)
+    problem.input_data, problem.target_data = get_dataset(problem.config, dataset, problem.config["SIM_TIME"])
+
 
 if __name__ == "__main__":
     problem = izh_EA_evotorch()
+    if problem.config["ANTI_OVERFITTING"]:
+        problem.before_eval_hook.append(create_new_training_set)
     center_init, std_init = init_conditions(problem)
     
-
     # searcher = CMAES(problem, stdev_init=0.05, center_init=center_init, limit_C_decomposition=False, popsize=20)
     searcher = PyCMAES(problem,stdev_init=1, center_init=center_init,  popsize=problem.config["INDIVIDUALS"], cma_options={"CMA_stds":std_init})
-    # _ = WandbLogger(searcher, project = "SNN_Izhikevich_EA")
+    searcher.before_step_hook
+    if problem.config["WANDB_LOG"] == True:
+        _ = WandbLogger(searcher, project = "SNN_Izhikevich_EA", config=problem.config)
     logger = StdOutLogger(searcher)
+
+    
+
     searcher.run(problem.config["GENERATIONS"])
+
     best_solution = searcher.status["best"]
+    save_solution(best_solution,problem)
     test_solution(problem,best_solution)
 
