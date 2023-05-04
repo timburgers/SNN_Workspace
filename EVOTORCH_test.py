@@ -33,7 +33,6 @@ class izh_EA_evotorch(Problem):
         if platform.system() == "Windows":
             self.prefix = ""
 
-
         ### Read config file
         with open(self.prefix + "config_EVOTORCH.yaml","r") as f:
             self.config = yaml.safe_load(f)
@@ -227,6 +226,7 @@ if __name__ == "__main__":
     searcher.before_step_hook
     if problem.config["WANDB_LOG"] == True:
         _ = WandbLogger(searcher, project = "SNN_Izhikevich_EA", config=problem.config)
+        wandb.config.update({"OS": platform.system()})
     logger = StdOutLogger(searcher)
 
     
