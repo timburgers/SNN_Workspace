@@ -2,7 +2,7 @@ import torch
 import pygad.torchga as torchga #Changed al lot of functions in torchga
 import pygad
 from SNN_Izh_LI_init import Izhikevich_SNN, initialize_parameters
-from wandb_log_functions import create_wandb_summary_table_EA
+from wandb_log_functions import create_wandb_summary_table_EA, number_first_wandb_name
 import wandb
 import yaml
 import pandas as pd
@@ -156,11 +156,7 @@ def main():
     
     run = wandb.init(project= "SNN_Izhikevich_EA", mode=wandb_mode, reinit=True, config=config)
 
-    ### Set number first in the wandb name convention
-    name =  wandb.run.name
-    split_name = name.split("-")
-    new_name = split_name[-1]+"-"+ split_name[0]+ "-"+split_name[1]
-    wandb.run.name = new_name
+    number_first_wandb_name()
 
     wandb.config.update({"OS": platform.system()})
 

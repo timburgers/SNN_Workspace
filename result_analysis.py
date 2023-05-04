@@ -11,13 +11,13 @@ from scipy.fft import fft, fftfreq
 
 
 sim_time = 30
-dataset_number = 3 # None is the self made 13s dataset
-filename = "pretty-darkness-189"
+dataset_number = 5 # None is the self made 13s dataset
+filename = "221-light-droid"
 lib = "evotorch"
 
 create_plots = True
-colored_background = False
-create_table = False
+colored_background = True
+create_table = True
 create_csv_file = False
 
 spectal_analysis = True

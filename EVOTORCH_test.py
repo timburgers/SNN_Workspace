@@ -1,7 +1,8 @@
 
 import torch
 import pygad.torchga as torchga
-from SNN_Izh_LI_init import Izhikevich_SNN, initialize_parameters
+from SNN_Izh_LI_init import Izhikevich_SNN
+from wandb_log_functions import number_first_wandb_name
 from Izh_LI_EA_PYGAD import get_dataset
 import yaml
 import numpy as np
@@ -102,7 +103,7 @@ def init_conditions(problem):
             names_center_init = np.append(names_center_init,name)
 
             # Fill in initial condition of stepsize (std)
-            initial_step_size = (bounds_config[name]["high"]-bounds_config[name]["low"])/10
+            initial_step_size = (bounds_config[name]["high"]-bounds_config[name]["low"])*problem.config["PERCENT_INTIIAL_STEPSIZE"]
             std_init = np.append(std_init,initial_step_size)
 
     return center_init, std_init
@@ -223,13 +224,13 @@ if __name__ == "__main__":
     
     # searcher = CMAES(problem, stdev_init=0.05, center_init=center_init, limit_C_decomposition=False, popsize=20)
     searcher = PyCMAES(problem,stdev_init=1, center_init=center_init,  popsize=problem.config["INDIVIDUALS"], cma_options={"CMA_stds":std_init})
-    searcher.before_step_hook
+
     if problem.config["WANDB_LOG"] == True:
         _ = WandbLogger(searcher, project = "SNN_Izhikevich_EA", config=problem.config)
         wandb.config.update({"OS": platform.system()})
+        number_first_wandb_name()
     logger = StdOutLogger(searcher)
 
-    
 
     searcher.run(problem.config["GENERATIONS"])
 

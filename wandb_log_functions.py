@@ -62,6 +62,14 @@ def print_network_training_parameters(config):
 		print(config["INITIAL_PARAMS_RANDOM"])	
 
 
+def number_first_wandb_name():
+	### Set number first in the wandb name convention
+    name =  wandb.run.name
+    split_name = name.split("-")
+    new_name = split_name[-1]+"-"+ split_name[0]+ "-"+split_name[1]
+    wandb.run.name = new_name
+
+
 def create_wandb_summary_table_EA(run,spike_train,config,final_parameters):
 	### print total spike count per neuron
 	spike_count = []
