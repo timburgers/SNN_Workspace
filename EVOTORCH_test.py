@@ -8,8 +8,8 @@ import yaml
 import numpy as np
 import matplotlib.pyplot as plt
 import pickle
-# import os
-# os.environ["RAY_DEDUP_LOGS"]= "0"
+import os
+os.environ["RAY_DEDUP_LOGS"]= "0"
 from evotorch import SolutionBatch
 from random import randint
 
@@ -24,7 +24,7 @@ import platform
 
 import warnings
 warnings.filterwarnings("ignore")
-ray.init(log_to_driver=False)
+# ray.init(log_to_driver=False)
 
 class izh_EA_evotorch(Problem):
     def __init__(self):
@@ -50,7 +50,7 @@ class izh_EA_evotorch(Problem):
             solution_length=111,
             initial_bounds=(-1,1),
             num_actors=self.config["NUMBER_PROCESSES"],
-            bounds=self.bounds
+            bounds=self.bounds,
         )
 
 
@@ -61,6 +61,7 @@ class izh_EA_evotorch(Problem):
         snn_states[0,:,:] = -20 		#initialize U
         LI_state = torch.zeros(1,1)
         solution_np = solution.values.detach().numpy()
+        
 
         izh_output, izh_state, predictions = torchga.predict(self.SNN_izhik,
                                             solution_np,
@@ -68,8 +69,11 @@ class izh_EA_evotorch(Problem):
                                             snn_states, #(u, v, s) 
                                             LI_state) #data in form: input, state_snn, state LI
 
-        predictions = predictions[:,0,0]
-        solution_fitness = self.loss_function(predictions, self.target_data).detach().numpy()
+        predictions = predictions[:,0,0].detach().numpy()
+        target_data = self.target_data.detach().numpy()
+        print("max target data = ", np.max(target_data))
+        solution_fitness = (np.square(predictions - target_data)).mean(axis=None)
+        # solution_fitness = self.loss_function(predictions, self.target_data).detach().numpy()
         print(solution_fitness)
         solution.set_evals(solution_fitness)
     
@@ -111,7 +115,7 @@ def init_conditions(problem):
 def test_solution(problem, solution):
     # Initialize varibales from problem Class
     model = problem.SNN_izhik
-    test_input_data, test_target_data = get_dataset(problem.config, problem.config["DATASET_NUMBER"], problem.config["SIM_TIME"])
+    test_input_data, test_target_data = get_dataset(problem.config, None, 13)
     solution = solution.values.detach().numpy()
 
     ### Print the final parameters to the terminal
@@ -211,19 +215,31 @@ def save_solution(solution, problem):
         pickle.dump(solution, pickle_out)
         pickle_out.close()
 
-def create_new_training_set(batch: SolutionBatch):
-    dataset = randint(0,99)
-    problem.input_data, problem.target_data = get_dataset(problem.config, dataset, problem.config["SIM_TIME"])
+def create_new_training_set():
+    dataset = randint(0,499)
+    print("Training dataset = ", dataset)
+    input_data_new, target_data_new = get_dataset(problem.config, dataset, problem.config["SIM_TIME"])
+
+    #Check if multiple processes are called, and then change the instance at all actors if necessary
+    if problem.actors is not None:
+        for i in range(len(problem.actors)):
+            actor = problem.actors[i]
+            actor.set.remote("input_data",input_data_new)
+            actor.set.remote("target_data",target_data_new)
+    if problem.actors is None:
+        problem.input_data = input_data_new
+        problem.target_data = target_data_new
+    
 
 
 if __name__ == "__main__":
     problem = izh_EA_evotorch()
-    if problem.config["ANTI_OVERFITTING"]:
-        problem.before_eval_hook.append(create_new_training_set)
     center_init, std_init = init_conditions(problem)
     
     # searcher = CMAES(problem, stdev_init=0.05, center_init=center_init, limit_C_decomposition=False, popsize=20)
     searcher = PyCMAES(problem,stdev_init=1, center_init=center_init,  popsize=problem.config["INDIVIDUALS"], cma_options={"CMA_stds":std_init})
+    if problem.config["ANTI_OVERFITTING"]:
+        searcher.before_step_hook.append(create_new_training_set)
 
     if problem.config["WANDB_LOG"] == True:
         _ = WandbLogger(searcher, project = "SNN_Izhikevich_EA", config=problem.config)
@@ -233,7 +249,7 @@ if __name__ == "__main__":
 
 
     searcher.run(problem.config["GENERATIONS"])
-
+    lastpop = searcher.population
     best_solution = searcher.status["best"]
     save_solution(best_solution,problem)
     test_solution(problem,best_solution)

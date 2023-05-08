@@ -46,26 +46,26 @@ def get_dataset(config, dataset_num, sim_time):
     if platform.system() == "Windows":
         prefix = ""
 
-    # Either use one of the standard datasets, or the manual one
+    # Either use one of the standard datasets
     if dataset_num != None:
         file = "/dt0.002_norm_neg/dataset_"+ str(dataset_num)
-    else: file = "/" + config["DATA_FILE"]
+        start_in_middle = 15*500
+    # Or the manual created one
+    else: 
+        file = "/" + config["DATA_FILE"]
+        start_in_middle=1
 
-    input_data = pd.read_csv(prefix + config["DATASET_DIR"]+ file + ".csv", usecols=config["INPUT_COLUMN_DATAFILE"], header=None, skiprows=[0])
+    
+
+    input_data = pd.read_csv(prefix + config["DATASET_DIR"]+ file + ".csv", usecols=config["INPUT_COLUMN_DATAFILE"], header=None, skiprows=start_in_middle, nrows=sim_time*500)
     input_data = torch.tensor(input_data.values).float().unsqueeze(0) 	# convert from pandas df to torch tensor and floats + shape from (seq_len ,features) to (1, seq, feature)
 
 
-    target_data = pd.read_csv(prefix + config["DATASET_DIR"] + file + ".csv", usecols=config["LABEL_COLUMN_DATAFILE"], header=None, skiprows=[0])
+    target_data = pd.read_csv(prefix + config["DATASET_DIR"] + file + ".csv", usecols=config["LABEL_COLUMN_DATAFILE"], header=None,  skiprows=start_in_middle, nrows=sim_time*500)
     target_data = torch.tensor(target_data.values).float()
     target_data = target_data[:,0]
 
-    
-    if sim_time < 40:
-        timesteps = sim_time*500
-        input_data = input_data[:,:timesteps,:]
-        target_data = target_data[:timesteps]
-    if sim_time>40:
-        exit("The dataset is only 40 secs")
+
 
     return input_data, target_data
 

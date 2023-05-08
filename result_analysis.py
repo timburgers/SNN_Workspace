@@ -8,23 +8,21 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pickle
 from scipy.fft import fft, fftfreq
+import warnings
+warnings.filterwarnings("ignore")
 
-
-sim_time = 30
-dataset_number = 5 # None is the self made 13s dataset
-filename = "221-light-droid"
+# for dataset_number in range(10):
+sim_time = 20
+dataset_number =None # None is the self made 13s dataset
+filename = "274-bumbling-firebrand"
 lib = "evotorch"
 
 create_plots = True
-colored_background = True
+colored_background = False
 create_table = True
 create_csv_file = False
 
-spectal_analysis = True
-
-
-
-
+spectal_analysis = False
 
 
 
@@ -74,14 +72,21 @@ izh_output, izh_state, predictions = pygad.torchga.predict(SNN_izhik,
                                     snn_states,
                                     LI_state)
 
-predictions = predictions[:,0,0].detach().numpy()
-target_data = target_data.detach().numpy()
+predictions = predictions[:,0,0]
+
 input_data = input_data.detach().numpy()
 input_data = input_data[0,:,0]
 izh_u = izh_state[:,0,0,:].detach().numpy()
 izh_v = izh_state[:,1,0,:].detach().numpy()
+fitness_func = torch.nn.MSELoss()
+solution_fitness = fitness_func(predictions, target_data).detach().numpy()
+print("Fitness of solution = ", solution_fitness)
 
-    
+predictions = predictions.detach().numpy()
+target_data = target_data.detach().numpy()
+
+mse = (np.square(predictions - target_data)).mean(axis=None)
+print(mse)
 
 if create_plots == True:
 

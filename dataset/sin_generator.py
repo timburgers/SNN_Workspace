@@ -3,25 +3,25 @@ import matplotlib.pyplot as plt
 import math
 import random
 
-for loop in range(100):
+for loop in range(500):
     ###############################################################
     mu = 0
     time = 40
     dt = 0.002
 
     # At zero crossing
-    prob_aplitude_change = 0.4 # probability that the amplitude changes to zero crossing
-    prob_constant_line_zero = 0.2
+    prob_aplitude_change = 0.5 # probability that the amplitude changes to zero crossing
+    prob_constant_line_zero = 0.15
 
     # At top or bottom crossing (both can not be larger than 1!)
-    prob_freq_change = 0.3
-    prob_constant_line_top_bottom = 0.5
+    prob_freq_change = 0.4
+    prob_constant_line_top_bottom = 0.4
 
     ROOT_DIR = "Sim_data/derivative/dt0.002_norm_neg"
 
     ##############################################################################
     # initialize
-    A = 0.2
+    A = 0.5
     t = 0
     phase =0
     freq = 1/20
@@ -118,7 +118,7 @@ for loop in range(100):
     diff_pos_signal = diff_signal.clip(min=0)
     diff_neg_signal = diff_signal.clip(max=0)
 
-    # np.savetxt(ROOT_DIR + "/dataset_"+ str(loop) + ".csv",np.concatenate([t,signal,diff_signal, diff_pos_signal, diff_neg_signal],axis=1),delimiter=',', header="Time (s), Input signal, Derivative, Derivative positive, Derivative negative")
+    np.savetxt(ROOT_DIR + "/dataset_"+ str(loop) + ".csv",np.concatenate([t,signal,diff_signal, diff_pos_signal, diff_neg_signal],axis=1),delimiter=',', header="Time (s), Input signal, Derivative, Derivative positive, Derivative negative")
 
 
 plt.plot(t,signal)
