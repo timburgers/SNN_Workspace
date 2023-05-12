@@ -9,21 +9,30 @@ import numpy as np
 import pickle
 from scipy.fft import fft, fftfreq
 import warnings
+import torch.nn as nn
 warnings.filterwarnings("ignore")
 
 # for dataset_number in range(10):
-sim_time = 20
+sim_time = 13
 dataset_number =None # None is the self made 13s dataset
-filename = "274-bumbling-firebrand"
+filename = "370-tough-fog"
 lib = "evotorch"
 
-create_plots = True
-colored_background = False
-create_table = True
-create_csv_file = False
+create_plots                    = True
+plot_with_best_testrun          = True  #True: solution = best performance on manual dataset      False: solution = best performance overall (can be easy dataset)
+muliple_test_runs_error_plot    = True  
+plot_last_generation            = True
 
-spectal_analysis = False
+colored_background              = True
+spike_count_plot                = True
 
+create_table                    = False
+create_csv_file                 = False
+
+plot_sigma                      = False
+
+spectal_analysis                = False
+plot_parameters_evolution       = False
 
 
 
@@ -39,9 +48,30 @@ if lib == "pygad":
     solution = loaded_ga_instance.best_solutions[-1]
 
 if lib == "evotorch":
-    pickle_in = open("Results_EA/Evotorch/" + filename+".pkl","rb")
-    solution = pickle.load(pickle_in)
-    solution = solution.values.detach().numpy()
+    pickle_in = open("Results_EA/Evotorch/dict/" + filename+".pkl","rb")
+    dict_solutions = pickle.load(pickle_in)
+    solution = dict_solutions["best_solution"]
+
+    if plot_with_best_testrun == True:
+        solutions = dict_solutions["test_solutions"]
+        solutions_error = dict_solutions["error"]
+        step_size = dict_solutions["step_size"]
+        generations = dict_solutions["generations"]
+
+        best_sol_ind = np.argmin(solutions_error)
+        solution = solutions[best_sol_ind+1] #+1 since first of solution_testrun is only zeros
+        if plot_last_generation == True:
+            solution = solutions[-1] #+1 since first of solution_testrun is only zeros
+            print("Plot shown with last generation")
+
+        # Check if the best solution is the last generation
+        if best_sol_ind == len(solutions_error)-1:
+            best_gen = generations
+        else: best_gen = (best_sol_ind)*step_size
+        print("Best solutions of the intermidiate testrun implementation is found at ", best_gen, " generations")
+    else: print("Solution: Best evaluated solution (note: can be the result of an easy training dataset)")
+
+
 
 ### Read config file and insert dummy data input the SNN
 with open("config_Izh_LI_EA.yaml","r") as f:
@@ -72,6 +102,7 @@ izh_output, izh_state, predictions = pygad.torchga.predict(SNN_izhik,
                                     snn_states,
                                     LI_state)
 
+
 predictions = predictions[:,0,0]
 
 input_data = input_data.detach().numpy()
@@ -85,8 +116,25 @@ print("Fitness of solution = ", solution_fitness)
 predictions = predictions.detach().numpy()
 target_data = target_data.detach().numpy()
 
-mse = (np.square(predictions - target_data)).mean(axis=None)
-print(mse)
+spike_count_window = np.array([])
+spikes_izh = izh_output[:,0,:] # spikes_izh of shape (timesteps,neurons)
+window_size =10
+sliding_window = nn.AvgPool1d(window_size,stride=1)
+
+for neuron in range(spikes_izh.size(dim=1)):
+    spike_count = spikes_izh[:,neuron].detach().numpy()
+    spike_count = torch.tensor([spike_count])
+    _slided_count = sliding_window(spike_count).detach().numpy()
+    for _ in range(int(window_size/2)):
+        _slided_count = np.insert(_slided_count,[0],[0])
+    for _ in range(int(window_size/2)-1):
+        _slided_count = np.append(_slided_count,[0])
+
+    if not np.any(spike_count_window):
+        spike_count_window = np.append(spike_count_window, _slided_count)
+    else: spike_count_window = np.vstack((spike_count_window,_slided_count))
+
+
 
 if create_plots == True:
 
@@ -143,14 +191,22 @@ if create_plots == True:
             
             if column ==0 or column ==2:
                 y = izh_v[:,neuron]
+
+            # Plot in the second column
             if column ==1 or column ==3:
-                y = izh_u[:,neuron]
+                if spike_count_plot== True:
+                    y=spike_count_window[neuron,:]
+
+                else: 
+                    y = izh_u[:,neuron]
             
             if row==5:
                 column = column + 2
             if row>4:
                 row = row -5
+            
             axis1[str(row)+","+str(column)].plot(time_arr,y)
+
             axis1[str(row)+","+str(column)].xaxis.grid()
 
             ### only plot in V plots
@@ -169,9 +225,19 @@ if create_plots == True:
             ### only plot in U plots
             if column ==1 or column ==3:
                 axis1[str(row)+","+str(column)].axhline(0,linestyle="--",color="k")
+                
+                # Plot the different background, corresponding with target sign
+                if colored_background == True and spike_count_plot==True:
+                    for i in range(len(pos_idx_start)):
+                        axis1[str(row)+","+str(column)].axvspan(pos_idx_start[i]*0.002, pos_idx_end[i]*0.002, facecolor="g", alpha= 0.2)
+                    for i in range(len(neg_idx_start)):
+                        axis1[str(row)+","+str(column)].axvspan(neg_idx_start[i]*0.002, neg_idx_end[i]*0.002, facecolor="r", alpha= 0.2)
+                    for i in range(len(zero_idx_start)):
+                        axis1[str(row)+","+str(column)].axvspan(zero_idx_start[i]*0.002, zero_idx_end[i]*0.002, facecolor="k", alpha= 0.2)
             neuron = neuron +1
         column = 0
 
+    time_arr = np.arange(0,sim_time,0.002)
     ### Plot the lowest figure
     axis1["input"].plot(time_arr,input_data, label = "Input")
     axis1["input"].plot(time_arr,target_data, label = "Target")
@@ -193,7 +259,7 @@ if create_plots == True:
     plt.legend()
 
     # Otherwise the plot and table are shown on the same moment
-    if create_table == False and spectal_analysis == False:
+    if create_table == False and spectal_analysis == False and muliple_test_runs_error_plot==False:
         plt.show()
 
 ######################### plot table ##########################
@@ -296,3 +362,70 @@ if spectal_analysis == True:
     plt.grid()
     plt.show()
 
+if muliple_test_runs_error_plot == True:
+    plt.figure()
+    gen_arr = np.arange(0,len(solutions_error)*step_size,step_size)
+    # if generations%step_size!=0:
+    #     gen_arr = np.append(gen_arr,generations)
+    plt.plot(gen_arr,solutions_error)
+
+    plt.title("Error of Manual Test Run every "+ str(step_size) +" generations")
+    plt.xlabel("Generations [-]")
+    plt.ylabel("Error [-]")
+    plt.grid()
+    if plot_sigma == False:
+        plt.show()
+
+if plot_sigma == True:
+    sigma = dict_solutions["sigma"]
+    gen_arr = np.arange(0, len(sigma))
+    plt.figure()
+    plt.title("Stepsize over generations")
+    plt.xlabel("Generations [-]")
+    plt.ylabel("Stepsize [-]")
+    plt.plot(gen_arr,sigma)
+    plt.grid()
+    plt.show()
+
+if plot_parameters_evolution == True:
+
+    generations = np.size(dict_solutions["mean"],0)
+    parameters_mean = dict_solutions["mean"] #shape (generations, parameters)
+    final_parameters =torchga.model_weights_as_dict(SNN_izhik, parameters_mean[0,:])
+
+    ## Initialize dictonary structre{param: [params_gen1, params_gen2 etc..].}
+    full_solution_dict = {key:None for key, _ in final_parameters.items()}
+
+
+
+    ### Fill the dictornary
+    for param in full_solution_dict:
+        for gen in range(generations):
+            gen_parameters =torchga.model_weights_as_dict(SNN_izhik, parameters_mean[gen,:])
+            for name, value in gen_parameters.items():
+                if param == name:
+                    value = torch.flatten(value).detach().numpy()
+                    if full_solution_dict[param] is None: #Check is dict is empty 
+                        full_solution_dict[param] = value
+                    else:
+                        full_solution_dict[param] = np.vstack((full_solution_dict[param],value))
+
+                    break
+
+
+    ### Plot the different diagrams
+    gen_arr = np.arange(0,generations)
+    for param in full_solution_dict:
+        plt.figure()
+        for num_param in range(len(full_solution_dict[param][0,:])):
+            param_per_gen = full_solution_dict[param][:,num_param]
+            param_per_gen = param_per_gen.flatten()
+            plt.plot(gen_arr,param_per_gen,label=str(num_param))
+        plt.title("Evolution of " + str(param))
+        plt.xlabel("Generations [-]")
+        plt.xticks(gen_arr)
+        plt.legend()
+        plt.grid()
+    plt.show()
+        
+                    

@@ -1,21 +1,25 @@
 ### Hyperparameters
 NEURONS: 10
-GENERATIONS: 10
-INDIVIDUALS: 4
+INDIVIDUALS: 20
 
-DATASET_NUMBER: null
-DATA_FILE: "manual_dataset"
-SIM_TIME: 20            # max 40 secs
-NUMBER_PROCESSES: 1
-LABEL_COLUMN_DATAFILE: [2]
-IZHIK_TIME_STEP: 0.1
+GENERATIONS: 
+
+
+### Initialisation
 HALF_NEGATIVE_WEIGHTS: True
-ANTI_OVERFITTING: True
-PERCENT_INTIIAL_STEPSIZE: 0.1
+PERCENT_INTIIAL_STEPSIZE: 0.005   #percent of the initial bounded area
 
 ### Run settings
+SIM_TIME: 15            # max 40 secs
+NUMBER_PROCESSES: 10
+LABEL_COLUMN_DATAFILE: [2]
+SAVE_TEST_SOLUTION_STEPSIZE: 100  #every .. steps the solution to the test case is calculated and saved
+DIFFERENT_DATASET_EVERY_GENERATION: 20
+IZHIK_TIME_STEP: 0.1
+ANTI_OVERFITTING: True
 WANDB_LOG:          True
 SAVE_LAST_SOLUTION: True
+ALGORITHM: "pycma" #cmaes or pycma
 # SHOW_PLOTS:         True
 
 
@@ -23,6 +27,8 @@ SAVE_LAST_SOLUTION: True
 ### Dataset parameters
 DATASET_DIR: "Sim_data/derivative"
 INPUT_COLUMN_DATAFILE: [1]
+DATASET_NUMBER: null
+DATA_FILE: "manual_dataset"
 
 ############# Initial conditions #############
 INITIAL_PARAMS_RANDOM:
@@ -41,7 +47,6 @@ INITIAL_PARAMS_RANDOM:
 # Second layer
   l2.neuron.leak: 0.9
   l2.ff.weight: 0.20 
-
 
 
 
