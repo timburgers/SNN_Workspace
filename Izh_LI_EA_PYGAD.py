@@ -257,7 +257,7 @@ def main():
 # a new process is spawned
 
 if platform.system() == "Linux":
-    prefix = "/data/tim/SNN_Workspace/"
+    prefix = "/scratch/timburgers/SNN_Workspace/"
 
 if platform.system() == "Windows":
     prefix = ""
