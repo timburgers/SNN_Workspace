@@ -3,7 +3,7 @@ import torch
 import pygad.torchga as torchga
 from SNN_LIF_LI_init import LIF_SNN
 from wandb_log_functions import number_first_wandb_name
-from Izh_LI_EA_PYGAD import get_dataset
+from IZH.Izh_LI_EA_PYGAD import get_dataset
 import yaml
 import numpy as np
 import matplotlib.pyplot as plt

@@ -1,7 +1,7 @@
 import torch
 import pygad.torchga as torchga #Changed al lot of functions in torchga
 import pygad
-from SNN_Izh_LI_init import Izhikevich_SNN, initialize_parameters
+from IZH.SNN_Izh_LI_init import Izhikevich_SNN, initialize_parameters
 from wandb_log_functions import create_wandb_summary_table_EA, number_first_wandb_name
 import wandb
 import yaml
@@ -264,7 +264,7 @@ if platform.system() == "Windows":
 
 
 ### Read config file
-with open(prefix + "config_Izh_LI_EA.yaml","r") as f:
+with open(prefix + "IZH/config_Izh_LI_EA.yaml","r") as f:
     config = yaml.safe_load(f)
 device = "cpu"
 
