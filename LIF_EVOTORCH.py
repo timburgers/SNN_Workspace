@@ -29,7 +29,7 @@ ray.init(log_to_driver=False, include_dashboard=False)
 class LIF_EA_evotorch(Problem):
     def __init__(self):
         if platform.system() == "Linux":
-            self.prefix = "/scratch/timburgers/SNN/"
+            self.prefix = "/scratch/timburgers/SNN_Workspace/"
 
         if platform.system() == "Windows":
             self.prefix = ""

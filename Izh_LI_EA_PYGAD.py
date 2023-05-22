@@ -41,7 +41,7 @@ def fitness_func(ga_instance, solution, sol_idx):
 
 def get_dataset(config, dataset_num, sim_time):
     if platform.system() == "Linux":
-        prefix = "/data/tim/SNN_Workspace/"
+        prefix = "/scratch/timburgers/SNN_Workspace/"
 
     if platform.system() == "Windows":
         prefix = ""
