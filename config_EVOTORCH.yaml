@@ -2,7 +2,7 @@
 NEURONS: 10
 INDIVIDUALS: 20
 
-GENERATIONS: 
+GENERATIONS: 1000
 
 
 ### Initialisation

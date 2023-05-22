@@ -55,7 +55,6 @@ def get_dataset(config, dataset_num, sim_time):
         file = "/" + config["DATA_FILE"]
         start_in_middle=1
 
-    
 
     input_data = pd.read_csv(prefix + config["DATASET_DIR"]+ file + ".csv", usecols=config["INPUT_COLUMN_DATAFILE"], header=None, skiprows=start_in_middle, nrows=sim_time*500)
     input_data = torch.tensor(input_data.values).float().unsqueeze(0) 	# convert from pandas df to torch tensor and floats + shape from (seq_len ,features) to (1, seq, feature)

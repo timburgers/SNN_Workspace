@@ -1,13 +1,15 @@
 import torch
 import pygad
 import pygad.torchga as torchga
-from SNN_Izh_LI_init import Izhikevich_SNN, initialize_parameters
+from SNN_Izh_LI_init import Izhikevich_SNN
+from SNN_LIF_LI_init import LIF_SNN
 import yaml
 from Izh_LI_EA_PYGAD import get_dataset
 import matplotlib.pyplot as plt
 import numpy as np
 import pickle
 from scipy.fft import fft, fftfreq
+import os
 import warnings
 import torch.nn as nn
 warnings.filterwarnings("ignore")
@@ -15,18 +17,19 @@ warnings.filterwarnings("ignore")
 # for dataset_number in range(10):
 sim_time = 13
 dataset_number =None # None is the self made 13s dataset
-filename = "370-tough-fog"
+filename = "65-lucky-sea"
+folder = "LIF/Evotorch"
 lib = "evotorch"
 
 create_plots                    = True
 plot_with_best_testrun          = True  #True: solution = best performance on manual dataset      False: solution = best performance overall (can be easy dataset)
-muliple_test_runs_error_plot    = True  
+muliple_test_runs_error_plot    = False  
 plot_last_generation            = True
 
 colored_background              = True
 spike_count_plot                = True
 
-create_table                    = False
+create_table                    = True
 create_csv_file                 = False
 
 plot_sigma                      = False
@@ -34,6 +37,13 @@ plot_sigma                      = False
 spectal_analysis                = False
 plot_parameters_evolution       = False
 
+#Pick last file name
+if filename == None:
+    all_files = os.listdir("Results_EA/"+folder)
+    splitted_files = [int(f.split("-")[0]) for f in all_files]
+    max_ind = splitted_files.index(max(splitted_files))
+    filename = all_files[max_ind].split(".")[0] #get rid of .pkl
+    print("\nFilename used = ", filename)
 
 
 
@@ -41,14 +51,19 @@ plot_parameters_evolution       = False
 
 #########################################################################################
 
+if folder.split("/")[0]=="LIF":
+    SNN_TYPE = "LIF"
+else: SNN_TYPE = "IZH"
+
+
 if lib == "pygad":
     ### load the ga_instance of the last generation
-    loaded_ga_instance = pygad.load("Results_EA/"+ filename)
+    loaded_ga_instance = pygad.load("Results_EA/"+ folder +"/" + filename)
     loaded_ga_instance.parallel_processing = None
     solution = loaded_ga_instance.best_solutions[-1]
 
 if lib == "evotorch":
-    pickle_in = open("Results_EA/Evotorch/dict/" + filename+".pkl","rb")
+    pickle_in = open("Results_EA/"+ folder +"/" + filename+".pkl","rb")
     dict_solutions = pickle.load(pickle_in)
     solution = dict_solutions["best_solution"]
 
@@ -73,30 +88,47 @@ if lib == "evotorch":
 
 
 
-### Read config file and insert dummy data input the SNN
-with open("config_Izh_LI_EA.yaml","r") as f:
-    config = yaml.safe_load(f)
-device = "cpu"
-param_init = initialize_parameters(config)
-SNN_izhik = Izhikevich_SNN(param_init, device, config)
+
+### Select LIF or IZH mode
+if SNN_TYPE == "LIF":
+    with open("config_LIF_EVOTORCH.yaml","r") as f:
+        config = yaml.safe_load(f)
+
+    # Solve for the number of neurons 
+    for i in range(100):
+        if i**2+6*i+1 == solution.size:
+            number_of_neurons = i 
+            break
+            
+    config["NEURONS"] = number_of_neurons
+    model = LIF_SNN(None,"cpu",config)
+
+    #### Initialize neuron states (I, V, spikes) 
+    snn_states = torch.zeros(3, 1, model.neurons)
+    LI_state = torch.zeros(1,1)
+
+elif SNN_TYPE == "IZH":
+    with open("config_Izh_LI_EA.yaml","r") as f:
+        config = yaml.safe_load(f)
+    model = Izhikevich_SNN(None, "cpu", config)
+
+    ### Initialize neuron states (U, V, spikes) 
+    snn_states = torch.zeros(3, 1, model.neurons)
+    snn_states[0,:,:] = -20 		#initialize U
+    snn_states[1,:,:] = -70			#initialize V
+    LI_state = torch.zeros(1,1)
 
 
-#### Initialize neuron states (u, v, s) 
-snn_states = torch.zeros(3, 1, SNN_izhik.neurons)
-snn_states[1,:,:] = -70			#initialize V
-snn_states[0,:,:] = -20 		#initialize U
-LI_state = torch.zeros(1,1)
 
 ### load in the best parameters in solution
-
-final_parameters =torchga.model_weights_as_dict(SNN_izhik, solution)
+final_parameters =torchga.model_weights_as_dict(model, solution)
 thresholds = final_parameters["l1.neuron.thresh"].detach().numpy()
 
 ### Get the input and target data
 input_data, target_data = get_dataset(config,dataset_number,sim_time)
 
 # Make predictions based on the best solution.
-izh_output, izh_state, predictions = pygad.torchga.predict(SNN_izhik,
+snn_spikes, snn_state, predictions = pygad.torchga.predict(model,
                                     solution,
                                     input_data,
                                     snn_states,
@@ -104,11 +136,9 @@ izh_output, izh_state, predictions = pygad.torchga.predict(SNN_izhik,
 
 
 predictions = predictions[:,0,0]
-
 input_data = input_data.detach().numpy()
 input_data = input_data[0,:,0]
-izh_u = izh_state[:,0,0,:].detach().numpy()
-izh_v = izh_state[:,1,0,:].detach().numpy()
+
 fitness_func = torch.nn.MSELoss()
 solution_fitness = fitness_func(predictions, target_data).detach().numpy()
 print("Fitness of solution = ", solution_fitness)
@@ -116,22 +146,26 @@ print("Fitness of solution = ", solution_fitness)
 predictions = predictions.detach().numpy()
 target_data = target_data.detach().numpy()
 
-spike_count_window = np.array([])
-spikes_izh = izh_output[:,0,:] # spikes_izh of shape (timesteps,neurons)
+
+### Calculate spiking sliding window count
+spike_count_window = None
+spikes_snn = snn_spikes[:,0,:] # spikes_izh of shape (timesteps,neurons)
 window_size =10
 sliding_window = nn.AvgPool1d(window_size,stride=1)
 
-for neuron in range(spikes_izh.size(dim=1)):
-    spike_count = spikes_izh[:,neuron].detach().numpy()
+for neuron in range(spikes_snn.size(dim=1)):
+    spike_count = spikes_snn[:,neuron].detach().numpy()
     spike_count = torch.tensor([spike_count])
     _slided_count = sliding_window(spike_count).detach().numpy()
+
+    ### Fill in the slided window with zeros (at beginning and end to make it samen size)
     for _ in range(int(window_size/2)):
         _slided_count = np.insert(_slided_count,[0],[0])
     for _ in range(int(window_size/2)-1):
         _slided_count = np.append(_slided_count,[0])
 
-    if not np.any(spike_count_window):
-        spike_count_window = np.append(spike_count_window, _slided_count)
+    if not hasattr(spike_count_window, "shape"):
+        spike_count_window = _slided_count
     else: spike_count_window = np.vstack((spike_count_window,_slided_count))
 
 
@@ -181,16 +215,16 @@ if create_plots == True:
         sharex=True
     )
 
-    # # plt.figure()
-    # fig,axis1 = plt.subplots(6,4, sharex=True)
+    recov_or_current = snn_state[:,0,0,:].detach().numpy()
+    mem_pot = snn_state[:,1,0,:].detach().numpy() 
 
     ### plot the raster of U and V of the 10 neurons (5xV, 5xU, 5xV, 5xU)
     for column in range(2):
         neuron = 0
-        for row in range(10):
+        for row in range(model.neurons):
             
             if column ==0 or column ==2:
-                y = izh_v[:,neuron]
+                y = mem_pot[:,neuron]
 
             # Plot in the second column
             if column ==1 or column ==3:
@@ -198,7 +232,7 @@ if create_plots == True:
                     y=spike_count_window[neuron,:]
 
                 else: 
-                    y = izh_u[:,neuron]
+                    y = recov_or_current[:,neuron] #LIF --> current and for IZH --> recovery variable
             
             if row==5:
                 column = column + 2
@@ -262,38 +296,49 @@ if create_plots == True:
     if create_table == False and spectal_analysis == False and muliple_test_runs_error_plot==False:
         plt.show()
 
-######################### plot table ##########################
-round_digits = 3
-neurons = np.array(["1","2","3","4","5","6","7","8","9","10"])
-w1 =np.round(torch.flatten(final_parameters["l1.ff.weight"]).detach().numpy(),round_digits)
-w2 =np.round(torch.flatten(final_parameters["l2.ff.weight"]).detach().numpy(),round_digits)
-thres = np.round(final_parameters["l1.neuron.thresh"].detach().numpy(),round_digits)
-a =np.round(final_parameters["l1.neuron.a"].detach().numpy(),round_digits)
-b =np.round(final_parameters["l1.neuron.b"].detach().numpy(),round_digits)
-c =np.round(final_parameters["l1.neuron.c"].detach().numpy(),round_digits)
-d =np.round(final_parameters["l1.neuron.d"].detach().numpy(),round_digits)
-v2 =np.round(final_parameters["l1.neuron.v2"].detach().numpy(),round_digits)
-v1 =np.round(final_parameters["l1.neuron.v1"].detach().numpy(),round_digits)
-v0 =np.round(final_parameters["l1.neuron.v0"].detach().numpy(),round_digits)
-utau =np.round(final_parameters["l1.neuron.tau_u"].detach().numpy(),round_digits)
+if create_table == True or create_csv_file==True:
+    ######################### plot table ##########################
+    round_digits = 3
+    neurons = np.array([])
+    for neur in range(1,config["NEURONS"]+1):
+        neurons = np.append(neurons,str(neur))
+    data = neurons
 
-if create_table ==True:
-    ### calculate spike count
-    spike_train = izh_state[:,2,0,:].detach().numpy()
+    #Add spike count to the data
+    spike_train = snn_state[:,2,0,:].detach().numpy()
     spike_count = np.array([])
     for neuron in range(config["NEURONS"]):
         spikes = float(np.sum(spike_train[:,neuron]))
         spike_count = np.append(spike_count,spikes)
+    data = np.vstack((data,spike_count))
 
+    column_label = ["Neuron", "Spike count"]
 
-    # Create data
-    data = np.transpose(np.vstack((neurons,spike_count,w1,w2,thres,a,b,c,d,v2,v1,v0,utau)))
-    columns = ("Neuron","Spike count","W1", "W2", "Thres","a","b","c","d","v2","v1","v0","u tau")
+    # Add all trained parameters to the data array
+    for parameter in final_parameters.keys():
+        data_param = np.round(torch.flatten(final_parameters[parameter]).detach().numpy(),round_digits)
+        # Only add the parameters which has one param per neurons( so not leak l2 and rec connections)
+        if data_param.size == neurons.size:
+            data =np.vstack((data,data_param))
+            column_label.append(parameter)
+        else: print("Parameter named ", parameter, " is not included in the table")
 
+    #find row with w1 and w2
+    ind_w1 = column_label.index("l1.ff.weight")
+    ind_w2 = column_label.index("l2.ff.weight")
 
+    # Swap the w1 to 3 row
+    data[[ind_w1,2]] = data[[2,ind_w1]]
+    column_label[3], column_label[ind_w2] = column_label[ind_w2], column_label[3]
+
+    # Swap w2 to row 4
+    data[[ind_w2,3]] = data[[3,ind_w2]]
+    column_label[2], column_label[ind_w1] = column_label[ind_w1], column_label[2]
+    
+if create_table ==True:
     plt.figure(linewidth=1,
             tight_layout={"pad":1})
-    table = plt.table(cellText=data, colLabels=columns, loc='center')
+    table = plt.table(cellText=np.transpose(data), colLabels=column_label, loc='center')
 
     # Set font size
     table.auto_set_font_size(False)
@@ -324,7 +369,8 @@ if create_table ==True:
     # highlight w1 cells
     idx=1
     w1_neg = []
-    for w in w1:
+    for w in data[2,:]:
+        w = float(w)
         if w<0:
             neg_cel = table[idx,2] #the one correpsonds to w1
             neg_cel.set_facecolor(color_mix["red"])
@@ -334,13 +380,41 @@ if create_table ==True:
 
     idx=1
     w2_neg = []
-    for w in w2:
+    for w in data[3,:]:
+        w = float(w)
         if w<0:
             neg_cel = table[idx,3] #the 2 correpsonds to w2
             neg_cel.set_facecolor(color_mix["red"])
         idx = idx+1
 
-    plt.show()
+    if "l1.rec.weight" not in final_parameters:
+        plt.show()
+
+    # Create the recurrent table
+    if "l1.rec.weight" in final_parameters:
+        # data = neurons[..., np.newaxis]
+        data = np.round(final_parameters["l1.rec.weight"].detach().numpy(),round_digits)
+
+        norm = plt.Normalize(data.min(), data.max())
+        colours = plt.cm.RdYlGn(norm(data))
+
+        column_label = [str(i) for i in range(1,config["NEURONS"]+1)]
+        plt.figure(linewidth=1,
+                tight_layout={"pad":1})
+        table = plt.table(cellText=data, colLabels=column_label, rowLabels=column_label, cellColours=colours, loc='center')
+
+        # Set font size
+        table.auto_set_font_size(False)
+        table.set_fontsize(15)
+
+        # Hide axes
+        ax = plt.gca()
+        ax.get_xaxis().set_visible(False)
+        ax.get_yaxis().set_visible(False)
+
+        # Hide axes border
+        plt.box(on=None)
+        plt.show()
 
 if create_csv_file == True:
     ### Create a matlab file with parameters
@@ -391,7 +465,7 @@ if plot_parameters_evolution == True:
 
     generations = np.size(dict_solutions["mean"],0)
     parameters_mean = dict_solutions["mean"] #shape (generations, parameters)
-    final_parameters =torchga.model_weights_as_dict(SNN_izhik, parameters_mean[0,:])
+    final_parameters =torchga.model_weights_as_dict(model, parameters_mean[0,:])
 
     ## Initialize dictonary structre{param: [params_gen1, params_gen2 etc..].}
     full_solution_dict = {key:None for key, _ in final_parameters.items()}
@@ -401,7 +475,7 @@ if plot_parameters_evolution == True:
     ### Fill the dictornary
     for param in full_solution_dict:
         for gen in range(generations):
-            gen_parameters =torchga.model_weights_as_dict(SNN_izhik, parameters_mean[gen,:])
+            gen_parameters =torchga.model_weights_as_dict(model, parameters_mean[gen,:])
             for name, value in gen_parameters.items():
                 if param == name:
                     value = torch.flatten(value).detach().numpy()

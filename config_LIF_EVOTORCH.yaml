@@ -1,0 +1,77 @@
+### Hyperparameters
+NEURONS: 8
+INDIVIDUALS: 18
+
+GENERATIONS: 10
+
+
+### Initialisation
+MANUAL_W1: [1.2, 1.2, 0.10,0.10, -1.2,-1.2, -0.10,-0.10]
+MANUAL_W2: [0.25,0.25, -0.25,-0.25, 0.25,0.25, -0.25,-0.25]
+MANUAL_leaki: [0.01,0.01, 0.9,0.9, 0.01,0.01, 0.9,0.9]
+
+INIT_BIAS1_HALF_NEG:     True
+INIT_W1_SMALL_WITH_MORE_LEAK: False                #To compensate for the smaller leak, the input weights of these neurons will be lower
+INIT_LEAKI_HALF_ZERO:        False                # Set the leak_i of the first 5 neurons to close to zero
+INIT_W2_HALF_NEG:   False
+
+BOUND_LEAKI_HALF_ZERO: False
+BOUNDS_W1_HALF_NEG: True
+PERCENT_INTIIAL_STEPSIZE: 0.005   #percent of the initial bounded area
+
+### Run settings
+SIM_TIME: 15            # max 40 secs
+NUMBER_PROCESSES: 10
+LABEL_COLUMN_DATAFILE: [2]
+SAVE_TEST_SOLUTION_STEPSIZE: 50  #every .. steps the solution to the test case is calculated and saved
+DIFFERENT_DATASET_EVERY_GENERATION: 50
+
+ANTI_OVERFITTING: False
+WANDB_LOG: True
+SAVE_LAST_SOLUTION: True
+ALGORITHM: "pycma" #cmaes or pycma
+SHOW_PLOTS: False
+
+
+
+### Dataset parameters
+DATASET_DIR: "Sim_data/derivative"
+INPUT_COLUMN_DATAFILE: [1]
+DATASET_NUMBER: null
+DATA_FILE: "manual_dataset"
+
+############# Initial conditions #############
+INITIAL_PARAMS_RANDOM:
+# First layer
+  l1.neuron.leak_i: 0.9
+  l1.neuron.leak_v: 0.9
+  l1.neuron.thresh: 1
+  l1.rec.weight: 0.01
+  l1.ff.weight: 1
+  l1.ff.bias: 0.5
+
+# Second layer
+  l2.neuron.leak: 0.9
+  l2.ff.weight: 0.20 
+
+
+
+#############  Parameter bounds #############
+# no constrains --> null
+# constraints --> {"low": 0,"high": 0.2, "step":0.01}   step is optional
+# not trained --> set to float/int
+PARAMETER_BOUNDS: #null if None in python
+# First layer
+
+  l1.neuron.leak_i: {"low": 0,"high": 0.99}
+  l1.neuron.leak_v: {"low": 0,"high": 1}
+  l1.neuron.thresh: {"low": 0.8,"high": 1.2}
+  l1.rec.weight: {"low": -0.2,"high": 0.2}
+  l1.ff.weight: {"low": -1.5,"high": 1.5}  #also negative!
+  l1.ff.bias: {"low": -1,"high": 1}  #also negative!
+
+# Second layer
+  l2.neuron.leak: {"low": 0.9,"high": 0.901}
+  l2.ff.weight:   {"low": -0.25,"high": 0.25} #also negative!
+
+
