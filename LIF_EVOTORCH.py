@@ -11,6 +11,7 @@ import pickle
 # import os
 # os.environ["RAY_DEDUP_LOGS"]= "0"
 from random import randint
+from torchmetrics import PearsonCorrCoef
 
 from evotorch import Problem
 from evotorch.algorithms import CMAES, PyCMAES
@@ -41,7 +42,8 @@ class LIF_EA_evotorch(Problem):
         self.model = LIF_SNN(None, "cpu", self.config)
         self.number_parameters = self.model.neurons**2+ self.model.neurons*6+1
         self.input_data, self.target_data = get_dataset(self.config, self.config["DATASET_NUMBER"], self.config["SIM_TIME"])
-        self.loss_function = torch.nn.MSELoss()
+        self.mse = torch.nn.MSELoss()
+        self.pearson = PearsonCorrCoef()
         self.bounds = create_bounds(self, self.model, self.config)
         self.prefix = ""
         self.test_solutions= np.zeros(self.number_parameters)
@@ -82,11 +84,11 @@ class LIF_EA_evotorch(Problem):
                                             snn_states, #(u, v, s) 
                                             LI_state) #data in form: input, state_snn, state LI
 
-        predictions = predictions[:,0,0].detach().numpy()
-        target_data = self.target_data.detach().numpy()
-        print("max target data = ", np.max(target_data))
-        solution_fitness = (np.square(predictions - target_data)).mean(axis=None)
-        # solution_fitness = self.loss_function(predictions, self.target_data).detach().numpy()
+        predictions = predictions[:,0,0]
+        # target_data = self.target_data.detach().numpy()
+        # print("max target data = ", np.max(target_data))
+        # solution_fitness = (np.square(predictions - target_data)).mean(axis=None)
+        solution_fitness = (self.mse(predictions, self.target_data) + self.pearson(predictions, self.target_data)).detach().numpy()
         print(solution_fitness)
         solution.set_evals(solution_fitness)
     
@@ -144,14 +146,6 @@ def init_conditions(problem):
                         if iteration<number_of_params/2:
                             center_init[-1]=center_init[-1]/10
                 
-                
-                ### Set bias 1
-                if name =="l1.ff.bias":  
-
-                    # Set the last half (with small leak), with a smaller weights
-                    if problem.config["INIT_BIAS1_HALF_NEG"]==True:
-                        if iteration>=number_of_params/2:
-                            center_init[-1]=-center_init[-1]
 
 
                 ### Set Weight 2
@@ -223,7 +217,7 @@ def test_solution(problem, solution):
     spike_train = l1_state[:,2,0,:].detach().numpy()
     # create_wandb_summary_table_EA(run, spike_train, config, final_parameters)
 
-    abs_error = problem.loss_function(predictions, test_target_data)
+    abs_error = problem.mse(predictions, problem.target_data) + problem.pearson(predictions, problem.target_data)
 
     print("\n Predictions : \n", predictions.detach().numpy())
     print("Absolute Error : ", abs_error.detach().numpy())

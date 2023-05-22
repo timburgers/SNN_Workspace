@@ -2,15 +2,14 @@
 NEURONS: 8
 INDIVIDUALS: 18
 
-GENERATIONS: 10
+GENERATIONS: 2
 
 
 ### Initialisation
-MANUAL_W1: [1.2, 1.2, 0.10,0.10, -1.2,-1.2, -0.10,-0.10]
+MANUAL_W1: [1.2, 1.2, 1,1, -1.2,-1.2, -1,-1]
 MANUAL_W2: [0.25,0.25, -0.25,-0.25, 0.25,0.25, -0.25,-0.25]
-MANUAL_leaki: [0.01,0.01, 0.9,0.9, 0.01,0.01, 0.9,0.9]
+MANUAL_leaki: [0.01,0.01, 0.2,0.1, 0.01,0.01, 0.2,0.1]
 
-INIT_BIAS1_HALF_NEG:     True
 INIT_W1_SMALL_WITH_MORE_LEAK: False                #To compensate for the smaller leak, the input weights of these neurons will be lower
 INIT_LEAKI_HALF_ZERO:        False                # Set the leak_i of the first 5 neurons to close to zero
 INIT_W2_HALF_NEG:   False
@@ -46,7 +45,7 @@ INITIAL_PARAMS_RANDOM:
   l1.neuron.leak_i: 0.9
   l1.neuron.leak_v: 0.9
   l1.neuron.thresh: 1
-  l1.rec.weight: 0.01
+  l1.rec.weight: 0.001
   l1.ff.weight: 1
   l1.ff.bias: 0.5
 
@@ -68,7 +67,7 @@ PARAMETER_BOUNDS: #null if None in python
   l1.neuron.thresh: {"low": 0.8,"high": 1.2}
   l1.rec.weight: {"low": -0.2,"high": 0.2}
   l1.ff.weight: {"low": -1.5,"high": 1.5}  #also negative!
-  l1.ff.bias: {"low": -1,"high": 1}  #also negative!
+  l1.ff.bias: {"low": 0.1,"high": 1}  #also negative!
 
 # Second layer
   l2.neuron.leak: {"low": 0.9,"high": 0.901}

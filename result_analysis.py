@@ -1,10 +1,10 @@
 import torch
 import pygad
 import pygad.torchga as torchga
-from SNN_Izh_LI_init import Izhikevich_SNN
+from IZH.SNN_Izh_LI_init import Izhikevich_SNN
 from SNN_LIF_LI_init import LIF_SNN
 import yaml
-from Izh_LI_EA_PYGAD import get_dataset
+from IZH.Izh_LI_EA_PYGAD import get_dataset
 import matplotlib.pyplot as plt
 import numpy as np
 import pickle
@@ -17,19 +17,19 @@ warnings.filterwarnings("ignore")
 # for dataset_number in range(10):
 sim_time = 13
 dataset_number =None # None is the self made 13s dataset
-filename = "65-lucky-sea"
+filename = None
 folder = "LIF/Evotorch"
 lib = "evotorch"
 
 create_plots                    = True
 plot_with_best_testrun          = True  #True: solution = best performance on manual dataset      False: solution = best performance overall (can be easy dataset)
 muliple_test_runs_error_plot    = False  
-plot_last_generation            = True
+plot_last_generation            = False
 
 colored_background              = True
 spike_count_plot                = True
 
-create_table                    = True
+create_table                    = False
 create_csv_file                 = False
 
 plot_sigma                      = False
