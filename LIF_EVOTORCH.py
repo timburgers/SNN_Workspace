@@ -482,7 +482,7 @@ if __name__ == "__main__":
         _ = WandbLogger(searcher, project = "SNN_LIF_EA", config=problem.config)
         wandb.config.update({"OS": platform.system()})
         number_first_wandb_name()
-    logger = StdOutLogger(searcher)
+    # logger = StdOutLogger(searcher)
 
 
     searcher.run(problem.config["GENERATIONS"])
