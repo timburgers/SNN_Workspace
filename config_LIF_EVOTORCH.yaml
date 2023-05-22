@@ -20,7 +20,7 @@ PERCENT_INTIIAL_STEPSIZE: 0.005   #percent of the initial bounded area
 
 ### Run settings
 SIM_TIME: 15            # max 40 secs
-NUMBER_PROCESSES: 10
+NUMBER_PROCESSES: 0
 LABEL_COLUMN_DATAFILE: [2]
 SAVE_TEST_SOLUTION_STEPSIZE: 50  #every .. steps the solution to the test case is calculated and saved
 DIFFERENT_DATASET_EVERY_GENERATION: 50

@@ -88,7 +88,8 @@ class LIF_EA_evotorch(Problem):
         # target_data = self.target_data.detach().numpy()
         # print("max target data = ", np.max(target_data))
         # solution_fitness = (np.square(predictions - target_data)).mean(axis=None)
-        solution_fitness = (self.mse(predictions, self.target_data) + self.pearson(predictions, self.target_data)).detach().numpy()
+        print ("MSE = ", (self.mse(predictions, self.target_data)).detach().numpy(), "and Pearson = ",(1-self.pearson(predictions, self.target_data)).detach().numpy() )
+        solution_fitness = (self.mse(predictions, self.target_data) + (1-self.pearson(predictions, self.target_data))).detach().numpy()
         print(solution_fitness)
         solution.set_evals(solution_fitness)
     
@@ -217,7 +218,7 @@ def test_solution(problem, solution):
     spike_train = l1_state[:,2,0,:].detach().numpy()
     # create_wandb_summary_table_EA(run, spike_train, config, final_parameters)
 
-    abs_error = problem.mse(predictions, problem.target_data) + problem.pearson(predictions, problem.target_data)
+    abs_error = problem.mse(predictions, problem.target_data) + (1-problem.pearson(predictions, problem.target_data))
 
     print("\n Predictions : \n", predictions.detach().numpy())
     print("Absolute Error : ", abs_error.detach().numpy())
