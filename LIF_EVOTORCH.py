@@ -491,9 +491,9 @@ def plot_stepsize(problem):
     if problem.config["WANDB_LOG"] == True:
         wandb.log({"Stepsize over generations": plt})
 
-def main(argv):
+if __name__ == "__main__":
     config_folder = "configs/"
-    opts, args = getopt.getopt(argv, "c:",["config="])
+    opts, args = getopt.getopt(sys.argv[1:], "c:",["config="])
     for opt,arg in opts:
         if opt in ("-c", "--config"):
             config = config_folder + arg
@@ -529,6 +529,3 @@ def main(argv):
     test_solution(problem,best_solution)
     plot_evolution_parameters(problem)
     plot_stepsize(problem)
-
-if __name__ == "__main__":
-    main(sys.argv[1:])
