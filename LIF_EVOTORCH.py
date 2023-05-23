@@ -22,13 +22,14 @@ from datetime import datetime
 import time
 import platform
 import math
+import sys, getopt
 
 import warnings
 warnings.filterwarnings("ignore")
 ray.init(log_to_driver=False, include_dashboard=False)
 
 class LIF_EA_evotorch(Problem):
-    def __init__(self):
+    def __init__(self, config):
         if platform.system() == "Linux":
             self.prefix = "/scratch/timburgers/SNN_Workspace/"
 
@@ -36,7 +37,7 @@ class LIF_EA_evotorch(Problem):
             self.prefix = ""
 
         ### Read config file
-        with open(self.prefix + "config_LIF_EVOTORCH.yaml","r") as f:
+        with open(self.prefix + config + ".yaml","r") as f:
             self.config = yaml.safe_load(f)
 
         self.model = LIF_SNN(None, "cpu", self.config)
@@ -103,7 +104,7 @@ def init_conditions(problem):
     model = problem.model
     param_model =torchga.model_weights_as_dict(model, np.ones(problem.number_parameters))
 
-    # Initialize the satandard deviation (stepsize) of the search
+    # Initialize STD (the satandard deviation/stepsize) of the search
     for name, value in param_model.items():
         number_of_params = len(torch.flatten(value).detach().numpy())
         for iteration in range(number_of_params):
@@ -112,7 +113,7 @@ def init_conditions(problem):
             std_init = np.append(std_init,initial_step_size)
 
 
-    # Initialize using a existing solution
+    # Initialize MEAN using a existing solution
     if problem.config["INIT_WITH_PREV_SOLUTION"] is not None:
         pickled_dict = open("Results_EA/LIF/Evotorch/" + problem.config["INIT_WITH_PREV_SOLUTION"] +".pkl","rb")
         dict_solutions = pickle.load(pickled_dict)
@@ -129,7 +130,7 @@ def init_conditions(problem):
         if problem.number_parameters != len(center_init):
             raise ValueError("Number of neurons in initial solution  doe snot correspond with the initial set number of neurons in the config file")
 
-    # Initialize using the parameters in the config file
+    # Initialize MEAN using the parameters in the config file
     else:
         init_config = problem.config["INITIAL_PARAMS_RANDOM"]
         names_center_init = np.array([])
@@ -490,8 +491,19 @@ def plot_stepsize(problem):
     if problem.config["WANDB_LOG"] == True:
         wandb.log({"Stepsize over generations": plt})
 
-if __name__ == "__main__":
-    problem = LIF_EA_evotorch()
+def main(argv):
+    config_folder = "configs/"
+    opts, args = getopt.getopt(argv, "c:",["config="])
+    for opt,arg in opts:
+        if opt in ("-c", "--config"):
+            config = config_folder + arg
+
+    # If not optional command are provided, use default config file
+    if len(opts) ==0:
+        config = config_folder + "config_LIF_DEFAULT"
+    print("Config file used = " +  config)
+    
+    problem = LIF_EA_evotorch(config)
     center_init, std_init = init_conditions(problem)
     
     if problem.config["ALGORITHM"]=="cmaes": searcher = CMAES(problem, stdev_init=1, center_init=center_init, limit_C_decomposition=False, popsize=problem.config["INDIVIDUALS"])
@@ -518,3 +530,5 @@ if __name__ == "__main__":
     plot_evolution_parameters(problem)
     plot_stepsize(problem)
 
+if __name__ == "__main__":
+    main(sys.argv[1:])
