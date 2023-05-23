@@ -2,7 +2,7 @@
 NEURONS: 16
 INDIVIDUALS: 20
 
-GENERATIONS: 100
+GENERATIONS: 2
 
 
 ### Initialisation
@@ -13,7 +13,7 @@ MANUAL_W1: [1.2, 1.2, 1.2, 1.2, 1,1,1,1, -1.2,-1.2,-1.2,-1.2, -1, -1, -1, -1]
 MANUAL_W2: [0.25,0.25,0.25,0.25, -0.25,-0.25,-0.25,-0.25, 0.25,0.25,0.25,0.25, -0.25,-0.25,-0.25,-0.25]
 MANUAL_leaki: [0.01,0.01,0.01,0.01, 0.2,0.1,0.2,0.1, 0.01,0.01,0.01,0.01, 0.2,0.1,0.2,0.1,]
 
-
+INIT_WITH_PREV_SOLUTION: "110-revived-dew"  #None or string
 INIT_W1_SMALL_WITH_MORE_LEAK: False                #To compensate for the smaller leak, the input weights of these neurons will be lower
 INIT_LEAKI_HALF_ZERO:        False                # Set the leak_i of the first 5 neurons to close to zero
 INIT_W2_HALF_NEG:   False
@@ -29,7 +29,7 @@ LABEL_COLUMN_DATAFILE: [2]
 SAVE_TEST_SOLUTION_STEPSIZE: 50  #every .. steps the solution to the test case is calculated and saved
 DIFFERENT_DATASET_EVERY_GENERATION: 1
 
-ANTI_OVERFITTING: True
+ANTI_OVERFITTING: False
 WANDB_LOG: True
 SAVE_LAST_SOLUTION: True
 ALGORITHM: "pycma" #cmaes or pycma

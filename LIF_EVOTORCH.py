@@ -97,97 +97,120 @@ class LIF_EA_evotorch(Problem):
 
 # Get the intiail position of the center and of the step size
 def init_conditions(problem):
-    init_config = problem.config["INITIAL_PARAMS_RANDOM"]
+
     bounds_config= problem.config["PARAMETER_BOUNDS"] #The bounds are usedto scale the initial step size
-    model = problem.model
-    names_center_init = np.array([])
-    center_init = np.array([])
     std_init=np.array([])
-    manual_w1_ind = 0
-    manual_w2_ind = 0
-    manual_leaki_ind = 0
-
-
-    ### Get the structure and order of the genome
+    model = problem.model
     param_model =torchga.model_weights_as_dict(model, np.ones(problem.number_parameters))
 
-    # Check if both initialization parameters are enabled
-    if isinstance(problem.config["MANUAL_W1"],list) and problem.config["INIT_W1_SMALL_WITH_MORE_LEAK"]==True:
-        raise Exception("Can not have manual weitghs and small weights for small leak in config")
-    if isinstance(problem.config["MANUAL_W2"],list) and problem.config["INIT_W2_HALF_NEG"]==True:
-        raise Exception("Can not have manual weitghs and half negative weights in config")
-    if isinstance(problem.config["MANUAL_leaki"],list) and problem.config["INIT_LEAKI_HALF_ZERO"]==True:
-        raise Exception("Can not have manual leak_i and half leak zero in config")
-    
-    #Check if list and then is size is same as the number of neurons
-    if isinstance(problem.config["MANUAL_W1"],list) and isinstance(problem.config["MANUAL_W2"],list) and isinstance(problem.config["MANUAL_leaki"],list):
-        if len(problem.config["MANUAL_W1"]) != problem.config["NEURONS"] or len(problem.config["MANUAL_W2"]) != problem.config["NEURONS"] or len(problem.config["MANUAL_leaki"]) != problem.config["NEURONS"]:
-            raise Exception("Manual init of weight or leaks not same size as the number of neurons")
-
-    ### Check if there is a lim in the config and otherwise add None to it
+    # Initialize the satandard deviation (stepsize) of the search
     for name, value in param_model.items():
         number_of_params = len(torch.flatten(value).detach().numpy())
         for iteration in range(number_of_params):
-            
-            # Fill in initial condition of mu
-            if name in init_config:
-                center_init = np.append(center_init,init_config[name])
-
-                ### Set Weight 1
-                if name =="l1.ff.weight":  
-                    
-                    # Manually set weight 1
-                    if isinstance(problem.config["MANUAL_W1"],list):
-                        manual_w1 = problem.config["MANUAL_W1"]
-                        center_init[-1]=manual_w1[manual_w1_ind]
-                        manual_w1_ind +=1
-
-
-                    # Set the last half (with small leak), with a smaller weights
-                    if problem.config["INIT_W1_SMALL_WITH_MORE_LEAK"]==True:
-                        if iteration<number_of_params/2:
-                            center_init[-1]=center_init[-1]/10
-                
-
-
-                ### Set Weight 2
-                if name =="l2.ff.weight":
-
-                    # Manually set weight 2
-                    if isinstance(problem.config["MANUAL_W2"],list):
-                        manual_w2 = problem.config["MANUAL_W2"]
-                        center_init[-1]=manual_w2[manual_w2_ind]
-                        manual_w2_ind +=1
-
-
-                    if problem.config["INIT_W2_HALF_NEG"]==True:
-                        if iteration>=number_of_params/2:
-                            center_init[-1]=-center_init[-1]
-                
-
-                ### Set leak_i
-                if  name.split(".")[-1]=="leak_i":
-
-                    # Manually set leak_i
-                    if isinstance(problem.config["MANUAL_leaki"],list):
-                        manual_leaki = problem.config["MANUAL_leaki"]
-                        center_init[-1]=manual_leaki[manual_leaki_ind]
-                        manual_leaki_ind +=1
-                
-                    if problem.config["INIT_LEAKI_HALF_ZERO"]==True:
-                        if iteration<number_of_params/2:
-                            center_init[-1]=0
-
-
-            else:
-                center_init = np.append(center_init,init_config[name])
-
-            # Create list with names of paramters
-            names_center_init = np.append(names_center_init,name)
-
             # Fill in initial condition of stepsize (std)
             initial_step_size = (bounds_config[name]["high"]-bounds_config[name]["low"])*problem.config["PERCENT_INTIIAL_STEPSIZE"]
             std_init = np.append(std_init,initial_step_size)
+
+
+    # Initialize using a existing solution
+    if problem.config["INIT_WITH_PREV_SOLUTION"] is not None:
+        pickled_dict = open("Results_EA/LIF/Evotorch/" + problem.config["INIT_WITH_PREV_SOLUTION"] +".pkl","rb")
+        dict_solutions = pickle.load(pickled_dict)
+
+        # Get all the test soltions (every 50 gen) and the corresponding error
+        solutions = dict_solutions["test_solutions"]
+        solutions_error = dict_solutions["error"]
+
+        # Find the lowest error and find the corresponding solution that achieved that error
+        best_sol_ind = np.argmin(solutions_error)
+        solution = solutions[best_sol_ind+1] #+1 since first of solution_testrun is only zeros
+        center_init = solution
+
+        if problem.number_parameters != len(center_init):
+            raise ValueError("Number of neurons in initial solution  doe snot correspond with the initial set number of neurons in the config file")
+
+    # Initialize using the parameters in the config file
+    else:
+        init_config = problem.config["INITIAL_PARAMS_RANDOM"]
+        names_center_init = np.array([])
+        center_init = np.array([])
+        manual_w1_ind = 0
+        manual_w2_ind = 0
+        manual_leaki_ind = 0
+
+        ### Get the structure and order of the genome
+
+
+        # Check if both initialization parameters are enabled
+        if isinstance(problem.config["MANUAL_W1"],list) and problem.config["INIT_W1_SMALL_WITH_MORE_LEAK"]==True:
+            raise Exception("Can not have manual weitghs and small weights for small leak in config")
+        if isinstance(problem.config["MANUAL_W2"],list) and problem.config["INIT_W2_HALF_NEG"]==True:
+            raise Exception("Can not have manual weitghs and half negative weights in config")
+        if isinstance(problem.config["MANUAL_leaki"],list) and problem.config["INIT_LEAKI_HALF_ZERO"]==True:
+            raise Exception("Can not have manual leak_i and half leak zero in config")
+        
+        #Check if list and then is size is same as the number of neurons
+        if isinstance(problem.config["MANUAL_W1"],list) and isinstance(problem.config["MANUAL_W2"],list) and isinstance(problem.config["MANUAL_leaki"],list):
+            if len(problem.config["MANUAL_W1"]) != problem.config["NEURONS"] or len(problem.config["MANUAL_W2"]) != problem.config["NEURONS"] or len(problem.config["MANUAL_leaki"]) != problem.config["NEURONS"]:
+                raise Exception("Manual init of weight or leaks not same size as the number of neurons")
+
+        ### Check if there is a lim in the config and otherwise add None to it
+        for name, value in param_model.items():
+            number_of_params = len(torch.flatten(value).detach().numpy())
+            for iteration in range(number_of_params):
+                
+                # Fill in initial condition of mu
+                if name in init_config:
+                    center_init = np.append(center_init,init_config[name])
+
+                    ### Set Weight 1
+                    if name =="l1.ff.weight":  
+                        
+                        # Manually set weight 1
+                        if isinstance(problem.config["MANUAL_W1"],list):
+                            manual_w1 = problem.config["MANUAL_W1"]
+                            center_init[-1]=manual_w1[manual_w1_ind]
+                            manual_w1_ind +=1
+
+
+                        # Set the last half (with small leak), with a smaller weights
+                        if problem.config["INIT_W1_SMALL_WITH_MORE_LEAK"]==True:
+                            if iteration<number_of_params/2:
+                                center_init[-1]=center_init[-1]/10
+                    
+
+
+                    ### Set Weight 2
+                    if name =="l2.ff.weight":
+
+                        # Manually set weight 2
+                        if isinstance(problem.config["MANUAL_W2"],list):
+                            manual_w2 = problem.config["MANUAL_W2"]
+                            center_init[-1]=manual_w2[manual_w2_ind]
+                            manual_w2_ind +=1
+
+
+                        if problem.config["INIT_W2_HALF_NEG"]==True:
+                            if iteration>=number_of_params/2:
+                                center_init[-1]=-center_init[-1]
+                    
+
+                    ### Set leak_i
+                    if  name.split(".")[-1]=="leak_i":
+
+                        # Manually set leak_i
+                        if isinstance(problem.config["MANUAL_leaki"],list):
+                            manual_leaki = problem.config["MANUAL_leaki"]
+                            center_init[-1]=manual_leaki[manual_leaki_ind]
+                            manual_leaki_ind +=1
+                    
+                        if problem.config["INIT_LEAKI_HALF_ZERO"]==True:
+                            if iteration<number_of_params/2:
+                                center_init[-1]=0
+
+                # Create list with names of paramters
+                names_center_init = np.append(names_center_init,name)
+
 
     return center_init, std_init
 
@@ -472,7 +495,7 @@ if __name__ == "__main__":
     center_init, std_init = init_conditions(problem)
     
     if problem.config["ALGORITHM"]=="cmaes": searcher = CMAES(problem, stdev_init=1, center_init=center_init, limit_C_decomposition=False, popsize=problem.config["INDIVIDUALS"])
-    if problem.config["ALGORITHM"]=="pycma": searcher = PyCMAES(problem,stdev_init=0.4, stdev_max=0.5, center_init=center_init,  popsize=problem.config["INDIVIDUALS"], cma_options={"CMA_stds":std_init}) # Porblem with bound, the mean drifts off, far off the limits ("fixed" with a repair function)
+    if problem.config["ALGORITHM"]=="pycma": searcher = PyCMAES(problem,stdev_init=0.4, stdev_max=1, center_init=center_init,  popsize=problem.config["INDIVIDUALS"], cma_options={"CMA_stds":std_init}) # Porblem with bound, the mean drifts off, far off the limits ("fixed" with a repair function)
 
     ### Insert a new dataset every generation
     if problem.config["ANTI_OVERFITTING"]:

@@ -18,7 +18,7 @@ import math
 # for dataset_number in range(10):
 sim_time = 13
 dataset_number =None # None is the self made 13s dataset
-filename = None
+filename = "110-revived-dew"
 folder = "LIF/Evotorch"
 lib = "evotorch"
 
@@ -30,7 +30,7 @@ plot_last_generation            = False
 colored_background              = True
 spike_count_plot                = True
 
-create_table                    = True
+create_table                    = False
 create_csv_file                 = False
 
 plot_sigma                      = False
