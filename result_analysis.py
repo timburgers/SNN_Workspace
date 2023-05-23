@@ -13,6 +13,7 @@ import os
 import warnings
 import torch.nn as nn
 warnings.filterwarnings("ignore")
+import math
 
 # for dataset_number in range(10):
 sim_time = 13
@@ -29,7 +30,7 @@ plot_last_generation            = False
 colored_background              = True
 spike_count_plot                = True
 
-create_table                    = False
+create_table                    = True
 create_csv_file                 = False
 
 plot_sigma                      = False
@@ -150,7 +151,7 @@ target_data = target_data.detach().numpy()
 ### Calculate spiking sliding window count
 spike_count_window = None
 spikes_snn = snn_spikes[:,0,:] # spikes_izh of shape (timesteps,neurons)
-window_size =10
+window_size =100
 sliding_window = nn.AvgPool1d(window_size,stride=1)
 
 for neuron in range(spikes_snn.size(dim=1)):
@@ -201,85 +202,89 @@ if create_plots == True:
     neg_idx_start, neg_idx_end = get_idx_of_non_zero(target_neg, mode="nonzero")
     zero_idx_start, zero_idx_end = get_idx_of_non_zero(target_data, mode="zero")
 
-    # Start creating the Figure
-    time_arr = np.arange(0,sim_time,0.002)
-    axis1 = plt.figure(layout="constrained").subplot_mosaic(
-        [
-            ["0,0","0,1","0,2","0,3"],
-            ["1,0","1,1","1,2","1,3"],
-            ["2,0","2,1","2,2","2,3"],
-            ["3,0","3,1","3,2","3,3"],
-            ["4,0","4,1","4,2","4,3"],
-            ["input","input","input","input"]
-        ],
-        sharex=True
-    )
-
-    recov_or_current = snn_state[:,0,0,:].detach().numpy()
-    mem_pot = snn_state[:,1,0,:].detach().numpy() 
-
-    ### plot the raster of U and V of the 10 neurons (5xV, 5xU, 5xV, 5xU)
-    for column in range(2):
-        neuron = 0
-        for row in range(model.neurons):
+    number_of_plots = math.ceil(number_of_neurons/10)
+    for idx_plot in range(number_of_plots):
+        if idx_plot == number_of_plots-1:
+            neurons_in_plot = number_of_neurons - idx_plot*10
+        else: neurons_in_plot = 10 
             
-            if column ==0 or column ==2:
-                y = mem_pot[:,neuron]
+        # Start creating the Figure
+        time_arr = np.arange(0,sim_time,0.002)
+        axis1 = plt.figure(layout="constrained").subplot_mosaic(
+            [
+                ["0,0","0,1","0,2","0,3"],
+                ["1,0","1,1","1,2","1,3"],
+                ["2,0","2,1","2,2","2,3"],
+                ["3,0","3,1","3,2","3,3"],
+                ["4,0","4,1","4,2","4,3"],
+                ["input","input","input","input"]
+            ],
+            sharex=True
+        )
 
-            # Plot in the second column
-            if column ==1 or column ==3:
-                if spike_count_plot== True:
-                    y=spike_count_window[neuron,:]
+        recov_or_current = snn_state[:,0,0,:].detach().numpy()
+        mem_pot = snn_state[:,1,0,:].detach().numpy() 
 
-                else: 
-                    y = recov_or_current[:,neuron] #LIF --> current and for IZH --> recovery variable
-            
-            if row==5:
-                column = column + 2
-            if row>4:
-                row = row -5
-            
-            axis1[str(row)+","+str(column)].plot(time_arr,y)
-
-            axis1[str(row)+","+str(column)].xaxis.grid()
-
-            ### only plot in V plots
-            if column ==0 or column ==2:
-                axis1[str(row)+","+str(column)].axhline(thresholds[neuron],color="r")
-
-                # Plot the different background, corresponding with target sign
-                if colored_background == True:
-                    for i in range(len(pos_idx_start)):
-                        axis1[str(row)+","+str(column)].axvspan(pos_idx_start[i]*0.002, pos_idx_end[i]*0.002, facecolor="g", alpha= 0.2)
-                    for i in range(len(neg_idx_start)):
-                        axis1[str(row)+","+str(column)].axvspan(neg_idx_start[i]*0.002, neg_idx_end[i]*0.002, facecolor="r", alpha= 0.2)
-                    for i in range(len(zero_idx_start)):
-                        axis1[str(row)+","+str(column)].axvspan(zero_idx_start[i]*0.002, zero_idx_end[i]*0.002, facecolor="k", alpha= 0.2)
-            
-            ### only plot in U plots
-            if column ==1 or column ==3:
-                axis1[str(row)+","+str(column)].axhline(0,linestyle="--",color="k")
+        ### plot the raster of U and V of the 10 neurons (5xV, 5xU, 5xV, 5xU)
+        for column in range(2):
+            neuron = 0+10*idx_plot
+            for row in range(neurons_in_plot):
                 
-                # Plot the different background, corresponding with target sign
-                if colored_background == True and spike_count_plot==True:
-                    for i in range(len(pos_idx_start)):
-                        axis1[str(row)+","+str(column)].axvspan(pos_idx_start[i]*0.002, pos_idx_end[i]*0.002, facecolor="g", alpha= 0.2)
-                    for i in range(len(neg_idx_start)):
-                        axis1[str(row)+","+str(column)].axvspan(neg_idx_start[i]*0.002, neg_idx_end[i]*0.002, facecolor="r", alpha= 0.2)
-                    for i in range(len(zero_idx_start)):
-                        axis1[str(row)+","+str(column)].axvspan(zero_idx_start[i]*0.002, zero_idx_end[i]*0.002, facecolor="k", alpha= 0.2)
-            neuron = neuron +1
-        column = 0
+                if column ==0 or column ==2:
+                    y = mem_pot[:,neuron]
 
-    time_arr = np.arange(0,sim_time,0.002)
-    ### Plot the lowest figure
-    axis1["input"].plot(time_arr,input_data, label = "Input")
-    axis1["input"].plot(time_arr,target_data, label = "Target")
-    axis1["input"].plot(time_arr,predictions, label = "Output")
-    axis1["input"].axhline(0,linestyle="--", color="k")
-    axis1["input"].xaxis.grid()
+                # Plot in the second column
+                if column ==1 or column ==3:
+                    if spike_count_plot== True:
+                        y=spike_count_window[neuron,:]
 
+                    else: 
+                        y = recov_or_current[:,neuron] #LIF --> current and for IZH --> recovery variable
+                
+                if row==5:
+                    column = column + 2
+                if row>4:
+                    row = row -5
+                
+                axis1[str(row)+","+str(column)].plot(time_arr,y)
 
+                axis1[str(row)+","+str(column)].xaxis.grid()
+
+                ### only plot in V plots
+                if column ==0 or column ==2:
+                    axis1[str(row)+","+str(column)].axhline(thresholds[neuron],color="r")
+
+                    # Plot the different background, corresponding with target sign
+                    if colored_background == True:
+                        for i in range(len(pos_idx_start)):
+                            axis1[str(row)+","+str(column)].axvspan(pos_idx_start[i]*0.002, pos_idx_end[i]*0.002, facecolor="g", alpha= 0.2)
+                        for i in range(len(neg_idx_start)):
+                            axis1[str(row)+","+str(column)].axvspan(neg_idx_start[i]*0.002, neg_idx_end[i]*0.002, facecolor="r", alpha= 0.2)
+                        for i in range(len(zero_idx_start)):
+                            axis1[str(row)+","+str(column)].axvspan(zero_idx_start[i]*0.002, zero_idx_end[i]*0.002, facecolor="k", alpha= 0.2)
+                
+                ### only plot in U plots
+                if column ==1 or column ==3:
+                    axis1[str(row)+","+str(column)].axhline(0,linestyle="--",color="k")
+                    
+                    # Plot the different background, corresponding with target sign
+                    if colored_background == True and spike_count_plot==True:
+                        for i in range(len(pos_idx_start)):
+                            axis1[str(row)+","+str(column)].axvspan(pos_idx_start[i]*0.002, pos_idx_end[i]*0.002, facecolor="g", alpha= 0.2)
+                        for i in range(len(neg_idx_start)):
+                            axis1[str(row)+","+str(column)].axvspan(neg_idx_start[i]*0.002, neg_idx_end[i]*0.002, facecolor="r", alpha= 0.2)
+                        for i in range(len(zero_idx_start)):
+                            axis1[str(row)+","+str(column)].axvspan(zero_idx_start[i]*0.002, zero_idx_end[i]*0.002, facecolor="k", alpha= 0.2)
+                neuron = neuron +1
+            column = 0
+
+        time_arr = np.arange(0,sim_time,0.002)
+        ### Plot the lowest figure
+        axis1["input"].plot(time_arr,input_data, label = "Input")
+        axis1["input"].plot(time_arr,target_data, label = "Target")
+        axis1["input"].plot(time_arr,predictions, label = "Output")
+        axis1["input"].axhline(0,linestyle="--", color="k")
+        axis1["input"].xaxis.grid()
     plt.legend()
 
 

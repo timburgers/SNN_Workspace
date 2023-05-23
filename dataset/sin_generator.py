@@ -15,7 +15,7 @@ for loop in range(500):
 
     # At top or bottom crossing (both can not be larger than 1!)
     prob_freq_change = 0.4
-    prob_constant_line_top_bottom = 0.4
+    prob_constant_line_top_bottom = 0.2
 
     ROOT_DIR = "Sim_data/derivative/dt0.002_norm_neg"
 

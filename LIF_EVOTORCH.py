@@ -88,8 +88,9 @@ class LIF_EA_evotorch(Problem):
         # target_data = self.target_data.detach().numpy()
         # print("max target data = ", np.max(target_data))
         # solution_fitness = (np.square(predictions - target_data)).mean(axis=None)
-        print ("MSE = ", (self.mse(predictions, self.target_data)).detach().numpy(), "and Pearson = ",(1-self.pearson(predictions, self.target_data)).detach().numpy() )
-        solution_fitness = (self.mse(predictions, self.target_data) + (1-self.pearson(predictions, self.target_data))).detach().numpy()
+        pearson_loss = 1-self.pearson(predictions, self.target_data)
+        mse_loss = self.mse(predictions, self.target_data)
+        solution_fitness = (mse_loss + pearson_loss).detach().numpy()
         print(solution_fitness)
         solution.set_evals(solution_fitness)
     

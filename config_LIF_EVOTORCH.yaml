@@ -1,14 +1,18 @@
 ### Hyperparameters
-NEURONS: 8
-INDIVIDUALS: 18
+NEURONS: 16
+INDIVIDUALS: 20
 
-GENERATIONS: 2
+GENERATIONS: 100
 
 
 ### Initialisation
-MANUAL_W1: [1.2, 1.2, 1,1, -1.2,-1.2, -1,-1]
-MANUAL_W2: [0.25,0.25, -0.25,-0.25, 0.25,0.25, -0.25,-0.25]
-MANUAL_leaki: [0.01,0.01, 0.2,0.1, 0.01,0.01, 0.2,0.1]
+# MANUAL_W1: [1.2, 1.2, 1.2, 1.2,1.2, 1.2, 1.2, 1.2, 1,1,1,1,1,1,1,1, -1.2,-1.2,-1.2,-1.2,-1.2,-1.2,-1.2,-1.2, -1, -1, -1, -1,-1, -1, -1, -1]
+# MANUAL_W2: [0.25,0.25,0.25,0.25,0.25,0.25,0.25,0.25, -0.25,-0.25,-0.25,-0.25,-0.25,-0.25,-0.25,-0.25, 0.25,0.25,0.25,0.25,0.25,0.25,0.25,0.25, -0.25,-0.25,-0.25,-0.25,-0.25,-0.25,-0.25,-0.25]
+# MANUAL_leaki: [0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01, 0.2,0.1,0.2,0.1,0.2,0.1,0.2,0.1, 0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01, 0.2,0.1,0.2,0.1,0.2,0.1,0.2,0.1]
+MANUAL_W1: [1.2, 1.2, 1.2, 1.2, 1,1,1,1, -1.2,-1.2,-1.2,-1.2, -1, -1, -1, -1]
+MANUAL_W2: [0.25,0.25,0.25,0.25, -0.25,-0.25,-0.25,-0.25, 0.25,0.25,0.25,0.25, -0.25,-0.25,-0.25,-0.25]
+MANUAL_leaki: [0.01,0.01,0.01,0.01, 0.2,0.1,0.2,0.1, 0.01,0.01,0.01,0.01, 0.2,0.1,0.2,0.1,]
+
 
 INIT_W1_SMALL_WITH_MORE_LEAK: False                #To compensate for the smaller leak, the input weights of these neurons will be lower
 INIT_LEAKI_HALF_ZERO:        False                # Set the leak_i of the first 5 neurons to close to zero
@@ -20,12 +24,12 @@ PERCENT_INTIIAL_STEPSIZE: 0.005   #percent of the initial bounded area
 
 ### Run settings
 SIM_TIME: 15            # max 40 secs
-NUMBER_PROCESSES: 0
+NUMBER_PROCESSES: 10
 LABEL_COLUMN_DATAFILE: [2]
 SAVE_TEST_SOLUTION_STEPSIZE: 50  #every .. steps the solution to the test case is calculated and saved
-DIFFERENT_DATASET_EVERY_GENERATION: 50
+DIFFERENT_DATASET_EVERY_GENERATION: 1
 
-ANTI_OVERFITTING: False
+ANTI_OVERFITTING: True
 WANDB_LOG: True
 SAVE_LAST_SOLUTION: True
 ALGORITHM: "pycma" #cmaes or pycma

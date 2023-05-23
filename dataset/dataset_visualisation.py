@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 
 data_dir = "Sim_data/derivative/dt0.002_norm_neg"
-number_dataset = 3
+number_dataset = 410
 input_column = 1
 target_column = 2   #1=P, 2=D
 
