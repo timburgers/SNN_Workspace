@@ -1,9 +1,7 @@
 ### Hyperparameters
 NEURONS: 16
 INDIVIDUALS: 20
-
-GENERATIONS: 2
-
+GENERATIONS: 10
 
 ### Initialisation
 # MANUAL_W1: [1.2, 1.2, 1.2, 1.2,1.2, 1.2, 1.2, 1.2, 1,1,1,1,1,1,1,1, -1.2,-1.2,-1.2,-1.2,-1.2,-1.2,-1.2,-1.2, -1, -1, -1, -1,-1, -1, -1, -1]
@@ -25,24 +23,30 @@ PERCENT_INTIIAL_STEPSIZE: 0.005   #percent of the initial bounded area
 ### Run settings
 SIM_TIME: 15            # max 40 secs
 NUMBER_PROCESSES: 10
-LABEL_COLUMN_DATAFILE: [2]
+LABEL_COLUMN_DATAFILE: [0]
 SAVE_TEST_SOLUTION_STEPSIZE: 50  #every .. steps the solution to the test case is calculated and saved
+TEST_DATA_FILE: "test_dataset"
 DIFFERENT_DATASET_EVERY_GENERATION: 1
 
-ANTI_OVERFITTING: False
+ANTI_OVERFITTING: True
 WANDB_LOG: True
 SAVE_LAST_SOLUTION: True
 ALGORITHM: "pycma" #cmaes or pycma
 SHOW_PLOTS: False
+START_DATASETS_IN_MIDDLE: False
 
+### Dynamics settings Blimp
+DZ_INITIAL: 0
+Z_INITIAL: 0
+TIME_STEP: 0.01
 
 
 ### Dataset parameters
-DATASET_DIR: "Sim_data/derivative"
-INPUT_COLUMN_DATAFILE: [1]
+FITNESS_INCLUDE_DYANMICS: True
+DATASET_DIR: "Sim_data/height_control_PID/zref_norm_positive"
+# DATASET_DIR: "Sim_data/derivative/dt0.002_norm_neg"
+INPUT_COLUMN_DATAFILE: [0]
 DATASET_NUMBER: null
-DATA_FILE: "manual_dataset"
-
 ############# Initial conditions #############
 INITIAL_PARAMS_RANDOM:
 # First layer

@@ -23,6 +23,8 @@ import time
 import platform
 import math
 import sys, getopt
+from sim_dynamics.Dynamics import Blimp
+import copy
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -77,21 +79,41 @@ class LIF_EA_evotorch(Problem):
         snn_states = torch.zeros(3, 1, self.model.neurons) # frist dim in order [current,mempot,spike]
         LI_state = torch.zeros(1,1)
         solution_np = solution.values.detach().numpy()
+
+
+        if self.config["FITNESS_INCLUDE_DYANMICS"] == False:
+            _, _, predictions = torchga.predict(self.model,
+                                                solution_np,
+                                                self.input_data,
+                                                snn_states, #(u, v, s) 
+                                                LI_state) #data in form: input, state_snn, state LI
+
+            predictions = predictions[:,0,0]
+            pearson_loss = 1-self.pearson(predictions, self.target_data)
+            mse_loss = self.mse(predictions, self.target_data)
+            solution_fitness = (mse_loss + pearson_loss).detach().numpy()
         
+        if self.config["FITNESS_INCLUDE_DYANMICS"] == True:
+            model_weights_dict = torchga.model_weights_as_dict(self.model,solution_np)
+            _model = copy.deepcopy(self.model)
+            _model.load_state_dict(model_weights_dict)
+            dyn_system = Blimp(self.config)
+            sys_output = np.array([])
+            input_data = self.input_data[..., np.newaxis]
 
-        _, _, predictions = torchga.predict(self.model,
-                                            solution_np,
-                                            self.input_data,
-                                            snn_states, #(u, v, s) 
-                                            LI_state) #data in form: input, state_snn, state LI
 
-        predictions = predictions[:,0,0]
-        # target_data = self.target_data.detach().numpy()
-        # print("max target data = ", np.max(target_data))
-        # solution_fitness = (np.square(predictions - target_data)).mean(axis=None)
-        pearson_loss = 1-self.pearson(predictions, self.target_data)
-        mse_loss = self.mse(predictions, self.target_data)
-        solution_fitness = (mse_loss + pearson_loss).detach().numpy()
+            for t in range(self.input_data.shape[1]):
+                input = input_data[:,t,:,:]
+                _, snn_states, LI_state = _model(input, snn_states, LI_state)
+                snn_states = snn_states[0,:,:,:]    # get rid of the additional list where the items are inserted in forward pass
+                LI_state = LI_state[0,:,:]          # get rid of the additional list where the items are inserted in forward pass
+                dyn_system.sim_dynamics(LI_state.detach().numpy())
+                sys_output = np.append(sys_output, dyn_system.get_z())
+
+            mse_loss =(np.square(sys_output - self.target_data.detach().numpy())).mean()
+            solution_fitness = mse_loss
+
+        
         print(solution_fitness)
         solution.set_evals(solution_fitness)
     
@@ -516,7 +538,7 @@ if __name__ == "__main__":
         searcher.after_step_hook.append(evaluate_manual_dataset)
 
     if problem.config["WANDB_LOG"] == True:
-        _ = WandbLogger(searcher, project = "SNN_LIF_EA", config=problem.config)
+        _ = WandbLogger(searcher, project = "SNN_BLIMP", config=problem.config)
         wandb.config.update({"OS": platform.system()})
         number_first_wandb_name()
     # logger = StdOutLogger(searcher)

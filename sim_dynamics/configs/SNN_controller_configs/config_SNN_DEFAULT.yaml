@@ -1,0 +1,21 @@
+# Testrun Parameters
+TIME_STEP: 0.01	# The sample time per time step [s]
+SIM_TIME: 50		# Total length of simulation [s]
+SETPOINT_UPDATE_STEP:  5
+MIMIMAL_HEIGHT_CHANGE: 4
+MASS: 1 			# Total mass of drone [kg]
+g: -9.81 			# Gravitational constant [m/s^2]
+
+# Testrun initialization
+SETPOINT_Z: 0 	# Setpoint of height [m]
+Z_INITIAL: 0. 		# Initial height [m]
+DZ_INITIAL: 0 		# Initial velocity [m/s]
+
+# Hyperparamaters
+TRAINING_DATASET: "z_zref_kpe_kde_Thrust"
+
+# Options for model run
+SAVE_MODEL: True
+WANDB_LOG: True
+SHOW_MODEL: True
+SHOW_PLOTS: False

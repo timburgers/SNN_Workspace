@@ -14,11 +14,12 @@ import warnings
 import torch.nn as nn
 warnings.filterwarnings("ignore")
 import math
+from torchmetrics import PearsonCorrCoef
 
 # for dataset_number in range(10):
 sim_time = 13
 dataset_number =None # None is the self made 13s dataset
-filename = "110-revived-dew"
+filename = None
 folder = "LIF/Evotorch"
 lib = "evotorch"
 
@@ -92,7 +93,7 @@ if lib == "evotorch":
 
 ### Select LIF or IZH mode
 if SNN_TYPE == "LIF":
-    with open("config_LIF_EVOTORCH.yaml","r") as f:
+    with open("configs/config_LIF_DEFAULT.yaml","r") as f:
         config = yaml.safe_load(f)
 
     # Solve for the number of neurons 
@@ -140,8 +141,13 @@ predictions = predictions[:,0,0]
 input_data = input_data.detach().numpy()
 input_data = input_data[0,:,0]
 
-fitness_func = torch.nn.MSELoss()
-solution_fitness = fitness_func(predictions, target_data).detach().numpy()
+mse = torch.nn.MSELoss()
+pearson = PearsonCorrCoef()
+
+
+pearson_loss = 1-pearson(predictions, target_data)
+mse_loss = mse(predictions, target_data)
+solution_fitness = (mse_loss + pearson_loss).detach().numpy()
 print("Fitness of solution = ", solution_fitness)
 
 predictions = predictions.detach().numpy()

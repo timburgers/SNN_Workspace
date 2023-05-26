@@ -48,11 +48,13 @@ def get_dataset(config, dataset_num, sim_time):
 
     # Either use one of the standard datasets
     if dataset_num != None:
-        file = "/dt0.002_norm_neg/dataset_"+ str(dataset_num)
-        start_in_middle = 15*500
+        file = "/dataset_"+ str(dataset_num)
+        if config["START_DATASETS_IN_MIDDLE"] == True:
+            start_in_middle = 15*500
+        else: start_in_middle = 1
     # Or the manual created one
     else: 
-        file = "/" + config["DATA_FILE"]
+        file = "/" + config["TEST_DATA_FILE"]
         start_in_middle=1
 
 
@@ -256,23 +258,23 @@ def main():
 # that can not be accessed as input variables, thus this part of the code is constantly runned when
 # a new process is spawned
 
-if platform.system() == "Linux":
-    prefix = "/scratch/timburgers/SNN_Workspace/"
+# if platform.system() == "Linux":
+#     prefix = "/scratch/timburgers/SNN_Workspace/"
 
-if platform.system() == "Windows":
-    prefix = ""
+# if platform.system() == "Windows":
+#     prefix = ""
 
 
-### Read config file
-with open(prefix + "IZH/config_Izh_LI_EA.yaml","r") as f:
-    config = yaml.safe_load(f)
-device = "cpu"
+# ### Read config file
+# with open(prefix + "IZH/config_Izh_LI_EA.yaml","r") as f:
+#     config = yaml.safe_load(f)
+# device = "cpu"
 
-### Initialize SNN + Dataset
-param_init = initialize_parameters(config)
-SNN_izhik = Izhikevich_SNN(param_init, device, config).to(device) 
-input_data, target_data = get_dataset(config, config["DATASET_NUMBER"], config["SIM_TIME"])
-loss_function = torch.nn.MSELoss()
+# ### Initialize SNN + Dataset
+# param_init = initialize_parameters(config)
+# SNN_izhik = Izhikevich_SNN(param_init, device, config).to(device) 
+# input_data, target_data = get_dataset(config, config["DATASET_NUMBER"], config["SIM_TIME"])
+# loss_function = torch.nn.MSELoss()
 
 if __name__ == '__main__':
     main()
