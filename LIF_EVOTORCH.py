@@ -98,19 +98,20 @@ class LIF_EA_evotorch(Problem):
             _model = copy.deepcopy(self.model)
             _model.load_state_dict(model_weights_dict)
             dyn_system = Blimp(self.config)
-            sys_output = np.array([])
+            height = torch.tensor([0])
             input_data = self.input_data[..., np.newaxis]
 
 
             for t in range(self.input_data.shape[1]):
-                input = input_data[:,t,:,:]
-                _, snn_states, LI_state = _model(input, snn_states, LI_state)
+                ref = input_data[:,t,:,:]
+                error = ref - height[-1]
+                _, snn_states, LI_state = _model(error, snn_states, LI_state)
                 snn_states = snn_states[0,:,:,:]    # get rid of the additional list where the items are inserted in forward pass
                 LI_state = LI_state[0,:,:]          # get rid of the additional list where the items are inserted in forward pass
                 dyn_system.sim_dynamics(LI_state.detach().numpy())
-                sys_output = np.append(sys_output, dyn_system.get_z())
+                height = np.append(height, dyn_system.get_z())
 
-            mse_loss =(np.square(sys_output - self.target_data.detach().numpy())).mean()
+            mse_loss =(np.square(height[1:] - self.target_data.detach().numpy())).mean() # Skip the first 0 height input
             solution_fitness = mse_loss
 
         
