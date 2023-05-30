@@ -17,21 +17,23 @@ import math
 from torchmetrics import PearsonCorrCoef
 
 # for dataset_number in range(10):
-sim_time = 13
+sim_time = 20
 dataset_number =None # None is the self made 13s dataset
 filename = None
-folder = "LIF/Evotorch"
+folder = "Blimp"
 lib = "evotorch"
+SNN_TYPE = "LIF"
+TIME_STEP = 0.01
 
 create_plots                    = True
 plot_with_best_testrun          = True  #True: solution = best performance on manual dataset      False: solution = best performance overall (can be easy dataset)
-muliple_test_runs_error_plot    = False  
+muliple_test_runs_error_plot    = True  
 plot_last_generation            = False
 
 colored_background              = True
 spike_count_plot                = True
 
-create_table                    = False
+create_table                    = True
 create_csv_file                 = False
 
 plot_sigma                      = False
@@ -53,9 +55,9 @@ if filename == None:
 
 #########################################################################################
 
-if folder.split("/")[0]=="LIF":
-    SNN_TYPE = "LIF"
-else: SNN_TYPE = "IZH"
+# if folder.split("/")[0]=="LIF":
+#     SNN_TYPE = "LIF"
+# else: SNN_TYPE = "IZH"
 
 
 if lib == "pygad":
@@ -147,7 +149,8 @@ pearson = PearsonCorrCoef()
 
 pearson_loss = 1-pearson(predictions, target_data)
 mse_loss = mse(predictions, target_data)
-solution_fitness = (mse_loss + pearson_loss).detach().numpy()
+print("only MSE \n")
+solution_fitness = mse_loss.detach().numpy()
 print("Fitness of solution = ", solution_fitness)
 
 predictions = predictions.detach().numpy()
@@ -215,7 +218,7 @@ if create_plots == True:
         else: neurons_in_plot = 10 
             
         # Start creating the Figure
-        time_arr = np.arange(0,sim_time,0.002)
+        time_arr = np.arange(0,sim_time,TIME_STEP)
         axis1 = plt.figure(layout="constrained").subplot_mosaic(
             [
                 ["0,0","0,1","0,2","0,3"],
@@ -263,11 +266,11 @@ if create_plots == True:
                     # Plot the different background, corresponding with target sign
                     if colored_background == True:
                         for i in range(len(pos_idx_start)):
-                            axis1[str(row)+","+str(column)].axvspan(pos_idx_start[i]*0.002, pos_idx_end[i]*0.002, facecolor="g", alpha= 0.2)
+                            axis1[str(row)+","+str(column)].axvspan(pos_idx_start[i]*TIME_STEP, pos_idx_end[i]*TIME_STEP, facecolor="g", alpha= 0.2)
                         for i in range(len(neg_idx_start)):
-                            axis1[str(row)+","+str(column)].axvspan(neg_idx_start[i]*0.002, neg_idx_end[i]*0.002, facecolor="r", alpha= 0.2)
+                            axis1[str(row)+","+str(column)].axvspan(neg_idx_start[i]*TIME_STEP, neg_idx_end[i]*TIME_STEP, facecolor="r", alpha= 0.2)
                         for i in range(len(zero_idx_start)):
-                            axis1[str(row)+","+str(column)].axvspan(zero_idx_start[i]*0.002, zero_idx_end[i]*0.002, facecolor="k", alpha= 0.2)
+                            axis1[str(row)+","+str(column)].axvspan(zero_idx_start[i]*TIME_STEP, zero_idx_end[i]*TIME_STEP, facecolor="k", alpha= 0.2)
                 
                 ### only plot in U plots
                 if column ==1 or column ==3:
@@ -276,15 +279,15 @@ if create_plots == True:
                     # Plot the different background, corresponding with target sign
                     if colored_background == True and spike_count_plot==True:
                         for i in range(len(pos_idx_start)):
-                            axis1[str(row)+","+str(column)].axvspan(pos_idx_start[i]*0.002, pos_idx_end[i]*0.002, facecolor="g", alpha= 0.2)
+                            axis1[str(row)+","+str(column)].axvspan(pos_idx_start[i]*TIME_STEP, pos_idx_end[i]*TIME_STEP, facecolor="g", alpha= 0.2)
                         for i in range(len(neg_idx_start)):
-                            axis1[str(row)+","+str(column)].axvspan(neg_idx_start[i]*0.002, neg_idx_end[i]*0.002, facecolor="r", alpha= 0.2)
+                            axis1[str(row)+","+str(column)].axvspan(neg_idx_start[i]*TIME_STEP, neg_idx_end[i]*TIME_STEP, facecolor="r", alpha= 0.2)
                         for i in range(len(zero_idx_start)):
-                            axis1[str(row)+","+str(column)].axvspan(zero_idx_start[i]*0.002, zero_idx_end[i]*0.002, facecolor="k", alpha= 0.2)
+                            axis1[str(row)+","+str(column)].axvspan(zero_idx_start[i]*TIME_STEP, zero_idx_end[i]*TIME_STEP, facecolor="k", alpha= 0.2)
                 neuron = neuron +1
             column = 0
 
-        time_arr = np.arange(0,sim_time,0.002)
+        time_arr = np.arange(0,sim_time,TIME_STEP)
         ### Plot the lowest figure
         axis1["input"].plot(time_arr,input_data, label = "Input")
         axis1["input"].plot(time_arr,target_data, label = "Target")

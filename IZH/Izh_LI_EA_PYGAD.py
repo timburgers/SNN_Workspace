@@ -46,11 +46,13 @@ def get_dataset(config, dataset_num, sim_time):
     if platform.system() == "Windows":
         prefix = ""
 
+    time_step = config["TIME_STEP"]
+
     # Either use one of the standard datasets
     if dataset_num != None:
         file = "/dataset_"+ str(dataset_num)
         if config["START_DATASETS_IN_MIDDLE"] == True:
-            start_in_middle = 15*500
+            start_in_middle = 15*(1/time_step)
         else: start_in_middle = 1
     # Or the manual created one
     else: 
@@ -58,11 +60,11 @@ def get_dataset(config, dataset_num, sim_time):
         start_in_middle=1
 
 
-    input_data = pd.read_csv(prefix + config["DATASET_DIR"]+ file + ".csv", usecols=config["INPUT_COLUMN_DATAFILE"], header=None, skiprows=start_in_middle, nrows=sim_time*500)
+    input_data = pd.read_csv(prefix + config["DATASET_DIR"]+ file + ".csv", usecols=config["INPUT_COLUMN_DATAFILE"], header=None, skiprows=start_in_middle, nrows=sim_time*(1/time_step))
     input_data = torch.tensor(input_data.values).float().unsqueeze(0) 	# convert from pandas df to torch tensor and floats + shape from (seq_len ,features) to (1, seq, feature)
 
 
-    target_data = pd.read_csv(prefix + config["DATASET_DIR"] + file + ".csv", usecols=config["LABEL_COLUMN_DATAFILE"], header=None,  skiprows=start_in_middle, nrows=sim_time*500)
+    target_data = pd.read_csv(prefix + config["DATASET_DIR"] + file + ".csv", usecols=config["LABEL_COLUMN_DATAFILE"], header=None,  skiprows=start_in_middle, nrows=sim_time*(1/time_step))
     target_data = torch.tensor(target_data.values).float()
     target_data = target_data[:,0]
 

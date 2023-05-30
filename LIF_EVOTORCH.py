@@ -102,7 +102,7 @@ class LIF_EA_evotorch(Problem):
             input_data = self.input_data[..., np.newaxis]
 
 
-            for t in range(self.input_data.shape[1]):
+            for t in range(input_data.shape[1]):
                 ref = input_data[:,t,:,:]
                 error = ref - height[-1]
                 _, snn_states, LI_state = _model(error, snn_states, LI_state)
@@ -254,36 +254,71 @@ def test_solution(problem, solution):
     #### Initialize neuron states (u, v, s) 
     snn_states = torch.zeros(3, 1, model.neurons)
     LI_state = torch.zeros(1,1)
-
-    # Make predictions based on the best solution.
-    l1_spikes, l1_state, predictions = torchga.predict(model,
-                                        solution,
-                                        test_input_data,
-                                        snn_states,
-                                        LI_state)
-    predictions = predictions[:,0,0]
     
-    spike_train = l1_state[:,2,0,:].detach().numpy()
-    # create_wandb_summary_table_EA(run, spike_train, config, final_parameters)
 
-    abs_error = problem.mse(predictions, problem.target_data) + (1-problem.pearson(predictions, problem.target_data))
+    if problem.config["FITNESS_INCLUDE_DYANMICS"] == False:
+        # Make predictions based on the best solution.
+        l1_spikes, l1_state, control_output = torchga.predict(model,
+                                            solution,
+                                            test_input_data,
+                                            snn_states,
+                                            LI_state)
 
-    print("\n Predictions : \n", predictions.detach().numpy())
-    print("Absolute Error : ", abs_error.detach().numpy())
+        actual_data = control_output[:,0,0]
+        target_data = test_target_data
+
+        mse_pearson = problem.mse(actual_data, target_data) + (1-problem.pearson(actual_data, target_data))
+
+        actual_data = actual_data.detach().numpy()
+        target_data = target_data.detach().numpy()
+        print("MSE + Peasrons loss = ", mse_pearson.detach().numpy())
+
+        label_actual_data = "Output of controller"
+        title = "Controller output and reference"
+
+    if problem.config["FITNESS_INCLUDE_DYANMICS"] == True:
+        model_weights_dict = torchga.model_weights_as_dict(problem.model,solution)
+        _model = copy.deepcopy(problem.model)
+        _model.load_state_dict(model_weights_dict)
+        dyn_system = Blimp(problem.config)
+        sys_output = torch.tensor([0])
+        control_output = np.array([])
+        input_data = test_input_data[..., np.newaxis]
 
 
-    predictions = predictions.detach().numpy()
-    test_target_data = test_target_data.detach().numpy()
-    time_test = np.arange(0,np.size(predictions)*0.002,0.002)
+        for t in range(input_data.shape[1]):
+            ref = input_data[:,t,:,:]
+            error = ref - sys_output[-1]
+            _, snn_states, LI_state = _model(error, snn_states, LI_state)
+            snn_states = snn_states[0,:,:,:]    # get rid of the additional list where the items are inserted in forward pass
+            LI_state = LI_state[0,:,:]         # get rid of the additional list where the items are inserted in forward pass
+            dyn_system.sim_dynamics(LI_state.detach().numpy())
+            control_output = np.append(control_output, LI_state.detach().numpy())
+            sys_output = np.append(sys_output, dyn_system.get_z())
+        
+        actual_data = sys_output[1:]
+        target_data = test_target_data.detach().numpy()
 
-    plt.plot(time_test, predictions,label="Prediction")
-    plt.plot(time_test,test_target_data,'r',label="Target")
+        mse_loss =(np.square(actual_data -target_data)).mean() # Skip the first 0 height input
+        print("MSE = ", mse_loss)
+
+        label_actual_data = "Height of blimp"
+        title = "Height control of the Blimp"
+        
+        time_test = np.arange(0,np.size(actual_data)*problem.config["TIME_STEP"],problem.config["TIME_STEP"])
+        plt.plot(time_test, control_output, linestyle = "--", color = "k" )
+
+
+    time_test = np.arange(0,np.size(actual_data)*problem.config["TIME_STEP"],problem.config["TIME_STEP"])
+    plt.plot(time_test, actual_data, color = "b", label=label_actual_data)
+    plt.plot(time_test,test_target_data, color = 'r',label="Target")
+    plt.title(title)
     plt.grid()
     plt.legend()
     
 
     if problem.config["WANDB_LOG"] == True:
-        wandb.log({"Test sequence": plt})
+        wandb.log({title: plt})
 
     plt.show()
 
