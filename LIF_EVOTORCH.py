@@ -241,7 +241,7 @@ def init_conditions(problem):
 def test_solution(problem, solution):
     # Initialize varibales from problem Class
     model = problem.model
-    test_input_data, test_target_data = get_dataset(problem.config, None, 13)
+    test_input_data, test_target_data = get_dataset(problem.config, None, 20)
     solution = solution.values.detach().numpy()
 
     ### Print the final parameters to the terminal
@@ -397,7 +397,7 @@ def create_new_training_set():
     # Insert the test dataset every ... times, otherwise choose a random sequence
     if searcher.step_count%problem.config["SAVE_TEST_SOLUTION_STEPSIZE"] == problem.config["SAVE_TEST_SOLUTION_STEPSIZE"]-1 or searcher.step_count==0 or searcher.steps_count ==problem.config["GENERATIONS"]-1:
         problem.dataset=None
-        problem.input_data_new,problem.target_data_new = get_dataset(problem.config,problem.dataset,13)
+        problem.input_data_new,problem.target_data_new = get_dataset(problem.config,problem.dataset,20)
         problem.manual_dataset_prev = True
     elif searcher.step_count%problem.config["DIFFERENT_DATASET_EVERY_GENERATION"]==0 or problem.manual_dataset_prev==True:
         problem.dataset = randint(0,499)
