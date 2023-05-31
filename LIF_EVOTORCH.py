@@ -25,6 +25,7 @@ import math
 import sys, getopt
 from sim_dynamics.Dynamics import Blimp
 import copy
+import random
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -137,8 +138,9 @@ def init_conditions(problem):
 
 
     # Initialize MEAN using a existing solution
-    if problem.config["INIT_WITH_PREV_SOLUTION"] is not None:
-        pickled_dict = open("Results_EA/LIF/Evotorch/" + problem.config["INIT_WITH_PREV_SOLUTION"] +".pkl","rb")
+    if problem.config["MEAN_SETTING"] == "previous":
+        print ("\nManual initialization of the mean with file ", problem.config["PREVIOUS_SOLUTION"])
+        pickled_dict = open("Results_EA/Blimp/" + problem.config["PREVIOUS_SOLUTION"] +".pkl","rb")
         dict_solutions = pickle.load(pickled_dict)
 
         # Get all the test soltions (every 50 gen) and the corresponding error
@@ -147,94 +149,45 @@ def init_conditions(problem):
 
         # Find the lowest error and find the corresponding solution that achieved that error
         best_sol_ind = np.argmin(solutions_error)
-        solution = solutions[best_sol_ind+1] #+1 since first of solution_testrun is only zeros
-        center_init = solution
+        center_init = solutions[best_sol_ind+1] #+1 since first of solution_testrun is only zeros
 
         if problem.number_parameters != len(center_init):
-            raise ValueError("Number of neurons in initial solution  doe snot correspond with the initial set number of neurons in the config file")
+            raise ValueError("Number of neurons in initial solution  does not correspond with the initial set number of neurons in the config file")
 
-    # Initialize MEAN using the parameters in the config file
-    else:
-        init_config = problem.config["INITIAL_PARAMS_RANDOM"]
-        names_center_init = np.array([])
+    elif problem.config["MEAN_SETTING"] == "same for all" or problem.config["MEAN_SETTING"] == "custom":
         center_init = np.array([])
-        manual_w1_ind = 0
-        manual_w2_ind = 0
-        manual_leaki_ind = 0
+        init_method = problem.config["SAME_FOR_ALL"]
 
-        ### Get the structure and order of the genome
-
-
-        # Check if both initialization parameters are enabled
-        if isinstance(problem.config["MANUAL_W1"],list) and problem.config["INIT_W1_SMALL_WITH_MORE_LEAK"]==True:
-            raise Exception("Can not have manual weitghs and small weights for small leak in config")
-        if isinstance(problem.config["MANUAL_W2"],list) and problem.config["INIT_W2_HALF_NEG"]==True:
-            raise Exception("Can not have manual weitghs and half negative weights in config")
-        if isinstance(problem.config["MANUAL_leaki"],list) and problem.config["INIT_LEAKI_HALF_ZERO"]==True:
-            raise Exception("Can not have manual leak_i and half leak zero in config")
-        
-        #Check if list and then is size is same as the number of neurons
-        if isinstance(problem.config["MANUAL_W1"],list) and isinstance(problem.config["MANUAL_W2"],list) and isinstance(problem.config["MANUAL_leaki"],list):
-            if len(problem.config["MANUAL_W1"]) != problem.config["NEURONS"] or len(problem.config["MANUAL_W2"]) != problem.config["NEURONS"] or len(problem.config["MANUAL_leaki"]) != problem.config["NEURONS"]:
-                raise Exception("Manual init of weight or leaks not same size as the number of neurons")
-
-        ### Check if there is a lim in the config and otherwise add None to it
         for name, value in param_model.items():
             number_of_params = len(torch.flatten(value).detach().numpy())
+
+            # If custom, select the init type for that parameter
+            if problem.config["MEAN_SETTING"] == "custom":
+                init_method = problem.config["CUSTOM"][name]
+            print ("Mean initialization of  ", name, " with method ", init_method)
+
             for iteration in range(number_of_params):
-                
-                # Fill in initial condition of mu
-                if name in init_config:
-                    center_init = np.append(center_init,init_config[name])
 
-                    ### Set Weight 1
-                    if name =="l1.ff.weight":  
-                        
-                        # Manually set weight 1
-                        if isinstance(problem.config["MANUAL_W1"],list):
-                            manual_w1 = problem.config["MANUAL_W1"]
-                            center_init[-1]=manual_w1[manual_w1_ind]
-                            manual_w1_ind +=1
+                #Fill the array with the initial parameter
+                if init_method == "manual":    init_param =  problem.config[init_method][name][iteration]
+                if init_method == "gaussian":  init_param = problem.config[init_method][name]
+                if init_method == "range":     init_param = random.uniform(problem.config[init_method][name][0],problem.config[init_method][name][1])
+                center_init = np.append(center_init, init_param)
 
-
-                        # Set the last half (with small leak), with a smaller weights
-                        if problem.config["INIT_W1_SMALL_WITH_MORE_LEAK"]==True:
-                            if iteration<number_of_params/2:
-                                center_init[-1]=center_init[-1]/10
+                #Check if extra rule applies to the initialization
+                if init_method == "gaus" or init_method == "range":
                     
-
-
-                    ### Set Weight 2
-                    if name =="l2.ff.weight":
-
-                        # Manually set weight 2
-                        if isinstance(problem.config["MANUAL_W2"],list):
-                            manual_w2 = problem.config["MANUAL_W2"]
-                            center_init[-1]=manual_w2[manual_w2_ind]
-                            manual_w2_ind +=1
-
-
-                        if problem.config["INIT_W2_HALF_NEG"]==True:
-                            if iteration>=number_of_params/2:
-                                center_init[-1]=-center_init[-1]
+                    if problem.config["INIT_W1_H2_NEG"]==True and name == "l1.ff.weight":
+                        if iteration>=number_of_params/2:
+                            center_init[-1]=-center_init[-1]
                     
-
-                    ### Set leak_i
-                    if  name.split(".")[-1]=="leak_i":
-
-                        # Manually set leak_i
-                        if isinstance(problem.config["MANUAL_leaki"],list):
-                            manual_leaki = problem.config["MANUAL_leaki"]
-                            center_init[-1]=manual_leaki[manual_leaki_ind]
-                            manual_leaki_ind +=1
+                    if problem.config["INIT_W2_Q2_Q4_NEG"]==True and name == "l2.ff.weight":
+                        if math.floor(number_of_params/4) < iteration< math.floor(number_of_params/2) or iteration> math.floor(number_of_params*3/4):
+                            center_init[-1]=-center_init[-1]
                     
-                        if problem.config["INIT_LEAKI_HALF_ZERO"]==True:
-                            if iteration<number_of_params/2:
-                                center_init[-1]=0
-
-                # Create list with names of paramters
-                names_center_init = np.append(names_center_init,name)
-
+                    if problem.config["INIT_LEAKI_HALF_ZERO"]==True and name == "l1.neuron.leak_i":
+                        if iteration<number_of_params/2:
+                            center_init[-1]=0
 
     return center_init, std_init
 
@@ -337,7 +290,7 @@ def create_bounds(problem, model,config):
             if name in bound_config:
 
                 # Check if parameters is the weights
-                if name == "l1.ff.weight" and config["INIT_W2_HALF_NEG"]==True and config["BOUNDS_W1_HALF_NEG"]==True:
+                if name == "l1.ff.weight" and config["BOUNDS_W1_H2_NEG"]==True:
                     # Set the last half of the neurons the the negative bound
                     if iteration>=number_of_params/2:
                         lower_bounds.append(bound_config[name]["low"])
@@ -345,9 +298,20 @@ def create_bounds(problem, model,config):
                     else:
                         lower_bounds.append(bound_config[name]["low"])
                         upper_bounds.append(bound_config[name]["high"])
+
+                # Check if parameters is the weights
+                elif name == "l2.ff.weight" and config["BOUND_W2_Q2_Q4_NEG"]==True:
+                    # Set the last half of the neurons the the negative bound
+                    if math.floor(number_of_params/4) < iteration< math.floor(number_of_params/2) or iteration> math.floor(number_of_params*3/4):
+                        lower_bounds.append(bound_config[name]["low"])
+                        upper_bounds.append(0)
+                    else:
+                        lower_bounds.append(0)
+                        upper_bounds.append(bound_config[name]["high"])
                 
+
                 # Check if parameters is the leak_i
-                elif name.split(".")[-1] == "leak_i" and config["BOUND_LEAKI_HALF_ZERO"]==True:
+                elif name == "l1.neuron.leak_i" and config["BOUND_LEAKI_HALF_ZERO"]==True:
                     # Set the leak_i first half of neurons to a near zero 
                     if iteration<number_of_params/2:
                         lower_bounds.append(0)
@@ -399,6 +363,7 @@ def create_new_training_set():
         problem.dataset=None
         problem.input_data_new,problem.target_data_new = get_dataset(problem.config,problem.dataset,20)
         problem.manual_dataset_prev = True
+        
     elif searcher.step_count%problem.config["DIFFERENT_DATASET_EVERY_GENERATION"]==0 or problem.manual_dataset_prev==True:
         problem.dataset = randint(0,499)
         problem.input_data_new, problem.target_data_new = get_dataset(problem.config, problem.dataset, problem.config["SIM_TIME"])

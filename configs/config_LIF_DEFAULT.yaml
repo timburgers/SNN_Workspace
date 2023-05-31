@@ -1,38 +1,17 @@
 ### Hyperparameters
 NEURONS: 16
 INDIVIDUALS: 10
-GENERATIONS: 2
-
-### Initialisation
-# MANUAL_W1: [1.2, 1.2, 1.2, 1.2,1.2, 1.2, 1.2, 1.2, 1,1,1,1,1,1,1,1, -1.2,-1.2,-1.2,-1.2,-1.2,-1.2,-1.2,-1.2, -1, -1, -1, -1,-1, -1, -1, -1]
-# MANUAL_W2: [0.25,0.25,0.25,0.25,0.25,0.25,0.25,0.25, -0.25,-0.25,-0.25,-0.25,-0.25,-0.25,-0.25,-0.25, 0.25,0.25,0.25,0.25,0.25,0.25,0.25,0.25, -0.25,-0.25,-0.25,-0.25,-0.25,-0.25,-0.25,-0.25]
-# MANUAL_leaki: [0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01, 0.2,0.1,0.2,0.1,0.2,0.1,0.2,0.1, 0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01, 0.2,0.1,0.2,0.1,0.2,0.1,0.2,0.1]
-MANUAL_W1: [1.2, 1.2, 1.2, 1.2, 1,1,1,1, -1.2,-1.2,-1.2,-1.2, -1, -1, -1, -1]
-MANUAL_W2: [0.25,0.25,0.25,0.25, -0.25,-0.25,-0.25,-0.25, 0.25,0.25,0.25,0.25, -0.25,-0.25,-0.25,-0.25]
-MANUAL_leaki: [0.01,0.01,0.01,0.01, 0.2,0.1,0.2,0.1, 0.01,0.01,0.01,0.01, 0.2,0.1,0.2,0.1,]
-
-INIT_WITH_PREV_SOLUTION: null  #None or string
-INIT_W1_SMALL_WITH_MORE_LEAK: False                #To compensate for the smaller leak, the input weights of these neurons will be lower
-INIT_LEAKI_HALF_ZERO:        False                # Set the leak_i of the first 5 neurons to close to zero
-INIT_W2_HALF_NEG:   False
-
-BOUND_LEAKI_HALF_ZERO: False
-BOUNDS_W1_HALF_NEG: True
-PERCENT_INTIIAL_STEPSIZE: 0.005   #percent of the initial bounded area
-
-### Run settings
-SIM_TIME: 15            # max 40 secs
+GENERATIONS: 3
 NUMBER_PROCESSES: 10
-LABEL_COLUMN_DATAFILE: [0]
-SAVE_TEST_SOLUTION_STEPSIZE: 50  #every .. steps the solution to the test case is calculated and saved
-TEST_DATA_FILE: "test_dataset"
-DIFFERENT_DATASET_EVERY_GENERATION: 1
+SIM_TIME: 15            # max 40 secs
 
+# Saving Solution
+SAVE_TEST_SOLUTION_STEPSIZE: 50  #every .. steps the solution to the test case is calculated and saved
+
+# Dataset loading options
 ANTI_OVERFITTING: True
-WANDB_LOG: True
-SAVE_LAST_SOLUTION: True
-ALGORITHM: "pycma" #cmaes or pycma
-SHOW_PLOTS: False
+DIFFERENT_DATASET_EVERY_GENERATION: 1
+DATASET_NUMBER: null
 START_DATASETS_IN_MIDDLE: False
 
 ### Dynamics settings Blimp
@@ -40,40 +19,90 @@ DZ_INITIAL: 0
 Z_INITIAL: 0
 TIME_STEP: 0.01
 
-
-### Dataset parameters
+### Less frequenty changed parameters
 FITNESS_INCLUDE_DYANMICS: True
 DATASET_DIR: "Sim_data/height_control_PID/zref_norm_positive"
-# DATASET_DIR: "Sim_data/derivative/dt0.002_norm_neg"
 INPUT_COLUMN_DATAFILE: [0]
-DATASET_NUMBER: null
+LABEL_COLUMN_DATAFILE: [0]
+TEST_DATA_FILE: "test_dataset"
+ALGORITHM: "pycma" #cmaes or pycma
+WANDB_LOG:          True
+SAVE_LAST_SOLUTION: True
+SHOW_PLOTS:         False
 
 
+#####################################################################################################################################
+#########################################   Initial conditions   #####################################################################
+
+# There are two optinons: either manually (with prev solution or hardcoded) setting the parameters or using a mean value and a gaussian 
+# distribution. If it is not set manually, then it it automatically set via mean and gaussian
+
+######## MEAN
+#Options: 
+# 1) "prev":  Previous solution
+# 2) "same for all": All paramaters all initialized using th same method
+# 3) "custom":  Every parameters can be initialized using a different method
+
+MEAN_SETTING: "custom" # "previous", "same for all" or "custom"  
+
+PREVIOUS_SOLUTION: 38-smart-blaze  # Null or the name of the prev saved soltion (without .pkl)
+SAME_FOR_ALL: "range"      # Either Null or "manual"/"gaussian"/"range"
+CUSTOM:
+  l1.neuron.leak_i: "manual"
+  l1.neuron.leak_v: "gaussian"
+  l1.neuron.thresh: "range"
+  l1.rec.weight:    "range"
+  l1.ff.weight:     "range"
+  l1.ff.bias:       "range"
+
+  l2.neuron.leak:   "range"
+  l2.ff.weight:     "range"
 
 
-############# Initial conditions #############
-INITIAL_PARAMS_RANDOM:
-# First layer
+### Manual
+manual:
+  l1.ff.weight: [1.2, 1.2, 1.2, 1.2, 1,1,1,1, -1.2,-1.2,-1.2,-1.2, -1, -1, -1, -1]
+  l2.ff.weight: [0.25,0.25,0.25,0.25, -0.25,-0.25,-0.25,-0.25, 0.25,0.25,0.25,0.25, -0.25,-0.25,-0.25,-0.25]
+  l1.neuron.leak_i: [0.01,0.01,0.01,0.01, 0.2,0.1,0.2,0.1, 0.01,0.01,0.01,0.01, 0.2,0.1,0.2,0.1,]
+
+### Gaussian and range
+INIT_LEAKI_HALF_ZERO: False                # Set the leak_i of the first 5 neurons to close to zero
+INIT_W2_Q2_Q4_NEG:    True
+INIT_W1_H2_NEG:       True
+
+gaussian:
   l1.neuron.leak_i: 0.9
   l1.neuron.leak_v: 0.9
   l1.neuron.thresh: 1
   l1.rec.weight: 0.001
   l1.ff.weight: 1
   l1.ff.bias: 0.5
-
-# Second layer
   l2.neuron.leak: 0.9
   l2.ff.weight: 0.20 
 
+range:
+  l1.neuron.leak_i: [0.1   , 0.9]
+  l1.neuron.leak_v: [0.1   , 0.9]
+  l1.neuron.thresh: [0.8   , 1.2]
+  l1.rec.weight:    [0.001 , 0.002]
+  l1.ff.weight:     [1     , 1.5]
+  l1.ff.bias:       [0.2   , 0.8]
+  l2.neuron.leak:   [0.899   , 0.901]
+  l2.ff.weight:     [0.15  , 0.25] 
+
+######## STD
+PERCENT_INTIIAL_STEPSIZE: 0.005
 
 
-#############  Parameter bounds #############
-# no constrains --> null
-# constraints --> {"low": 0,"high": 0.2, "step":0.01}   step is optional
-# not trained --> set to float/int
+
+#####################################################################################################################################
+#########################################   Bounds   #####################################################################
+
+BOUND_LEAKI_HALF_ZERO: False  #Second half of neurons leak is zero
+BOUND_W2_Q2_Q4_NEG: True    #Q1,Q3 postive and Q2,Q4 negative
+BOUNDS_W1_H2_NEG: True      #Second half of neurons w1 is zero
+
 PARAMETER_BOUNDS: #null if None in python
-# First layer
-
   l1.neuron.leak_i: {"low": 0,"high": 0.99}
   l1.neuron.leak_v: {"low": 0,"high": 1}
   l1.neuron.thresh: {"low": 0.8,"high": 1.2}
@@ -81,8 +110,7 @@ PARAMETER_BOUNDS: #null if None in python
   l1.ff.weight: {"low": -1.5,"high": 1.5}  #also negative!
   l1.ff.bias: {"low": 0.1,"high": 1}  #also negative!
 
-# Second layer
-  l2.neuron.leak: {"low": 0.9,"high": 0.901}
+  l2.neuron.leak: {"low": 0.88,"high": 0.92}
   l2.ff.weight:   {"low": -0.25,"high": 0.25} #also negative!
 
 

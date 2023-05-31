@@ -136,7 +136,6 @@ def init_empty(config):
 	init_param = {}
 	neurons = config["NEURONS"]
 
-	config_rand = config["INITIAL_PARAMS_RANDOM"]		
 	init_param["l1_thres"]	= torch.ones(neurons).float()
 	init_param["l1_leak_i"]	= torch.ones(neurons).float()
 	init_param["l1_leak_v"]	= torch.ones(neurons).float()

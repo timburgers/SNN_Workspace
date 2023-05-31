@@ -15,6 +15,8 @@ import torch.nn as nn
 warnings.filterwarnings("ignore")
 import math
 from torchmetrics import PearsonCorrCoef
+import copy
+from sim_dynamics.Dynamics import Blimp
 
 # for dataset_number in range(10):
 sim_time = 20
@@ -28,12 +30,12 @@ TIME_STEP = 0.01
 create_plots                    = True
 plot_with_best_testrun          = True  #True: solution = best performance on manual dataset      False: solution = best performance overall (can be easy dataset)
 muliple_test_runs_error_plot    = True  
-plot_last_generation            = False
+plot_last_generation            = True
 
 colored_background              = True
 spike_count_plot                = True
 
-create_table                    = True
+create_table                    = False
 create_csv_file                 = False
 
 plot_sigma                      = False
@@ -122,8 +124,6 @@ elif SNN_TYPE == "IZH":
     snn_states[1,:,:] = -70			#initialize V
     LI_state = torch.zeros(1,1)
 
-
-
 ### load in the best parameters in solution
 final_parameters =torchga.model_weights_as_dict(model, solution)
 thresholds = final_parameters["l1.neuron.thresh"].detach().numpy()
@@ -131,35 +131,92 @@ thresholds = final_parameters["l1.neuron.thresh"].detach().numpy()
 ### Get the input and target data
 input_data, target_data = get_dataset(config,dataset_number,sim_time)
 
-# Make predictions based on the best solution.
-snn_spikes, snn_state, predictions = pygad.torchga.predict(model,
-                                    solution,
-                                    input_data,
-                                    snn_states,
-                                    LI_state)
+
+if config["FITNESS_INCLUDE_DYANMICS"] == False:
+    control_input = input_data
+    # Make predictions based on the best solution.
+    l1_spikes, l1_state, control_output = torchga.predict(model,
+                                        solution,
+                                        control_input,
+                                        snn_states,
+                                        LI_state)
+
+    actual_data = control_output[:,0,0]
+    target_data = target_data
+    mse = torch.nn.MSELoss()
+    pearson = PearsonCorrCoef()
+
+    mse_pearson = mse(actual_data, target_data) + (1-pearson(actual_data, target_data))
+
+    actual_data = actual_data.detach().numpy()
+    target_data = target_data.detach().numpy()
+    print("MSE + Peasrons loss = ", mse_pearson.detach().numpy())
+
+    label_actual_data = "Output of controller"
+    title = "Controller output and reference"
+
+if config["FITNESS_INCLUDE_DYANMICS"] == True:
+    model_weights_dict = torchga.model_weights_as_dict(model,solution)
+    _model = copy.deepcopy(model)
+    _model.load_state_dict(model_weights_dict)
+    dyn_system = Blimp(config)
+    sys_output = torch.tensor([0])
+    control_output = np.array([])
+    control_input =np.array([])
+    input_data = input_data[..., np.newaxis]
 
 
-predictions = predictions[:,0,0]
-input_data = input_data.detach().numpy()
-input_data = input_data[0,:,0]
+    for t in range(input_data.shape[1]):
+        ref = input_data[:,t,:,:]
+        error = ref - sys_output[-1]
+        snn_spikes, snn_states, LI_state = _model(error, snn_states, LI_state)
+        snn_states = snn_states[0,:,:,:]    # get rid of the additional list where the items are inserted in forward pass
+        LI_state = LI_state[0,:,:]         # get rid of the additional list where the items are inserted in forward pass
+        dyn_system.sim_dynamics(LI_state.detach().numpy())
+        if t ==0:
+            l1_state=snn_states.detach().numpy()[np.newaxis,...]
+            l1_spikes=snn_spikes.detach().numpy()
+        else:
+            l1_state = np.concatenate((l1_state,snn_states.detach().numpy()[np.newaxis,...]))
+            l1_spikes = np.concatenate((l1_spikes,snn_spikes.detach().numpy()))
+        control_input = np.append(control_input, error.detach().numpy())
+        control_output = np.append(control_output, LI_state.detach().numpy())
+        sys_output = np.append(sys_output, dyn_system.get_z())
+    
+    actual_data = sys_output[1:]
+    target_data = target_data.detach().numpy()
 
-mse = torch.nn.MSELoss()
-pearson = PearsonCorrCoef()
+    mse_loss =(np.square(actual_data -target_data)).mean() # Skip the first 0 height input
+    print("MSE = ", mse_loss)
+
+    label_actual_data = "Height of blimp"
+    title = "Height control of the Blimp"
+    
+    time_test = np.arange(0,np.size(actual_data)*config["TIME_STEP"],config["TIME_STEP"])
+    plt.plot(time_test, control_output, linestyle = "--", color = "k" )
+
+    # Convert to tensors since it is required for the other part of the script
+    l1_state = torch.from_numpy(l1_state)
+    l1_spikes = torch.from_numpy(l1_spikes)
+    input_data = input_data[0,:,0,0]
 
 
-pearson_loss = 1-pearson(predictions, target_data)
-mse_loss = mse(predictions, target_data)
-print("only MSE \n")
-solution_fitness = mse_loss.detach().numpy()
-print("Fitness of solution = ", solution_fitness)
+time_test = np.arange(0,np.size(actual_data)*config["TIME_STEP"],config["TIME_STEP"])
+plt.plot(time_test, actual_data, color = "b", label=label_actual_data)
+plt.plot(time_test,target_data, color = 'r',label="Target")
+plt.title(title)
+plt.grid()
+plt.legend()
+    
 
-predictions = predictions.detach().numpy()
-target_data = target_data.detach().numpy()
+
+
+
 
 
 ### Calculate spiking sliding window count
 spike_count_window = None
-spikes_snn = snn_spikes[:,0,:] # spikes_izh of shape (timesteps,neurons)
+spikes_snn = l1_spikes[:,0,:] # spikes_izh of shape (timesteps,neurons)
 window_size =100
 sliding_window = nn.AvgPool1d(window_size,stride=1)
 
@@ -231,8 +288,9 @@ if create_plots == True:
             sharex=True
         )
 
-        recov_or_current = snn_state[:,0,0,:].detach().numpy()
-        mem_pot = snn_state[:,1,0,:].detach().numpy() 
+
+        recov_or_current = l1_state[:,0,0,:].detach().numpy()
+        mem_pot = l1_state[:,1,0,:].detach().numpy() 
 
         ### plot the raster of U and V of the 10 neurons (5xV, 5xU, 5xV, 5xU)
         for column in range(2):
@@ -289,21 +347,24 @@ if create_plots == True:
 
         time_arr = np.arange(0,sim_time,TIME_STEP)
         ### Plot the lowest figure
-        axis1["input"].plot(time_arr,input_data, label = "Input")
-        axis1["input"].plot(time_arr,target_data, label = "Target")
-        axis1["input"].plot(time_arr,predictions, label = "Output")
-        axis1["input"].axhline(0,linestyle="--", color="k")
+        axis1["input"].plot(time_arr,control_input, label = "Input")
+        axis1["input"].plot(time_arr,control_output, label = "Output")
+        if config["FITNESS_INCLUDE_DYANMICS"] == False:
+            axis1["input"].plot(time_arr,target_data, label = "Target")
+            axis1["input"].axhline(0,linestyle="--", color="k")
         axis1["input"].xaxis.grid()
     plt.legend()
 
 
     plt.figure()
     ### Plot the lowest figure
-    plt.plot(time_arr,input_data, label = "Input")
-    plt.plot(time_arr,target_data, label = "Target")
-    plt.plot(time_arr,predictions, label = "Output")
-    plt.axhline(0,linestyle="--", color="k")
+    plt.plot(time_arr,control_input, label = "Input")
+    plt.plot(time_arr,control_output, label = "Target")
+    if config["FITNESS_INCLUDE_DYANMICS"] == False:
+        axis1["input"].plot(time_arr,target_data, label = "Target")
+        axis1["input"].axhline(0,linestyle="--", color="k")
     plt.grid()
+    plt.title("Controller in and output")
     plt.legend()
 
     # Otherwise the plot and table are shown on the same moment
@@ -319,7 +380,7 @@ if create_table == True or create_csv_file==True:
     data = neurons
 
     #Add spike count to the data
-    spike_train = snn_state[:,2,0,:].detach().numpy()
+    spike_train = l1_state[:,2,0,:].detach().numpy()
     spike_count = np.array([])
     for neuron in range(config["NEURONS"]):
         spikes = float(np.sum(spike_train[:,neuron]))
