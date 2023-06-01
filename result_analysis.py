@@ -19,7 +19,7 @@ import copy
 from sim_dynamics.Dynamics import Blimp
 
 # for dataset_number in range(10):
-sim_time = 20
+sim_time = 40
 dataset_number =None # None is the self made 13s dataset
 filename = None
 folder = "Blimp"

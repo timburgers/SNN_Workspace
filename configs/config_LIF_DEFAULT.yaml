@@ -43,8 +43,10 @@ SHOW_PLOTS:         False
 # 2) "same for all": All paramaters all initialized using th same method
 # 3) "custom":  Every parameters can be initialized using a different method
 
-MEAN_SETTING: "custom" # "previous", "same for all" or "custom"  
+MEAN_SETTING: "same for all" # "previous", "same for all" or "custom"  
 
+
+################################################################################################
 PREVIOUS_SOLUTION: 38-smart-blaze  # Null or the name of the prev saved soltion (without .pkl)
 SAME_FOR_ALL: "range"      # Either Null or "manual"/"gaussian"/"range"
 CUSTOM:

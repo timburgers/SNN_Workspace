@@ -59,7 +59,7 @@ class LIF_EA_evotorch(Problem):
         self.input_data_new = None
         self.target_data_new = None
 
-        self.C_matrix = None
+        # self.C_matrix = None
         self.mean = None
         self.sigma = None
         self.stds = None
@@ -350,10 +350,9 @@ def save_solution(best_solution, problem):
                          "generations":problem.config["GENERATIONS"],
                          "best_solution": best_solution.values.detach().numpy(),
                          "datasets": problem.train_datasets,
-                         "C":problem.C_matrix,
+                        #  "C":problem.C_matrix,
                          "mean": problem.mean,
-                         "sigma":problem.sigma,
-                         "stds":problem.stds}
+                         "sigma":problem.sigma}
         pickle.dump(test_solutions, pickle_out)
         pickle_out.close()
 
@@ -386,9 +385,9 @@ def create_new_training_set():
 def evaluate_manual_dataset():
     save_per_generation = math.ceil(problem.config["GENERATIONS"]/2000)
     if problem.config["ALGORITHM"] == "pycma" and searcher.step_count%save_per_generation ==0: 
-        if problem.C_matrix is None:
-            problem.C_matrix = searcher._es.C[np.newaxis, ...]
-        else: problem.C_matrix = np.concatenate((problem.C_matrix, searcher._es.C[np.newaxis, ...]), axis=0)
+        # if problem.C_matrix is None:
+        #     problem.C_matrix = searcher._es.C[np.newaxis, ...]
+        # else: problem.C_matrix = np.concatenate((problem.C_matrix, searcher._es.C[np.newaxis, ...]), axis=0)
 
         if problem.mean is None:
             problem.mean = searcher._es.mean[np.newaxis, ...]
@@ -404,9 +403,9 @@ def evaluate_manual_dataset():
         # problem.mean = np.append(problem.mean,)
 
     if problem.config["ALGORITHM"] == "cmaes":
-        if problem.C_matrix is None:
-            problem.C_matrix = searcher.C.detach().numpy()[np.newaxis, ...]
-        else: problem.C_matrix = np.concatenate((problem.C_matrix, searcher.C.detach().numpy()[np.newaxis, ...]), axis=0)
+        # if problem.C_matrix is None:
+        #     problem.C_matrix = searcher.C.detach().numpy()[np.newaxis, ...]
+        # else: problem.C_matrix = np.concatenate((problem.C_matrix, searcher.C.detach().numpy()[np.newaxis, ...]), axis=0)
 
         if problem.mean is None:
             problem.mean = searcher.m.detach().numpy()[np.newaxis, ...]

@@ -5,10 +5,10 @@ import random
 
 number_of_files= 500
 time_step = 0.01		# The sample time per time step [s]
-sim_time = 20			# Total length of simulation [s]
+sim_time = 50			# Total length of simulation [s]
 
 for idx in range(number_of_files):
-	new_ref_freq = random.randint(4,6)	# per seconds
+	new_ref_freq = random.randint(3,6)	# per seconds
 	minimal_height_change = random.randint(1,4)/10
 
 	z_ref = np.array([])
