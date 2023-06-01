@@ -1,9 +1,9 @@
 ### Hyperparameters
 NEURONS: 16
 INDIVIDUALS: 10
-GENERATIONS: 3
+GENERATIONS: 20
 NUMBER_PROCESSES: 10
-SIM_TIME: 15            # max 40 secs
+SIM_TIME: 25            # max 40 secs
 
 # Saving Solution
 SAVE_TEST_SOLUTION_STEPSIZE: 50  #every .. steps the solution to the test case is calculated and saved
@@ -18,6 +18,9 @@ START_DATASETS_IN_MIDDLE: False
 DZ_INITIAL: 0
 Z_INITIAL: 0
 TIME_STEP: 0.01
+
+MODEL: "LIF_SNN_shared"
+SHARED_WEIGHTS_BIAS: True
 
 ### Less frequenty changed parameters
 FITNESS_INCLUDE_DYANMICS: True
@@ -82,7 +85,7 @@ gaussian:
   l2.neuron.leak: 0.9
   l2.ff.weight: 0.20 
 
-range:
+range: #keep all positive
   l1.neuron.leak_i: [0.1   , 0.9]
   l1.neuron.leak_v: [0.1   , 0.9]
   l1.neuron.thresh: [0.8   , 1.2]
@@ -107,10 +110,10 @@ BOUNDS_W1_H2_NEG: True      #Second half of neurons w1 is zero
 PARAMETER_BOUNDS: #null if None in python
   l1.neuron.leak_i: {"low": 0,"high": 0.99}
   l1.neuron.leak_v: {"low": 0,"high": 1}
-  l1.neuron.thresh: {"low": 0.8,"high": 1.2}
+  l1.neuron.thresh: {"low": 0.8,"high": 10}
   l1.rec.weight: {"low": -0.2,"high": 0.2}
   l1.ff.weight: {"low": -1.5,"high": 1.5}  #also negative!
-  l1.ff.bias: {"low": 0.1,"high": 1}  #also negative!
+  l1.ff.bias: {"low": -1,"high": 1}  #also negative!
 
   l2.neuron.leak: {"low": 0.88,"high": 0.92}
   l2.ff.weight:   {"low": -0.25,"high": 0.25} #also negative!

@@ -1,7 +1,7 @@
 
 import torch
 import pygad.torchga as torchga
-from SNN_LIF_LI_init import LIF_SNN
+from SNN_LIF_LI_init import LIF_SNN, LIF_SNN_shared
 from wandb_log_functions import number_first_wandb_name
 from IZH.Izh_LI_EA_PYGAD import get_dataset
 import yaml
@@ -42,9 +42,14 @@ class LIF_EA_evotorch(Problem):
         ### Read config file
         with open(self.prefix + config + ".yaml","r") as f:
             self.config = yaml.safe_load(f)
-
-        self.model = LIF_SNN(None, "cpu", self.config)
-        self.number_parameters = self.model.neurons**2+ self.model.neurons*6+1
+        
+        # Select model
+        if self.config["MODEL"] == "LIF_SNN_shared":    self.model = LIF_SNN_shared(None, self.config["NEURONS"])
+        if self.config["MODEL"] == "LIF_SNN":           self.model = LIF_SNN(None, self.config["NEURONS"])
+        self.number_parameters = 0
+        for parameter in self.model.parameters():
+            self.number_parameters = self.number_parameters + torch.flatten(parameter).shape[0]
+        
         self.input_data, self.target_data = get_dataset(self.config, self.config["DATASET_NUMBER"], self.config["SIM_TIME"])
         self.mse = torch.nn.MSELoss()
         self.pearson = PearsonCorrCoef()
@@ -131,6 +136,7 @@ def init_conditions(problem):
     # Initialize STD (the satandard deviation/stepsize) of the search
     for name, value in param_model.items():
         number_of_params = len(torch.flatten(value).detach().numpy())
+
         for iteration in range(number_of_params):
             # Fill in initial condition of stepsize (std)
             initial_step_size = (bounds_config[name]["high"]-bounds_config[name]["low"])*problem.config["PERCENT_INTIIAL_STEPSIZE"]
@@ -177,15 +183,15 @@ def init_conditions(problem):
                 #Check if extra rule applies to the initialization
                 if init_method == "gaus" or init_method == "range":
                     
-                    if problem.config["INIT_W1_H2_NEG"]==True and name == "l1.ff.weight":
+                    if problem.config["INIT_W1_H2_NEG"]==True and name == "l1.ff.weight" and problem.config["SHARED_WEIGHTS_BIAS"] == False:
                         if iteration>=number_of_params/2:
                             center_init[-1]=-center_init[-1]
                     
-                    if problem.config["INIT_W2_Q2_Q4_NEG"]==True and name == "l2.ff.weight":
+                    if problem.config["INIT_W2_Q2_Q4_NEG"]==True and name == "l2.ff.weight" and problem.config["SHARED_WEIGHTS_BIAS"] == False:
                         if math.floor(number_of_params/4) < iteration< math.floor(number_of_params/2) or iteration> math.floor(number_of_params*3/4):
                             center_init[-1]=-center_init[-1]
                     
-                    if problem.config["INIT_LEAKI_HALF_ZERO"]==True and name == "l1.neuron.leak_i":
+                    if problem.config["INIT_LEAKI_HALF_ZERO"]==True and name == "l1.neuron.leak_i" and problem.config["SHARED_WEIGHTS_BIAS"] == False:
                         if iteration<number_of_params/2:
                             center_init[-1]=0
 
@@ -286,11 +292,12 @@ def create_bounds(problem, model,config):
     ### Check if there is a lim in the config and otherwise add None to it
     for name, value in param_model.items():
         number_of_params = len(torch.flatten(value).detach().numpy())
+
         for iteration in range(number_of_params):
             if name in bound_config:
 
                 # Check if parameters is the weights
-                if name == "l1.ff.weight" and config["BOUNDS_W1_H2_NEG"]==True:
+                if name == "l1.ff.weight" and config["BOUNDS_W1_H2_NEG"]==True and config["SHARED_WEIGHTS_BIAS"] == False:
                     # Set the last half of the neurons the the negative bound
                     if iteration>=number_of_params/2:
                         lower_bounds.append(bound_config[name]["low"])
@@ -300,7 +307,7 @@ def create_bounds(problem, model,config):
                         upper_bounds.append(bound_config[name]["high"])
 
                 # Check if parameters is the weights
-                elif name == "l2.ff.weight" and config["BOUND_W2_Q2_Q4_NEG"]==True:
+                elif name == "l2.ff.weight" and config["BOUND_W2_Q2_Q4_NEG"]==True and config["SHARED_WEIGHTS_BIAS"] == False:
                     # Set the last half of the neurons the the negative bound
                     if math.floor(number_of_params/4) < iteration< math.floor(number_of_params/2) or iteration> math.floor(number_of_params*3/4):
                         lower_bounds.append(bound_config[name]["low"])
@@ -311,7 +318,7 @@ def create_bounds(problem, model,config):
                 
 
                 # Check if parameters is the leak_i
-                elif name == "l1.neuron.leak_i" and config["BOUND_LEAKI_HALF_ZERO"]==True:
+                elif name == "l1.neuron.leak_i" and config["BOUND_LEAKI_HALF_ZERO"]==True and config["SHARED_WEIGHTS_BIAS"] == False:
                     # Set the leak_i first half of neurons to a near zero 
                     if iteration<number_of_params/2:
                         lower_bounds.append(0)

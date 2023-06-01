@@ -35,7 +35,7 @@ plot_last_generation            = True
 colored_background              = True
 spike_count_plot                = True
 
-create_table                    = False
+create_table                    = True
 create_csv_file                 = False
 
 plot_sigma                      = False
@@ -107,7 +107,7 @@ if SNN_TYPE == "LIF":
             break
             
     config["NEURONS"] = number_of_neurons
-    model = LIF_SNN(None,"cpu",config)
+    model = LIF_SNN(None,number_of_neurons)
 
     #### Initialize neuron states (I, V, spikes) 
     snn_states = torch.zeros(3, 1, model.neurons)

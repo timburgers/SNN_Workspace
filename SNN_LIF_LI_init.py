@@ -1,20 +1,20 @@
 import torch
 import torch.nn as nn
 from spiking.torch.layers.linear import RecurrentLinearLIF
+from models.linear_shared_weights import SHARED_RecurrentLinearLIF
 from models.spiking.spiking.torch.utils.surrogates import get_spike_fn
-from Coding.Decoding import Linear_LI_filter
+from models.Leaky_integrator import Linear_LI_filter, SHARED_Linear_LI_filter
 import numpy as np
 
 
 class LIF_SNN(nn.Module):
-	def __init__(self, param_init, device, config):
+	def __init__(self, param_init, neurons):
 		super(LIF_SNN,self).__init__()
-		self.input_features = config["NEURONS"]	
+		self.input_features = neurons
 		self.neurons = self.input_features
-		self.device = device
 
 		if param_init == None:
-			param_init = init_empty(config)
+			param_init = init_empty(neurons)
 
 		self.params_fixed_l1=dict(thresh = param_init["l1_thres"])
 		self.params_learnable_l1=dict(leak_i = param_init["l1_leak_i"], leak_v = param_init["l1_leak_v"])
@@ -52,6 +52,97 @@ class LIF_SNN(nn.Module):
 		
 		return spikes, states_snn, decoded
 
+class LIF_SNN_shared(nn.Module):
+	def __init__(self, param_init, neurons):
+		super(LIF_SNN_shared,self).__init__()
+		self.input_features = neurons
+		self.neurons = self.input_features
+
+		if param_init == None:
+			param_init = init_empty_shared(neurons)
+
+		self.params_fixed_l1=dict()
+		self.params_learnable_l1=dict(leak_i = param_init["l1_leak_i"], leak_v = param_init["l1_leak_v"],thresh = param_init["l1_thres"])
+
+		self.params_fixed_l2=dict()
+		self.params_learnable_l2 = dict(leak = param_init["l2_leak"])
+
+		self.l1 = SHARED_RecurrentLinearLIF(self.input_features,self.neurons,self.params_fixed_l1,self.params_learnable_l1,get_spike_fn("ArcTan", 1.0, 20.0))
+		self.l2 = SHARED_Linear_LI_filter(self.neurons,1,self.params_fixed_l2,self.params_learnable_l2,None, bias=False)
+
+		# Set the weights in the torch.nn module (Linear() expects the weight matrix in shape (output,input))
+		self.l1.ff.weight = torch.nn.parameter.Parameter(param_init["l1_weights"])
+		self.l1.ff.bias = torch.nn.parameter.Parameter(param_init["l1_bias"])
+		self.l1.rec.weight = torch.nn.parameter.Parameter(param_init["l1_weights_rec"])
+		self.l2.ff.weight = torch.nn.parameter.Parameter(param_init["l2_weights"])
+
+	def forward(self,input_batch,state_snn, state_LI):
+
+		batch_size, seq_length, n_inputs = input_batch.size()
+		outputs, states_snn, decoded = [],[],[]
+		
+
+		for timestep in range(seq_length):
+			input = input_batch[:,timestep,:]
+			state_snn,output = self.l1(state_snn,input)
+			state_LI, _ = self.l2(state_LI,output)
+
+			outputs += [output]
+			states_snn += [state_snn]
+			decoded += [state_LI]
+		
+		spikes = torch.stack(outputs)
+		states_snn = torch.stack(states_snn)
+		decoded = torch.stack(decoded)
+		
+		return spikes, states_snn, decoded
+
+
+class LIF_single_test(nn.Module):
+	def __init__(self, param_init, neurons,w1,b1):
+		super(LIF_single_test,self).__init__()
+		self.input_features = neurons
+		self.neurons = self.input_features
+
+		if param_init == None:
+			param_init = init_empty_shared(neurons)
+
+
+		self.params_fixed_l1=dict(thresh = param_init["l1_thres"]*2)
+		self.params_learnable_l1=dict(leak_i = param_init["l1_leak_i"]*0.9 , leak_v = param_init["l1_leak_v"]*0.9)
+
+		self.params_fixed_l2=dict(leak = param_init["l2_leak"]*0.9)
+		self.params_learnable_l2 = dict()
+
+		self.l1 = SHARED_RecurrentLinearLIF(self.input_features,self.neurons,self.params_fixed_l1,self.params_learnable_l1,get_spike_fn("ArcTan", 1.0, 20.0))
+		self.l2 = Linear_LI_filter(self.neurons,1,self.params_fixed_l2,self.params_learnable_l2,None)
+
+		# Set the weights in the torch.nn module (Linear() expects the weight matrix in shape (output,input))
+		self.l1.ff.weight = torch.nn.parameter.Parameter(param_init["l1_weights"]*w1)
+		self.l1.ff.bias = torch.nn.parameter.Parameter(param_init["l1_bias"]*b1)
+		self.l1.rec.weight = torch.nn.parameter.Parameter(param_init["l1_weights_rec"]*0)
+		self.l2.ff.weight = torch.nn.parameter.Parameter(param_init["l2_weights"]*0.25)
+
+	def forward(self,input_batch,state_snn, state_LI):
+
+		batch_size, seq_length, n_inputs = input_batch.size()
+		outputs, states_snn, decoded = [],[],[]
+		
+
+		for timestep in range(seq_length):
+			input = input_batch[:,timestep,:]
+			state_snn,output = self.l1(state_snn,input)
+			state_LI, _ = self.l2(state_LI,output)
+
+			outputs += [output]
+			states_snn += [state_snn]
+			decoded += [state_LI]
+		
+		spikes = torch.stack(outputs)
+		states_snn = torch.stack(states_snn)
+		decoded = torch.stack(decoded)
+		
+		return spikes, states_snn, decoded
 
 
 
@@ -60,22 +151,23 @@ class LIF_SNN(nn.Module):
 
 
 
-def list_learnable_parameters(network, show_results):
-	if show_results == True:
-		print ("Print the parameters of the network \n")
-	learn_param_dic = {}
-	for name, param in network.named_parameters():
-		if param.requires_grad:
-			if show_results == True:
-				print(name, param.data)	
-			else:
-				learn_param_dic[name] =  param.data.cpu().detach().numpy()
-	if show_results == True:
-		print("\n")
-		return	
-	else: return learn_param_dic
 
-# def initialize_parameters(config):
+# def list_learnable_parameters(network, show_results):
+# 	if show_results == True:
+# 		print ("Print the parameters of the network \n")
+# 	learn_param_dic = {}
+# 	for name, param in network.named_parameters():
+# 		if param.requires_grad:
+# 			if show_results == True:
+# 				print(name, param.data)	
+# 			else:
+# 				learn_param_dic[name] =  param.data.cpu().detach().numpy()
+# 	if show_results == True:
+# 		print("\n")
+# 		return	
+# 	else: return learn_param_dic
+
+# # def initialize_parameters(config):
 # 	print("initialize function used")
 # 	np.random.seed(config["RANDOM_INIT_SEED"])
 # 	init_param = {}
@@ -131,10 +223,9 @@ def list_learnable_parameters(network, show_results):
 # 	return init_param
 
 
-def init_empty(config):
+def init_empty(neurons):
 
 	init_param = {}
-	neurons = config["NEURONS"]
 
 	init_param["l1_thres"]	= torch.ones(neurons).float()
 	init_param["l1_leak_i"]	= torch.ones(neurons).float()
@@ -145,5 +236,22 @@ def init_empty(config):
 
 	init_param["l2_leak"] 	= torch.ones(1).float()
 	init_param["l2_weights"]= torch.ones((1,neurons)).float()	# random weights [-1,1]
+		
+	return init_param
+
+
+def init_empty_shared(neurons):
+
+	init_param = {}
+
+	init_param["l1_thres"]	= torch.ones(neurons).float()
+	init_param["l1_leak_i"]	= torch.ones(neurons).float()
+	init_param["l1_leak_v"]	= torch.ones(neurons).float()
+	init_param["l1_weights"]= torch.ones((int(neurons/2),1)).float()
+	init_param["l1_weights_rec"]= torch.ones((neurons,neurons)).float()
+	init_param["l1_bias"]	= torch.ones(int(neurons/2),1).float()
+
+	init_param["l2_leak"] 	= torch.ones(1).float()
+	init_param["l2_weights"]= torch.ones((int(neurons/2),1)).float()	# random weights [-1,1]
 		
 	return init_param

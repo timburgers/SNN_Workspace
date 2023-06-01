@@ -4,6 +4,6 @@ wandb/
 .vscode/
 results_EA/
 spiking/
-models/
+models/spiking/
 *.out
 run_ea.sh
