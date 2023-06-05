@@ -29,7 +29,7 @@ TARGET_FITNESS: 1
 #2) "system reference"  : Dynamic system simulated        Fitness: MSE
 #3) "pid system output" : Dynamic system simulated        Fitness: MSE + Pearson
 
-# ONLY USE THESE WHEN DIFFERENT STRUCTURE OF DATASET IS USE
+# //TODO ONLY USE THESE WHEN DIFFERENT STRUCTURE OF DATASET IS USE
 ALTERNATIVE_LABEL_INPUT: [0]
 ALTERNATIVE_LABEL_TARGET: [1]
 
