@@ -1,9 +1,8 @@
 
 import torch
 import pygad.torchga as torchga
-from SNN_LIF_LI_init import LIF_SNN, LIF_SNN_shared
+from SNN_LIF_LI_init import LIF_SNN
 from wandb_log_functions import number_first_wandb_name
-from IZH.Izh_LI_EA_PYGAD import get_dataset
 import yaml
 import numpy as np
 import matplotlib.pyplot as plt
@@ -26,13 +25,15 @@ import sys, getopt
 from sim_dynamics.Dynamics import Blimp
 import copy
 import random
+import pandas as pd
 
 import warnings
 warnings.filterwarnings("ignore")
 ray.init(log_to_driver=False, include_dashboard=False)
 
+
 class LIF_EA_evotorch(Problem):
-    def __init__(self, config):
+    def __init__(self, config_path):
         if platform.system() == "Linux":
             self.prefix = "/scratch/timburgers/SNN_Workspace/"
 
@@ -40,15 +41,19 @@ class LIF_EA_evotorch(Problem):
             self.prefix = ""
 
         ### Read config file
-        with open(self.prefix + config + ".yaml","r") as f:
+        with open(self.prefix + config_path + ".yaml","r") as f:
             self.config = yaml.safe_load(f)
         
         # Select model
-        if self.config["MODEL"] == "LIF_SNN_shared":    self.model = LIF_SNN_shared(None, self.config["NEURONS"])
-        if self.config["MODEL"] == "LIF_SNN":           self.model = LIF_SNN(None, self.config["NEURONS"])
+        self.model = LIF_SNN(None, self.config["NEURONS"], self.config["LAYER_SETTING"])
         self.number_parameters = 0
-        for parameter in self.model.parameters():
+
+        # Log the structure of the model that is used
+        self.dict_model_structure = dict()
+        for name, parameter in self.model.named_parameters():
             self.number_parameters = self.number_parameters + torch.flatten(parameter).shape[0]
+            self.dict_model_structure[name] = torch.flatten(parameter).shape[0]
+
         
         self.input_data, self.target_data = get_dataset(self.config, self.config["DATASET_NUMBER"], self.config["SIM_TIME"])
         self.mse = torch.nn.MSELoss()
@@ -59,6 +64,7 @@ class LIF_EA_evotorch(Problem):
         self.error_test_solutions= np.array([])
         self.train_datasets=np.array([])
         self.manual_dataset_prev = False
+        self.fitness_mode = self.config["TARGET_FITNESS"]
 
         self.datatset = None
         self.input_data_new = None
@@ -68,9 +74,7 @@ class LIF_EA_evotorch(Problem):
         self.mean = None
         self.sigma = None
         self.stds = None
-
-
-
+        
         super().__init__(
             objective_sense="min",
             solution_length=self.number_parameters,
@@ -84,46 +88,90 @@ class LIF_EA_evotorch(Problem):
         #### Initialize neuron states (u, v, s) 
         snn_states = torch.zeros(3, 1, self.model.neurons) # frist dim in order [current,mempot,spike]
         LI_state = torch.zeros(1,1)
-        solution_np = solution.values.detach().numpy()
+
+        solution_np = solution.values.detach().numpy() #numpy array of all parameters
+        controller = copy.deepcopy(self.model)
+        final_parameters =torchga.model_weights_as_dict(controller, solution_np)
+        controller.load_state_dict(final_parameters)
+
+        if  self.fitness_mode== 1: #Only controller simlation
+            fitness_measured = run_controller(self,controller,self.input_data, snn_states,LI_state, save_mode = False)
+        elif self.fitness_mode == 2 or self.fitness_mode == 3:#Also simulate the dyanmics
+            fitness_measured = run_controller_dynamics(self,controller,self.input_data, snn_states,LI_state, save_mode = False)
+
+        # Calculate the fitness value
+        fitness_value = evaluate_fitness(self, fitness_measured, self.target_data)
+
+        print(fitness_value)
+        solution.set_evals(fitness_value)
 
 
-        if self.config["FITNESS_INCLUDE_DYANMICS"] == False:
-            _, _, predictions = torchga.predict(self.model,
-                                                solution_np,
-                                                self.input_data,
-                                                snn_states, #(u, v, s) 
-                                                LI_state) #data in form: input, state_snn, state LI
+def run_controller(self,controller,input, snn_states, LI_state,save_mode):
+    control_output = np.array([])
+    if save_mode == False:
+        for t in range(input.shape[1]):
+            error = input[:,t,:]
+            snn_spikes, snn_states, LI_state = controller(error, snn_states, LI_state)
 
-            predictions = predictions[:,0,0]
-            pearson_loss = 1-self.pearson(predictions, self.target_data)
-            mse_loss = self.mse(predictions, self.target_data)
-            solution_fitness = (mse_loss + pearson_loss).detach().numpy()
-        
-        if self.config["FITNESS_INCLUDE_DYANMICS"] == True:
-            model_weights_dict = torchga.model_weights_as_dict(self.model,solution_np)
-            _model = copy.deepcopy(self.model)
-            _model.load_state_dict(model_weights_dict)
-            dyn_system = Blimp(self.config)
-            height = torch.tensor([0])
-            input_data = self.input_data[..., np.newaxis]
-
-
-            for t in range(input_data.shape[1]):
-                ref = input_data[:,t,:,:]
-                error = ref - height[-1]
-                _, snn_states, LI_state = _model(error, snn_states, LI_state)
-                snn_states = snn_states[0,:,:,:]    # get rid of the additional list where the items are inserted in forward pass
-                LI_state = LI_state[0,:,:]          # get rid of the additional list where the items are inserted in forward pass
-                dyn_system.sim_dynamics(LI_state.detach().numpy())
-                height = np.append(height, dyn_system.get_z())
-
-            mse_loss =(np.square(height[1:] - self.target_data.detach().numpy())).mean() # Skip the first 0 height input
-            solution_fitness = mse_loss
-
-        
-        print(solution_fitness)
-        solution.set_evals(solution_fitness)
+            # Append states to array
+            control_output = np.append(control_output,LI_state.detach().numpy())
+        return control_output
     
+    elif save_mode == True:
+        for t in range(input.shape[1]):
+            error = input[:,t,:]
+            snn_spikes, snn_states, LI_state = controller(error, snn_states, LI_state)
+
+            # Append states to array
+            if t==0: control_state = snn_states.detach().numpy()[np.newaxis,...]
+            else: control_state = np.concatenate((control_state, snn_states.detach().numpy()[np.newaxis, ...]))
+            control_output = np.append(control_output,LI_state.detach().numpy())
+        return control_output, control_state
+
+
+def run_controller_dynamics(self,controller,input, snn_states, LI_state, save_mode):
+    dyn_system = Blimp(self.config)
+    sys_output = np.array([0])
+    
+    if save_mode == False:
+        for t in range(input.shape[1]):
+            ref = input[:,t,:]
+            error = ref - sys_output[-1]
+            snn_spikes, snn_states, LI_state = controller(error, snn_states, LI_state)
+            dyn_system.sim_dynamics(LI_state.detach().numpy())
+
+            #Append states to array
+            sys_output = np.append(sys_output,dyn_system.get_z())
+        return sys_output[1:] # Skip the first 0 height input
+
+    if save_mode==True:
+        control_input = np.array([])
+        control_output = np.array([])
+
+        for t in range(input.shape[1]):
+            ref = input[:,t,:]
+            error = ref - sys_output[-1]
+            snn_spikes, snn_states, LI_state = controller(error, snn_states, LI_state)
+            dyn_system.sim_dynamics(LI_state.detach().numpy())
+
+            #Append states to array
+            if t==0: control_state = snn_states.detach().numpy()[np.newaxis,...]
+            else: control_state = np.concatenate((control_state, snn_states.detach().numpy()[np.newaxis, ...]))
+            control_input = np.append(control_input, error.detach().numpy())
+            control_output = np.append(control_output, LI_state.detach().numpy())
+            sys_output = np.append(sys_output,dyn_system.get_z())
+        return sys_output[1:], control_input, control_state, control_output # Skip the first 0 height input
+
+
+def evaluate_fitness(self, fitness_measured, fitness_target):
+    #Evaluate fitness using MSE and additionally pearson if there should be a linear correlation between target and output
+    fitness_target = torch.flatten(fitness_target)
+    fitness_measured = torch.from_numpy(fitness_measured)
+    fitness_value = self.mse(fitness_measured,fitness_target)
+    if self.fitness_mode == 1 or self.fitness_mode == 3:
+        fitness_value += (1-self.pearson(fitness_measured,fitness_target)) #pearson of 1 means linear correlation
+    return fitness_value
+        
 
 # Get the intiail position of the center and of the step size
 def init_conditions(problem):
@@ -183,15 +231,15 @@ def init_conditions(problem):
                 #Check if extra rule applies to the initialization
                 if init_method == "gaus" or init_method == "range":
                     
-                    if problem.config["INIT_W1_H2_NEG"]==True and name == "l1.ff.weight" and problem.config["SHARED_WEIGHTS_BIAS"] == False:
+                    if problem.config["INIT_W1_H2_NEG"]==True and name == "l1.ff.weight" and problem.config["LAYER_SETTING"]["l1"]["shared_weight_and_bias"] == False:
                         if iteration>=number_of_params/2:
                             center_init[-1]=-center_init[-1]
                     
-                    if problem.config["INIT_W2_Q2_Q4_NEG"]==True and name == "l2.ff.weight" and problem.config["SHARED_WEIGHTS_BIAS"] == False:
+                    if problem.config["INIT_W2_Q2_Q4_NEG"]==True and name == "l2.ff.weight" and problem.config["LAYER_SETTING"]["l2"]["shared_weight_and_bias"] == False:
                         if math.floor(number_of_params/4) < iteration< math.floor(number_of_params/2) or iteration> math.floor(number_of_params*3/4):
                             center_init[-1]=-center_init[-1]
                     
-                    if problem.config["INIT_LEAKI_HALF_ZERO"]==True and name == "l1.neuron.leak_i" and problem.config["SHARED_WEIGHTS_BIAS"] == False:
+                    if problem.config["INIT_LEAKI_HALF_ZERO"]==True and name == "l1.neuron.leak_i" and problem.config["LAYER_SETTING"]["l1"]["shared_leak_i"] == False:
                         if iteration<number_of_params/2:
                             center_init[-1]=0
 
@@ -199,78 +247,43 @@ def init_conditions(problem):
 
 def test_solution(problem, solution):
     # Initialize varibales from problem Class
-    model = problem.model
-    test_input_data, test_target_data = get_dataset(problem.config, None, 20)
-    solution = solution.values.detach().numpy()
+    input_data, fitness_target = get_dataset(problem.config, None, problem.config["SIM_TIME"])
+    
+    #################    Test sequence       ############################
+    snn_states = torch.zeros(3, 1, problem.model.neurons) # frist dim in order [current,mempot,spike]
+    LI_state = torch.zeros(1,1)
 
-    ### Print the final parameters to the terminal
-    final_parameters =torchga.model_weights_as_dict(model, solution)
+    solution_np = solution.values.detach().numpy() #numpy array of all parameters
+    controller = copy.deepcopy(problem.model)
+    final_parameters =torchga.model_weights_as_dict(controller, solution_np)
+    controller.load_state_dict(final_parameters)
+
+    if  problem.fitness_mode== 1: #Only controller simlation
+        fitness_measured, control_state = run_controller(problem,controller,input_data, snn_states,LI_state, save_mode=True)
+    elif problem.fitness_mode == 2 or problem.fitness_mode == 3:#Also simulate the dyanmics
+        fitness_measured, control_input, control_state, control_output = run_controller_dynamics(problem,controller,input_data, snn_states,LI_state, save_mode=True)
+
+    # Calculate the fitness value
+    fitness_value = evaluate_fitness(problem, fitness_measured, fitness_target)
+
+    # Print the parameters of the best solution to the terminal
     for key, value in final_parameters.items():
         print(key, value)
 
+    if problem.fitness_mode == 1:   label_fitness_measured = "SNN output"; label_fitness_target = "PID output"
+    if problem.fitness_mode == 2:   label_fitness_measured = "Blimp Height SNN"; label_fitness_target = "Blimp Height Reference"
+    if problem.fitness_mode == 3:   label_fitness_measured = "Blimp Height SNN"; label_fitness_target = "Blimp height PID"
 
-    #################    Test sequence       ############################
-    #### Initialize neuron states (u, v, s) 
-    snn_states = torch.zeros(3, 1, model.neurons)
-    LI_state = torch.zeros(1,1)
-    
-
-    if problem.config["FITNESS_INCLUDE_DYANMICS"] == False:
-        # Make predictions based on the best solution.
-        l1_spikes, l1_state, control_output = torchga.predict(model,
-                                            solution,
-                                            test_input_data,
-                                            snn_states,
-                                            LI_state)
-
-        actual_data = control_output[:,0,0]
-        target_data = test_target_data
-
-        mse_pearson = problem.mse(actual_data, target_data) + (1-problem.pearson(actual_data, target_data))
-
-        actual_data = actual_data.detach().numpy()
-        target_data = target_data.detach().numpy()
-        print("MSE + Peasrons loss = ", mse_pearson.detach().numpy())
-
-        label_actual_data = "Output of controller"
-        title = "Controller output and reference"
-
-    if problem.config["FITNESS_INCLUDE_DYANMICS"] == True:
-        model_weights_dict = torchga.model_weights_as_dict(problem.model,solution)
-        _model = copy.deepcopy(problem.model)
-        _model.load_state_dict(model_weights_dict)
-        dyn_system = Blimp(problem.config)
-        sys_output = torch.tensor([0])
-        control_output = np.array([])
-        input_data = test_input_data[..., np.newaxis]
-
-
-        for t in range(input_data.shape[1]):
-            ref = input_data[:,t,:,:]
-            error = ref - sys_output[-1]
-            _, snn_states, LI_state = _model(error, snn_states, LI_state)
-            snn_states = snn_states[0,:,:,:]    # get rid of the additional list where the items are inserted in forward pass
-            LI_state = LI_state[0,:,:]         # get rid of the additional list where the items are inserted in forward pass
-            dyn_system.sim_dynamics(LI_state.detach().numpy())
-            control_output = np.append(control_output, LI_state.detach().numpy())
-            sys_output = np.append(sys_output, dyn_system.get_z())
-        
-        actual_data = sys_output[1:]
-        target_data = test_target_data.detach().numpy()
-
-        mse_loss =(np.square(actual_data -target_data)).mean() # Skip the first 0 height input
-        print("MSE = ", mse_loss)
-
-        label_actual_data = "Height of blimp"
+    title = "Controller Response"
+    time_test = np.arange(0,problem.config["SIM_TIME"],problem.config["TIME_STEP"])
+    if problem.fitness_mode == 2 or problem.fitness_mode == 3:
         title = "Height control of the Blimp"
-        
-        time_test = np.arange(0,np.size(actual_data)*problem.config["TIME_STEP"],problem.config["TIME_STEP"])
-        plt.plot(time_test, control_output, linestyle = "--", color = "k" )
-
-
-    time_test = np.arange(0,np.size(actual_data)*problem.config["TIME_STEP"],problem.config["TIME_STEP"])
-    plt.plot(time_test, actual_data, color = "b", label=label_actual_data)
-    plt.plot(time_test,test_target_data, color = 'r',label="Target")
+        plt.plot(time_test, control_output, linestyle = "--", color = "k", label = "Control output")
+    if problem.fitness_mode == 3:
+        plt.plot(time_test, torch.flatten(input_data), linestyle = "--", color = "r", label = "Reference input")
+    
+    plt.plot(time_test, fitness_measured, color = "b", label=label_fitness_measured)
+    plt.plot(time_test, fitness_target, color = 'r',label=label_fitness_target)
     plt.title(title)
     plt.grid()
     plt.legend()
@@ -297,7 +310,7 @@ def create_bounds(problem, model,config):
             if name in bound_config:
 
                 # Check if parameters is the weights
-                if name == "l1.ff.weight" and config["BOUNDS_W1_H2_NEG"]==True and config["SHARED_WEIGHTS_BIAS"] == False:
+                if name == "l1.ff.weight" and config["BOUNDS_W1_H2_NEG"]==True and config["LAYER_SETTING"]["l1"]["shared_weight_and_bias"]== False:
                     # Set the last half of the neurons the the negative bound
                     if iteration>=number_of_params/2:
                         lower_bounds.append(bound_config[name]["low"])
@@ -307,7 +320,7 @@ def create_bounds(problem, model,config):
                         upper_bounds.append(bound_config[name]["high"])
 
                 # Check if parameters is the weights
-                elif name == "l2.ff.weight" and config["BOUND_W2_Q2_Q4_NEG"]==True and config["SHARED_WEIGHTS_BIAS"] == False:
+                elif name == "l2.ff.weight" and config["BOUND_W2_Q2_Q4_NEG"]==True and config["LAYER_SETTING"]["l2"]["shared_weight_and_bias"] == False:
                     # Set the last half of the neurons the the negative bound
                     if math.floor(number_of_params/4) < iteration< math.floor(number_of_params/2) or iteration> math.floor(number_of_params*3/4):
                         lower_bounds.append(bound_config[name]["low"])
@@ -318,7 +331,7 @@ def create_bounds(problem, model,config):
                 
 
                 # Check if parameters is the leak_i
-                elif name == "l1.neuron.leak_i" and config["BOUND_LEAKI_HALF_ZERO"]==True and config["SHARED_WEIGHTS_BIAS"] == False:
+                elif name == "l1.neuron.leak_i" and config["BOUND_LEAKI_HALF_ZERO"]==True and config["LAYER_SETTING"]["l1"]["shared_leak_i"] == False:
                     # Set the leak_i first half of neurons to a near zero 
                     if iteration<number_of_params/2:
                         lower_bounds.append(0)
@@ -350,7 +363,7 @@ def save_solution(best_solution, problem):
             file_name = date_time.strftime("%d-%m-%Y_%H-%M-%S")      
 
 
-        pickle_out = open(problem.prefix + "Results_EA/LIF/Evotorch/"+ file_name+ ".pkl","wb")
+        pickle_out = open(problem.prefix + "Results_EA/Blimp/"+ file_name+ ".pkl","wb")
         test_solutions= {"test_solutions":problem.test_solutions, 
                          "error": problem.error_test_solutions, 
                          "step_size": problem.config["SAVE_TEST_SOLUTION_STEPSIZE"], 
@@ -359,7 +372,9 @@ def save_solution(best_solution, problem):
                          "datasets": problem.train_datasets,
                         #  "C":problem.C_matrix,
                          "mean": problem.mean,
-                         "sigma":problem.sigma}
+                         "sigma":problem.sigma,
+                         "model_structure": problem.dict_model_structure,
+                         "config": problem.config}
         pickle.dump(test_solutions, pickle_out)
         pickle_out.close()
 
@@ -520,19 +535,58 @@ def plot_stepsize(problem):
     if problem.config["WANDB_LOG"] == True:
         wandb.log({"Stepsize over generations": plt})
 
+def get_dataset(config, dataset_num, sim_time):
+    if platform.system() == "Linux":
+        prefix = "/scratch/timburgers/SNN_Workspace/"
+
+    if platform.system() == "Windows":
+        prefix = ""
+
+    time_step = config["TIME_STEP"]
+
+    # Either use one of the standard datasets
+    if dataset_num != None:
+        file = "/dataset_"+ str(dataset_num)
+        if config["START_DATASETS_IN_MIDDLE"] == True:
+            start_in_middle = 15*(1/time_step)
+        else: start_in_middle = 1
+    # Or the manual created one
+    else: 
+        file = "/" + config["TEST_DATA_FILE"]
+        start_in_middle=1
+    
+    # Select the correct input and target datasets, based on the "TARGET_FITNESS" in the config
+    #column =   0)Z   1)Z_ref   2)Error   3)Kp*error    4)Kd*error    5)PD_output
+    if config["TARGET_FITNESS"] == 1:       input_col = [2]; target_col = [5]
+    elif config["TARGET_FITNESS"] == 2:     input_col = [1]; target_col = [1]
+    elif config["TARGET_FITNESS"] == 3:     input_col = [1]; target_col = [0]
+
+    input_data = pd.read_csv(prefix + config["DATASET_DIR"]+ file + ".csv", usecols=input_col, header=None, skiprows=start_in_middle, nrows=sim_time*(1/time_step))
+    input_data = torch.tensor(input_data.values).float().unsqueeze(0).unsqueeze(2) 	# convert from pandas df to torch tensor and floats + shape from (seq_len ,features) to (1, seq, feature)
+
+
+    target_data = pd.read_csv(prefix + config["DATASET_DIR"] + file + ".csv", usecols=target_col, header=None,  skiprows=start_in_middle, nrows=sim_time*(1/time_step))
+    target_data = torch.tensor(target_data.values).float()
+    target_data = target_data[:,0]
+
+
+
+    return input_data, target_data
+
+
 if __name__ == "__main__":
     config_folder = "configs/"
     opts, args = getopt.getopt(sys.argv[1:], "c:",["config="])
     for opt,arg in opts:
         if opt in ("-c", "--config"):
-            config = config_folder + arg
+            config_path = config_folder + arg
 
     # If not optional command are provided, use default config file
     if len(opts) ==0:
-        config = config_folder + "config_LIF_DEFAULT"
-    print("Config file used = " +  config)
+        config_path = config_folder + "config_LIF_DEFAULT"
+    print("Config file used = " +  config_path)
     
-    problem = LIF_EA_evotorch(config)
+    problem = LIF_EA_evotorch(config_path)
     center_init, std_init = init_conditions(problem)
     
     if problem.config["ALGORITHM"]=="cmaes": searcher = CMAES(problem, stdev_init=1, center_init=center_init, limit_C_decomposition=False, popsize=problem.config["INDIVIDUALS"])

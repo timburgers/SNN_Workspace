@@ -1,6 +1,5 @@
 from spiking.torch.neurons.lif import BaseNeuron
 from spiking.torch.layers.linear import BaseLinear
-from models.linear_shared_weights import SHARED_BaseLinear
 
 import torch
 
@@ -13,7 +12,7 @@ class Leaky_integrator_neuron(BaseNeuron):
     state_size = 1
     neuron_params = ["leak"]
 
-    def __init__(self, fixed_params, learnable_params, spike_fn):
+    def __init__(self, fixed_params, learnable_params, spike_fn, _layer_setting):
         super().__init__(self.state_size, fixed_params, learnable_params)
 
         # check parameters are there
@@ -52,9 +51,3 @@ class Linear_LI_filter(BaseLinear):
 
     neuron_model = Leaky_integrator_neuron
 
-class SHARED_Linear_LI_filter(SHARED_BaseLinear):
-    """
-    Linear layer with leaky integrator neuron.
-    """
-
-    neuron_model = Leaky_integrator_neuron

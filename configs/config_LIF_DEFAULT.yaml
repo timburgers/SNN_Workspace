@@ -1,7 +1,8 @@
+
 ### Hyperparameters
-NEURONS: 16
+NEURONS: 30
 INDIVIDUALS: 10
-GENERATIONS: 20
+GENERATIONS: 5
 NUMBER_PROCESSES: 10
 SIM_TIME: 25            # max 40 secs
 
@@ -9,29 +10,45 @@ SIM_TIME: 25            # max 40 secs
 SAVE_TEST_SOLUTION_STEPSIZE: 50  #every .. steps the solution to the test case is calculated and saved
 
 # Dataset loading options
-ANTI_OVERFITTING: True
+ANTI_OVERFITTING:         True
 DIFFERENT_DATASET_EVERY_GENERATION: 1
 DATASET_NUMBER: null
 START_DATASETS_IN_MIDDLE: False
 
+LAYER_SETTING:
+  l1:
+     recurrent:              False
+     clamp_v:                True  # BaseLIF  
+     shared_leak_i:          True
+     bias:                   True  # BaseLinear(Rec)Layers
+     shared_weight_and_bias: True
+
+  l2:
+     bias:                   False           # always set to fals
+     shared_weight_and_bias: True
+
+TARGET_FITNESS: 3   
+#1) "pid output"        : NO dynamic system simulated     Fitness: MSE + Pearson
+#2) "system reference"  : Dynamic system simulated        Fitness: MSE
+#3) "pid system output" : Dynamic system simulated        Fitness: MSE + Pearson
+
+###################################
+###################################
 ### Dynamics settings Blimp
 DZ_INITIAL: 0
 Z_INITIAL: 0
 TIME_STEP: 0.01
 
-MODEL: "LIF_SNN_shared"
-SHARED_WEIGHTS_BIAS: True
 
 ### Less frequenty changed parameters
-FITNESS_INCLUDE_DYANMICS: True
-DATASET_DIR: "Sim_data/height_control_PID/zref_norm_positive"
-INPUT_COLUMN_DATAFILE: [0]
-LABEL_COLUMN_DATAFILE: [0]
+DATASET_DIR: "Sim_data/height_control_PID/z_zref_error_kpe_kde_output"
 TEST_DATA_FILE: "test_dataset"
 ALGORITHM: "pycma" #cmaes or pycma
 WANDB_LOG:          True
 SAVE_LAST_SOLUTION: True
 SHOW_PLOTS:         False
+
+
 
 
 #####################################################################################################################################

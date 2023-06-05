@@ -6,6 +6,7 @@ import datetime
 import random
 from scipy.stats import truncnorm
 import pickle
+import torch
 
 # var = np.array([1,2,3,4,0,0,0,5,6,7,8,0,0,0,9,10,0,0,0,10])
 
@@ -36,7 +37,7 @@ import pickle
 # range = upper_bound-lower_bound
 # my_mean = 0.01
 # my_std = 1*(upper_bound-lower_bound)/15
-print(0%3)
+# print(0%3)
 # a, b = (lower_bound - my_mean) / my_std, (upper_bound - my_mean) / my_std
 # x_range = np.linspace(lower_bound-0.2*range,upper_bound+0.2*range,1000)
 # plt.plot(x_range, truncnorm.pdf(x_range, a, b, loc = my_mean, scale = my_std))
@@ -48,3 +49,15 @@ print(0%3)
 
 # print([1]*111)
 
+a = torch.ones(8)
+b= torch.ones(8)*2
+
+# print (a)
+# print(b)
+
+cat = torch.stack((a,b),dim=1)
+flat = torch.flatten(cat)
+print(cat)
+print(flat)
+print(flat.shape)
+# weight = torch.flatten(torch.cat((self.ff.weight,-1*self.ff.weight),dim=1)).unsqueeze(0)

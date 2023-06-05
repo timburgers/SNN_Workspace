@@ -6,7 +6,7 @@ import torch
 import torch.nn as nn
 from models.Izhikevich import LinearIzhikevich
 from models.spiking.spiking.torch.utils.surrogates import get_spike_fn
-from Coding.Decoding import Linear_LI_filter
+from models.Leaky_integrator import Linear_LI_filter
 import numpy as np
 
 
