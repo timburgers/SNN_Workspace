@@ -600,7 +600,16 @@ if __name__ == "__main__":
 
     if problem.config["WANDB_LOG"] == True:
         _ = WandbLogger(searcher, project = "SNN_BLIMP", config=problem.config)
-        wandb.config.update({"OS": platform.system()})
+        wandb.config.update({"OS": platform.system(),
+                             "leak_i shared": problem.config["LAYER_SETTING"]["l1"]["shared_leak_i"],
+                             "w1&b1 shared": problem.config["LAYER_SETTING"]["l1"]["shared_weight_and_bias"],
+                             "b1": problem.config["LAYER_SETTING"]["l1"]["bias"],
+                             "clamp V": problem.config["LAYER_SETTING"]["l1"]["clamp_v"],
+                             "recurrent": problem.config["LAYER_SETTING"]["l1"]["recurrent"],
+                             "w2 shared":problem.config["LAYER_SETTING"]["l2"]["shared_weight_and_bias"]})
+        if problem.config["MEAN_SETTING"]== "same for all": wandb.config.update({"MEAN_SETTING": problem.config["SAME_FOR_ALL"]},allow_val_change = True)
+        if problem.config["MEAN_SETTING"]== "previous": wandb.config.update({"MEAN_SETTING": problem.config["PREVIOUS_SOLUTION"]},allow_val_change = True)
+
         number_first_wandb_name()
     # logger = StdOutLogger(searcher)
 

@@ -6,14 +6,10 @@ GENERATIONS: 5
 NUMBER_PROCESSES: 10
 SIM_TIME: 25            # max 40 secs
 
-# Saving Solution
-SAVE_TEST_SOLUTION_STEPSIZE: 50  #every .. steps the solution to the test case is calculated and saved
-
-# Dataset loading options
+# Dataset loading and saving options
 ANTI_OVERFITTING:         True
 DIFFERENT_DATASET_EVERY_GENERATION: 1
-DATASET_NUMBER: null
-START_DATASETS_IN_MIDDLE: False
+SAVE_TEST_SOLUTION_STEPSIZE: 50  #every .. steps the solution to the test case is calculated and saved
 
 LAYER_SETTING:
   l1:
@@ -41,6 +37,8 @@ TIME_STEP: 0.01
 
 
 ### Less frequenty changed parameters
+DATASET_NUMBER: null
+START_DATASETS_IN_MIDDLE: False
 DATASET_DIR: "Sim_data/height_control_PID/z_zref_error_kpe_kde_output"
 TEST_DATA_FILE: "test_dataset"
 ALGORITHM: "pycma" #cmaes or pycma
@@ -59,7 +57,7 @@ SHOW_PLOTS:         False
 
 ######## MEAN
 #Options: 
-# 1) "prev":  Previous solution
+# 1) "previous":  Previous solution
 # 2) "same for all": All paramaters all initialized using th same method
 # 3) "custom":  Every parameters can be initialized using a different method
 
