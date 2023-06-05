@@ -1,15 +1,16 @@
 
 ### Hyperparameters
-NEURONS: 30
-INDIVIDUALS: 10
-GENERATIONS: 5
+NEURONS: 10
+INDIVIDUALS: 5
+GENERATIONS: 12
 NUMBER_PROCESSES: 10
 SIM_TIME: 25            # max 40 secs
 
 # Dataset loading and saving options
 ANTI_OVERFITTING:         True
 DIFFERENT_DATASET_EVERY_GENERATION: 1
-SAVE_TEST_SOLUTION_STEPSIZE: 50  #every .. steps the solution to the test case is calculated and saved
+SAVE_TEST_SOLUTION_STEPSIZE: 25  #every .. steps the solution to the test case is calculated and saved
+DATASET_DIR: "Sim_data/height_control_PID/sine_derivative"
 
 LAYER_SETTING:
   l1:
@@ -23,10 +24,14 @@ LAYER_SETTING:
      bias:                   False           # always set to fals
      shared_weight_and_bias: True
 
-TARGET_FITNESS: 3   
+TARGET_FITNESS: 1   
 #1) "pid output"        : NO dynamic system simulated     Fitness: MSE + Pearson
 #2) "system reference"  : Dynamic system simulated        Fitness: MSE
 #3) "pid system output" : Dynamic system simulated        Fitness: MSE + Pearson
+
+# ONLY USE THESE WHEN DIFFERENT STRUCTURE OF DATASET IS USE
+ALTERNATIVE_LABEL_INPUT: [0]
+ALTERNATIVE_LABEL_TARGET: [1]
 
 ###################################
 ###################################
@@ -39,7 +44,7 @@ TIME_STEP: 0.01
 ### Less frequenty changed parameters
 DATASET_NUMBER: null
 START_DATASETS_IN_MIDDLE: False
-DATASET_DIR: "Sim_data/height_control_PID/z_zref_error_kpe_kde_output"
+
 TEST_DATA_FILE: "test_dataset"
 ALGORITHM: "pycma" #cmaes or pycma
 WANDB_LOG:          True

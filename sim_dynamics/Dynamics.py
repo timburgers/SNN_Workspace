@@ -29,13 +29,14 @@ class Blimp():
 		self.time_step = config["TIME_STEP"]
 
 	def sim_dynamics(self,input):
-		self.ddz = input
+		self.ddz = input 
 		self.dz += self.ddz * self.time_step
 		self.z += self.dz * self.time_step
+		
 
 	def get_ddz(self):
 		return self.ddz
 	def get_dz(self):
 		return self.dz
 	def get_z(self):
-		return self.z
+		return self.z 

@@ -7,7 +7,7 @@ import yaml
 import numpy as np
 import matplotlib.pyplot as plt
 import pickle
-# import os
+import os
 # os.environ["RAY_DEDUP_LOGS"]= "0"
 from random import randint
 from torchmetrics import PearsonCorrCoef
@@ -56,8 +56,6 @@ class LIF_EA_evotorch(Problem):
 
         
         self.input_data, self.target_data = get_dataset(self.config, self.config["DATASET_NUMBER"], self.config["SIM_TIME"])
-        self.mse = torch.nn.MSELoss()
-        self.pearson = PearsonCorrCoef()
         self.bounds = create_bounds(self, self.model, self.config)
         self.prefix = ""
         self.test_solutions= np.zeros(self.number_parameters)
@@ -66,7 +64,12 @@ class LIF_EA_evotorch(Problem):
         self.manual_dataset_prev = False
         self.fitness_mode = self.config["TARGET_FITNESS"]
 
-        self.datatset = None
+        # Get the number of datasets (with only the word 'datatset' before the _)
+        all_files_in_folder = os.listdir(self.prefix + self.config["DATASET_DIR"])
+        splitted_files = [f.split("_")[0] for f in all_files_in_folder]
+        self.max_number_of_datasets = splitted_files.count("dataset")
+
+        self.dataset = None
         self.input_data_new = None
         self.target_data_new = None
 
@@ -95,18 +98,18 @@ class LIF_EA_evotorch(Problem):
         controller.load_state_dict(final_parameters)
 
         if  self.fitness_mode== 1: #Only controller simlation
-            fitness_measured = run_controller(self,controller,self.input_data, snn_states,LI_state, save_mode = False)
+            fitness_measured = run_controller(controller,self.input_data, snn_states,LI_state, save_mode = False)
         elif self.fitness_mode == 2 or self.fitness_mode == 3:#Also simulate the dyanmics
-            fitness_measured = run_controller_dynamics(self,controller,self.input_data, snn_states,LI_state, save_mode = False)
+            fitness_measured = run_controller_dynamics(self.config,controller,self.input_data, snn_states,LI_state, save_mode = False)
 
         # Calculate the fitness value
-        fitness_value = evaluate_fitness(self, fitness_measured, self.target_data)
+        fitness_value = evaluate_fitness(self.fitness_mode, fitness_measured, self.target_data)
 
         print(fitness_value)
         solution.set_evals(fitness_value)
 
 
-def run_controller(self,controller,input, snn_states, LI_state,save_mode):
+def run_controller(controller,input, snn_states, LI_state,save_mode):
     control_output = np.array([])
     if save_mode == False:
         for t in range(input.shape[1]):
@@ -129,8 +132,8 @@ def run_controller(self,controller,input, snn_states, LI_state,save_mode):
         return control_output, control_state
 
 
-def run_controller_dynamics(self,controller,input, snn_states, LI_state, save_mode):
-    dyn_system = Blimp(self.config)
+def run_controller_dynamics(config,controller,input, snn_states, LI_state, save_mode):
+    dyn_system = Blimp(config)
     sys_output = np.array([0])
     
     if save_mode == False:
@@ -163,13 +166,15 @@ def run_controller_dynamics(self,controller,input, snn_states, LI_state, save_mo
         return sys_output[1:], control_input, control_state, control_output # Skip the first 0 height input
 
 
-def evaluate_fitness(self, fitness_measured, fitness_target):
+def evaluate_fitness(fitness_mode, fitness_measured, fitness_target):
+    mse = torch.nn.MSELoss()
+    pearson = PearsonCorrCoef()
     #Evaluate fitness using MSE and additionally pearson if there should be a linear correlation between target and output
     fitness_target = torch.flatten(fitness_target)
     fitness_measured = torch.from_numpy(fitness_measured)
-    fitness_value = self.mse(fitness_measured,fitness_target)
-    if self.fitness_mode == 1 or self.fitness_mode == 3:
-        fitness_value += (1-self.pearson(fitness_measured,fitness_target)) #pearson of 1 means linear correlation
+    fitness_value = mse(fitness_measured,fitness_target)
+    if fitness_mode == 1 or fitness_mode == 3:
+        fitness_value += (1-pearson(fitness_measured,fitness_target)) #pearson of 1 means linear correlation
     return fitness_value
         
 
@@ -259,12 +264,12 @@ def test_solution(problem, solution):
     controller.load_state_dict(final_parameters)
 
     if  problem.fitness_mode== 1: #Only controller simlation
-        fitness_measured, control_state = run_controller(problem,controller,input_data, snn_states,LI_state, save_mode=True)
+        fitness_measured, control_state = run_controller(controller,input_data, snn_states,LI_state, save_mode=True)
     elif problem.fitness_mode == 2 or problem.fitness_mode == 3:#Also simulate the dyanmics
-        fitness_measured, control_input, control_state, control_output = run_controller_dynamics(problem,controller,input_data, snn_states,LI_state, save_mode=True)
+        fitness_measured, control_input, control_state, control_output = run_controller_dynamics(problem.config,controller,input_data, snn_states,LI_state, save_mode=True)
 
     # Calculate the fitness value
-    fitness_value = evaluate_fitness(problem, fitness_measured, fitness_target)
+    fitness_value = evaluate_fitness(problem.fitness_mode, fitness_measured, fitness_target)
 
     # Print the parameters of the best solution to the terminal
     for key, value in final_parameters.items():
@@ -382,11 +387,11 @@ def create_new_training_set():
     # Insert the test dataset every ... times, otherwise choose a random sequence
     if searcher.step_count%problem.config["SAVE_TEST_SOLUTION_STEPSIZE"] == problem.config["SAVE_TEST_SOLUTION_STEPSIZE"]-1 or searcher.step_count==0 or searcher.steps_count ==problem.config["GENERATIONS"]-1:
         problem.dataset=None
-        problem.input_data_new,problem.target_data_new = get_dataset(problem.config,problem.dataset,20)
+        problem.input_data_new,problem.target_data_new = get_dataset(problem.config,problem.dataset,problem.config["SIM_TIME"])
         problem.manual_dataset_prev = True
         
     elif searcher.step_count%problem.config["DIFFERENT_DATASET_EVERY_GENERATION"]==0 or problem.manual_dataset_prev==True:
-        problem.dataset = randint(0,499)
+        problem.dataset = randint(0,problem.max_number_of_datasets-1)
         problem.input_data_new, problem.target_data_new = get_dataset(problem.config, problem.dataset, problem.config["SIM_TIME"])
         problem.manual_dataset_prev = False
 
@@ -545,19 +550,24 @@ def get_dataset(config, dataset_num, sim_time):
     time_step = config["TIME_STEP"]
 
     # Either use one of the standard datasets
-    if dataset_num != None:
+    if type(dataset_num) == int: 
         file = "/dataset_"+ str(dataset_num)
         if config["START_DATASETS_IN_MIDDLE"] == True:
             start_in_middle = 15*(1/time_step)
         else: start_in_middle = 1
     # Or the manual created one
-    else: 
+    elif dataset_num ==None: 
         file = "/" + config["TEST_DATA_FILE"]
+        start_in_middle=1
+    # Or the step functions (longer time inbetween)
+    elif dataset_num == "step":
+        file = "/step_dataset"
         start_in_middle=1
     
     # Select the correct input and target datasets, based on the "TARGET_FITNESS" in the config
     #column =   0)Z   1)Z_ref   2)Error   3)Kp*error    4)Kd*error    5)PD_output
-    if config["TARGET_FITNESS"] == 1:       input_col = [2]; target_col = [5]
+    if config["ALTERNATIVE_LABEL_INPUT"] != None and config["ALTERNATIVE_LABEL_TARGET"] != None: input_col = config["ALTERNATIVE_LABEL_INPUT"]; target_col = config["ALTERNATIVE_LABEL_TARGET"]
+    elif config["TARGET_FITNESS"] == 1:     input_col = [2]; target_col = [5]
     elif config["TARGET_FITNESS"] == 2:     input_col = [1]; target_col = [1]
     elif config["TARGET_FITNESS"] == 3:     input_col = [1]; target_col = [0]
 

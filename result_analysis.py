@@ -4,7 +4,6 @@ import pygad.torchga as torchga
 from IZH.SNN_Izh_LI_init import Izhikevich_SNN
 from SNN_LIF_LI_init import LIF_SNN
 import yaml
-from IZH.Izh_LI_EA_PYGAD import get_dataset
 import matplotlib.pyplot as plt
 import numpy as np
 import pickle
@@ -17,11 +16,12 @@ import math
 from torchmetrics import PearsonCorrCoef
 import copy
 from sim_dynamics.Dynamics import Blimp
+from LIF_EVOTORCH import get_dataset, run_controller, run_controller_dynamics, evaluate_fitness
 
 # for dataset_number in range(10):
-sim_time = 40
-dataset_number =None # None is the self made 13s dataset
-filename = None
+sim_time = 60
+dataset_number = "step"                                                    # None is the test_dataset
+filename = 168                                                          #None --> highest number, or int or str (withou .pkl)
 folder_of_model = "Blimp"                                               # all folder under the folder Results_EA
 lib_algorithm = "evotorch"                                              # evotorch or pygad
 SNN_TYPE = "LIF"                                                        # either LIF or IZH
@@ -30,14 +30,14 @@ SNN_TYPE = "LIF"                                                        # either
 
 
 
-create_plots                    = True
-plot_with_best_testrun          = False  #True: solution = best performance on manual dataset      False: solution = best performance overall (can be easy dataset)
-muliple_test_runs_error_plot    = True  
+create_plots                    = False
+plot_with_best_testrun          = True  #True: solution = best performance on manual dataset      False: solution = best performance overall (can be easy dataset)
+muliple_test_runs_error_plot    = False  
 plot_last_generation            = False
 
 colored_background              = True
 spike_count_plot                = True
-create_table                    = True
+create_table                    = False
 
 
 create_csv_file                 = False
@@ -53,6 +53,12 @@ if filename == None:
     filename = all_files[max_ind].split(".")[0] #get rid of .pkl
     print("\nFilename used = ", filename)
 
+if type(filename) == int:
+    all_files = os.listdir("Results_EA/"+folder_of_model)
+    splitted_files = [int(f.split("-")[0]) for f in all_files]
+    index_file = splitted_files.index(filename)
+    filename = all_files[index_file].split(".")[0] #get rid of .pkl
+    print("\nFilename used = ", filename)
 
 
 
@@ -68,11 +74,13 @@ if lib_algorithm == "evotorch":
     pickle_in = open("Results_EA/"+ folder_of_model +"/" + filename+".pkl","rb")
     dict_solutions = pickle.load(pickle_in)
     solution = dict_solutions["best_solution"]
+    solutions_error = dict_solutions["error"]
+    step_size = dict_solutions["step_size"]
 
     if plot_with_best_testrun == True:
         solutions = dict_solutions["test_solutions"]
-        solutions_error = dict_solutions["error"]
-        step_size = dict_solutions["step_size"]
+        
+        
         generations = dict_solutions["generations"]
 
         best_sol_ind = np.argmin(solutions_error)
@@ -85,7 +93,7 @@ if lib_algorithm == "evotorch":
         if best_sol_ind == len(solutions_error)-1:
             best_gen = generations
         else: best_gen = (best_sol_ind)*step_size
-        print("Best solutions of the intermidiate testrun implementation is found at ", best_gen, " generations")
+        if plot_last_generation == False: print("Best solutions of the intermidiate testrun implementation is found at ", best_gen, " generations")
     else: print("Solution: Best evaluated solution (note: can be the result of an easy training dataset)")
 
 
@@ -98,10 +106,7 @@ if SNN_TYPE == "LIF":
     #     config = yaml.safe_load(f)
     config = dict_solutions["config"]
     number_of_neurons = config["NEURONS"]
-
-    if config["MODEL"] == "LIF_SNN":         controller = LIF_SNN(None,number_of_neurons, config["LAYER_SETTING"])
-
-
+    controller = LIF_SNN(None,number_of_neurons, config["LAYER_SETTING"])
 
     #### Initialize neuron states (I, V, spikes) 
     snn_states = torch.zeros(3, 1, controller.neurons)
@@ -122,62 +127,75 @@ elif SNN_TYPE == "IZH":
 
 time_step = config["TIME_STEP"]
 total_time_steps = int(sim_time/time_step)
+config["DATASET_DIR"] = "Sim_data/height_control_PID/fast_steps"
+# Initialize varibales from problem Class
+input_data, fitness_target = get_dataset(config, dataset_number, sim_time)
+fitness_mode = config["TARGET_FITNESS"]
 
-### load in the best parameters in solution
+#Override TARGET_FITNESS in config dict to load ideal pid response
+config["TARGET_FITNESS"] = 1 #since the target of mode 1 is the pid response
+_, ideal_pid_response = get_dataset(config, dataset_number, sim_time)
+
+snn_states = torch.zeros(3, 1, controller.neurons) # frist dim in order [current,mempot,spike]
+LI_state = torch.zeros(1,1)
+
 final_parameters =torchga.model_weights_as_dict(controller, solution)
+controller.load_state_dict(final_parameters)
 
-### Get the input and target data
-reference, _ = get_dataset(config,dataset_number,sim_time)
+if  fitness_mode== 1: #Only controller simlation
+    fitness_measured, control_state = run_controller(config,controller,input_data, snn_states,LI_state, save_mode=True)
+    control_output = fitness_measured
+    control_input = torch.flatten(input_data).detach().numpy()
 
-#load controller and system to will be controlled
-controller.load_state_dict(final_parameters) 
-dyn_system = Blimp(config)
+elif fitness_mode == 2 or fitness_mode == 3:#Also simulate the dyanmics
+    fitness_measured, control_input, control_state, control_output = run_controller_dynamics(config,controller,input_data, snn_states,LI_state, save_mode=True)
+    sys_output = fitness_measured
 
-control_input =np.array([])
-control_output = np.array([])
-sys_output = torch.tensor([0])
+# Calculate the fitness value
+fitness_value = evaluate_fitness(fitness_mode, fitness_measured, fitness_target)
+print("Fitness value = ", np.round(fitness_value.item(),5))
 
-
-# Run simulation
-for t in range(total_time_steps):
-    # Get the input to the controller
-    ref_state = reference[:,t,:]
-    act_state = sys_output[-1]
-    error = ref_state-act_state
-
-    # Simulate controller and system response
-    snn_spikes, snn_states, LI_state = controller(error, snn_states, LI_state)
-    dyn_system.sim_dynamics(LI_state.detach().numpy())
-
-    # Append all outputs to arrays. for control_state this is required to 
-    if t==0: control_state = snn_states.detach().numpy()[np.newaxis,...]
-    else: control_state = np.concatenate((control_state, snn_states.detach().numpy()[np.newaxis, ...]))
-    control_input = np.append(control_input, error.detach().numpy())
-    control_output = np.append(control_output, LI_state.detach().numpy())
-    sys_output = np.append(sys_output, dyn_system.get_z())
-
-# Calculate fitness
-actual_data = sys_output[1:]        # Skip the first 0 height input
-target_data = torch.flatten(reference).detach().numpy()
-mse_loss =(np.square(actual_data -target_data)).mean() 
-print("MSE = ", mse_loss)
-
-label_actual_data = "Height of blimp"
-title = "Height control of the Blimp"
-
-time_test = np.arange(0,np.size(actual_data)*time_step,time_step)
-plt.plot(time_test, control_output, linestyle = "--", color = "k" )
+# calculate the splitted 
+mse = torch.nn.MSELoss()
+pearson = PearsonCorrCoef()
+#Evaluate fitness using MSE and additionally pearson if there should be a linear correlation between target and output
+_fitness_target = torch.flatten(fitness_target)
+_fitness_measured = torch.from_numpy(fitness_measured)
+mse = mse(_fitness_measured,_fitness_target)
+print("MSE = ", np.round(mse.item(),5))
+if fitness_mode == 1 or fitness_mode == 3:
+    pearson =  (1-pearson(_fitness_measured,_fitness_target)) #pearson of 1 means linear correlation
+    print("Pearson = ", np.round(pearson.item(),5))
 
 
 
+# # Print the parameters of the best solution to the terminal
+# for key, value in final_parameters.items():
+#     print(key, value)
 
+if fitness_mode == 1:   label_fitness_measured = "SNN output"; label_fitness_target = "PID output"
+if fitness_mode == 2:   label_fitness_measured = "Blimp Height SNN"; label_fitness_target = "Blimp Height Reference"
+if fitness_mode == 3:   label_fitness_measured = "Blimp Height SNN"; label_fitness_target = "Blimp height PID"
 
+title = "Controller Response"
+time_test = np.arange(0,sim_time,config["TIME_STEP"])
+if fitness_mode == 2 or fitness_mode == 3:
+    title = "Height control of the Blimp"
+if fitness_mode == 3:
+    plt.plot(time_test, torch.flatten(input_data), linestyle = "--", color = "r", label = "Reference input")
+
+plt.plot(time_test, fitness_measured, color = "b", label=label_fitness_measured)
+plt.plot(time_test, fitness_target, color = 'r',label=label_fitness_target)
+plt.title(title)
+plt.grid()
+plt.legend()
+if create_plots == False:
+    plt.show()
 
 
 # Convert to tensors since it is required for the other part of the script
 l1_state = torch.from_numpy(control_state)
 l1_spikes = torch.from_numpy(control_state[:,:,0,:])
-input_data = reference[0,:,0,0]
 
 ## Add the shared weight in the coorect way to the solutions
 for name, param in final_parameters.items():
@@ -188,89 +206,6 @@ for name, param in final_parameters.items():
             final_parameters[name] = torch.flatten(torch.transpose(torch.cat((param,-1*param)),0,1))
         if name =="l1.ff.bias" or name=="l1.neuron.leak_i":
             final_parameters[name] = torch.flatten(torch.stack((param,param),dim=1))       
-
-
-
-
-# if config["FITNESS_INCLUDE_DYANMICS"] == False:
-#     control_input = input_data
-#     # Make predictions based on the best solution.
-#     l1_spikes, l1_state, control_output = torchga.predict(model,
-#                                         solution,
-#                                         control_input,
-#                                         snn_states,
-#                                         LI_state)
-
-#     actual_data = control_output[:,0,0]
-#     target_data = target_data
-#     mse = torch.nn.MSELoss()
-#     pearson = PearsonCorrCoef()
-
-#     mse_pearson = mse(actual_data, target_data) + (1-pearson(actual_data, target_data))
-
-#     actual_data = actual_data.detach().numpy()
-#     target_data = target_data.detach().numpy()
-#     print("MSE + Peasrons loss = ", mse_pearson.detach().numpy())
-
-#     label_actual_data = "Output of controller"
-#     title = "Controller output and reference"
-
-
-    # model_weights_dict = torchga.model_weights_as_dict(model,solution)
-    # _model = copy.deepcopy(model)
-    # _model.load_state_dict(model_weights_dict)
-    # dyn_system = Blimp(config)
-    # sys_output = torch.tensor([0])
-    # control_output = np.array([])
-    # control_input =np.array([])
-    # input_data = input_data[..., np.newaxis]
-
-
-    # for t in range(input_data.shape[1]):
-    #     ref = input_data[:,t,:,:]
-    #     error = ref - sys_output[-1]
-    #     snn_spikes, snn_states, LI_state = _model(error, snn_states, LI_state)
-    #     snn_states = snn_states[0,:,:,:]    # get rid of the additional list where the items are inserted in forward pass
-    #     LI_state = LI_state[0,:,:]         # get rid of the additional list where the items are inserted in forward pass
-    #     dyn_system.sim_dynamics(LI_state.detach().numpy())
-    #     if t ==0:
-    #         l1_state=snn_states.detach().numpy()[np.newaxis,...]
-    #         l1_spikes=snn_spikes.detach().numpy()
-    #     else:
-    #         l1_state = np.concatenate((l1_state,snn_states.detach().numpy()[np.newaxis,...]))
-    #         l1_spikes = np.concatenate((l1_spikes,snn_spikes.detach().numpy()))
-    #     control_input = np.append(control_input, error.detach().numpy())
-    #     control_output = np.append(control_output, LI_state.detach().numpy())
-    #     sys_output = np.append(sys_output, dyn_system.get_z())
-    
-    # actual_data = sys_output[1:]
-    # target_data = target_data.detach().numpy()
-
-    # mse_loss =(np.square(actual_data -target_data)).mean() # Skip the first 0 height input
-    # print("MSE = ", mse_loss)
-
-    # label_actual_data = "Height of blimp"
-    # title = "Height control of the Blimp"
-    
-    # time_test = np.arange(0,np.size(actual_data)*time_step,time_step)
-    # plt.plot(time_test, control_output, linestyle = "--", color = "k" )
-
-    # # Convert to tensors since it is required for the other part of the script
-    # l1_state = torch.from_numpy(l1_state)
-    # l1_spikes = torch.from_numpy(l1_spikes)
-    # input_data = input_data[0,:,0,0]
-
-
-time_test = np.arange(0,np.size(actual_data)*time_step,time_step)
-plt.plot(time_test, actual_data, color = "b", label=label_actual_data)
-plt.plot(time_test,target_data, color = 'r',label="Target")
-plt.title(title)
-plt.grid()
-plt.legend()
-    
-
-
-
 
 
 
@@ -408,24 +343,22 @@ if create_plots == True:
 
         time_arr = np.arange(0,sim_time,time_step)
         ### Plot the lowest figure
-        axis1["input"].plot(time_arr,control_input, label = "Input")
-        axis1["input"].plot(time_arr,control_output, label = "Output")
-        if config["FITNESS_INCLUDE_DYANMICS"] == False:
-            axis1["input"].plot(time_arr,target_data, label = "Target")
-            axis1["input"].axhline(0,linestyle="--", color="k")
+        axis1["input"].plot(time_arr,control_input, label = "SNN input")
+        axis1["input"].plot(time_arr,control_output, label = "SNN output")
+        axis1["input"].plot(time_arr,ideal_pid_response, label = "PID reponse")
+        axis1["input"].axhline(0,linestyle="--", color="k")
         axis1["input"].xaxis.grid()
     plt.legend()
 
 
     plt.figure()
     ### Plot the lowest figure
-    plt.plot(time_arr,control_input, label = "Input")
-    plt.plot(time_arr,control_output, label = "Target")
-    if config["FITNESS_INCLUDE_DYANMICS"] == False:
-        axis1["input"].plot(time_arr,target_data, label = "Target")
-        axis1["input"].axhline(0,linestyle="--", color="k")
+    plt.plot(time_arr,control_input, label = "SNN input")
+    plt.plot(time_arr,control_output, label = "SNN output")
+    plt.plot(time_arr,ideal_pid_response, label = "PID reponse")
+    plt.axhline(0,linestyle="--", color="k")
     plt.grid()
-    plt.title("Controller in and output")
+    plt.title("Controller response")
     plt.legend()
 
     # Otherwise the plot and table are shown on the same moment
