@@ -5,7 +5,7 @@ import random
 
 time_step = 0.01		# The sample time per time step [s]
 sim_time = 30			# Total length of simulation [s]
-freq_list = np.arange(5,7,0.1)
+freq_list = np.arange(2,10,0.1)
 time =np.arange(0,sim_time,time_step)
 
 
@@ -27,4 +27,4 @@ for idx in range(len(freq_list)):
 	d_error.shape=[len(d_error),1]
 
 
-	np.savetxt("Sim_data/height_control_PID/sine_derivative/dataset_" + str(idx)+ ".csv", np.concatenate([error_arr,d_error],axis=1), delimiter=',', header= "timestep = " + str(time_step)+ ", sim time = "+ str(sim_time)+ ", sine_freq = "+ str(freq_list[idx]))
+	np.savetxt("Sim_data/height_control_PID/sine_derivative_large/dataset_" + str(idx)+ ".csv", np.concatenate([error_arr,d_error],axis=1), delimiter=',', header= "timestep = " + str(time_step)+ ", sim time = "+ str(sim_time)+ ", sine_freq = "+ str(freq_list[idx]))

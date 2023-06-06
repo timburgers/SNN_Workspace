@@ -123,6 +123,7 @@ PERCENT_INTIIAL_STEPSIZE: 0.005
 #####################################################################################################################################
 #########################################   Bounds   #####################################################################
 
+#The Bound Booleans are only valid when the coresponding shared layer setting is set to false
 BOUND_LEAKI_HALF_ZERO: False  #Second half of neurons leak is zero
 BOUND_W2_Q2_Q4_NEG: True    #Q1,Q3 postive and Q2,Q4 negative
 BOUNDS_W1_H2_NEG: True      #Second half of neurons w1 is zero
