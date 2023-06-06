@@ -553,7 +553,7 @@ def get_dataset(config, dataset_num, sim_time):
     if type(dataset_num) == int: 
         file = "/dataset_"+ str(dataset_num)
         if config["START_DATASETS_IN_MIDDLE"] == True:
-            start_in_middle = 15*(1/time_step)
+            start_in_middle = int(15*(1/time_step))
         else: start_in_middle = 1
     # Or the manual created one
     elif dataset_num ==None: 
