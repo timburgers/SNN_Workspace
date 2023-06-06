@@ -1,7 +1,7 @@
 
 ### Hyperparameters
 NEURONS: 10
-INDIVIDUALS: 5
+INDIVIDUALS: 10
 GENERATIONS: 12
 NUMBER_PROCESSES: 10
 SIM_TIME: 25            # max 40 secs
@@ -10,14 +10,14 @@ SIM_TIME: 25            # max 40 secs
 ANTI_OVERFITTING:         True
 DIFFERENT_DATASET_EVERY_GENERATION: 1
 SAVE_TEST_SOLUTION_STEPSIZE: 25  #every .. steps the solution to the test case is calculated and saved
-# DATASET_DIR: "Sim_data/height_control_PID/sine_derivative"
-DATASET_DIR: "Sim_data/derivative/dt0.002_norm_neg"
-START_DATASETS_IN_MIDDLE: True
+DATASET_DIR: "Sim_data/height_control_PID/slow_steps"
+START_DATASETS_IN_MIDDLE: False
 
 
 LAYER_SETTING:
   l1:
      recurrent:              False
+     adaptive:               True
      clamp_v:                True  # BaseLIF  
      shared_leak_i:          True
      bias:                   True  # BaseLinear(Rec)Layers
@@ -27,14 +27,14 @@ LAYER_SETTING:
      bias:                   False           # always set to fals
      shared_weight_and_bias: True
 
-TARGET_FITNESS: 1   
+TARGET_FITNESS: 3   
 #1) "pid output"        : NO dynamic system simulated     Fitness: MSE + Pearson
 #2) "system reference"  : Dynamic system simulated        Fitness: MSE
 #3) "pid system output" : Dynamic system simulated        Fitness: MSE + Pearson
 
 # //TODO ONLY USE THESE WHEN DIFFERENT STRUCTURE OF DATASET IS USE
-ALTERNATIVE_LABEL_INPUT: [1]
-ALTERNATIVE_LABEL_TARGET: [2]
+ALTERNATIVE_LABEL_INPUT: null
+ALTERNATIVE_LABEL_TARGET: null
 
 ###################################
 ###################################
@@ -115,6 +115,9 @@ range: #keep all positive
   l1.rec.weight:    [0.001 , 0.002]
   l1.ff.weight:     [1     , 1.5]
   l1.ff.bias:       [0.2   , 0.8]
+  l1.neuron.leak_t: [0.1, 0.9]
+  l1.neuron.base_t: [1,2]
+  l1.neuron.add_t: [0.001,0.3]
   l2.neuron.leak:   [0.899   , 0.901]
   l2.ff.weight:     [0.15  , 0.25] 
 
@@ -135,6 +138,9 @@ PARAMETER_BOUNDS: #null if None in python
   l1.neuron.leak_i: {"low": 0,"high": 0.99}
   l1.neuron.leak_v: {"low": 0,"high": 1}
   l1.neuron.thresh: {"low": 0.8,"high": 10}
+  l1.neuron.leak_t: {"low": 0,"high": 0.99}
+  l1.neuron.base_t: {"low": 0,"high": 2}
+  l1.neuron.add_t: {"low": -1,"high": 1}
   l1.rec.weight: {"low": -0.2,"high": 0.2}
   l1.ff.weight: {"low": -1.5,"high": 1.5}  #also negative!
   l1.ff.bias: {"low": -1,"high": 1}  #also negative!

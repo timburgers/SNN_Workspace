@@ -20,9 +20,9 @@ from LIF_EVOTORCH import get_dataset, run_controller, run_controller_dynamics, e
 import copy
 
 # for dataset_number in range(10):
-sim_time = 1
+sim_time = 40
 dataset_number = None                                                    # None is the test_dataset
-filename = 183                                                          #None --> highest number, or int or str (withou .pkl)
+filename = 188                                                          #None --> highest number, or int or str (withou .pkl)
 folder_of_model = "Blimp"                                               # all folder under the folder Results_EA
 lib_algorithm = "evotorch"                                              # evotorch or pygad
 SNN_TYPE = "LIF"                                                        # either LIF or IZH
@@ -33,7 +33,7 @@ window_size =1
 exclude_non_spiking_neurons = True
 # excluded_neurons = [3,11,19,20,21,22] #idx start at 1
 excluded_neurons=[]
-new_dataset = "sine_derivative_large"
+new_dataset = "fast_steps"
 new_dataset_number = 0
 
 
@@ -178,9 +178,7 @@ total_time_steps = int(sim_time/time_step)
 input_data, fitness_target = get_dataset(config, dataset_number, sim_time)
 fitness_mode = config["TARGET_FITNESS"]
 
-#Override TARGET_FITNESS in config dict to load ideal pid response
-config["TARGET_FITNESS"] = 1 #since the target of mode 1 is the pid response
-_, ideal_pid_response = get_dataset(config, dataset_number, sim_time)
+
 
 ##################           RUN SIM                ########################################################
 fitness_measured, control_input, control_state ,control_output ,final_parameters = run_sim(fitness_mode, config,controller,solution,input_data,True)
@@ -222,7 +220,12 @@ if excluded_neurons or exclude_non_spiking_neurons:
     controller = sparse_controller
     number_of_neurons = new_number_of_neurons
     ideal_pid_response = fitness_target
+    input_data = new_input_data
 #####################################################
+else: #Override TARGET_FITNESS in config dict to load ideal pid response
+    config["TARGET_FITNESS"] = 1 #since the target of mode 1 is the pid response
+    _, ideal_pid_response = get_dataset(config, dataset_number, sim_time)
+
 
 # Calculate the fitness value
 fitness_value = evaluate_fitness(fitness_mode, fitness_measured, fitness_target)
@@ -269,8 +272,7 @@ if create_plots == False:
 # Convert to tensors since it is required for the other part of the script
 l1_state = torch.from_numpy(control_state)
 l1_spikes = torch.from_numpy(control_state[:,:,0,:])
-
-
+final_parameters = full_parameter_list(final_parameters)
 
 
 
