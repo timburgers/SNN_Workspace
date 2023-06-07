@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from spiking.torch.layers.linear import RecurrentLinearLIF, LinearLIF, LinearALIF
+from spiking.torch.layers.linear import RecurrentLinearLIF, LinearLIF, LinearALIF, RecurrentLinearALIF
 from models.spiking.spiking.torch.utils.surrogates import get_spike_fn
 from models.Leaky_integrator import Linear_LI_filter
 import numpy as np
@@ -42,12 +42,14 @@ class BASE_LIF_SNN(nn.Module):
 class LIF_SNN(BASE_LIF_SNN):
 	def __init__(self, param_init, neurons,layer_settings):
 		super(LIF_SNN,self).__init__(neurons)
-
-
+		
+		# Initialize the param_init array
 		if param_init == None: param_init = init_empty(neurons,layer_settings)
 
-	
+		# Init the parameters that are all present
 		self.params_learnable_l1=dict(leak_i = param_init["l1_leak_i"], leak_v = param_init["l1_leak_v"]) 
+		self.params_learnable_l2 = dict(leak = param_init["l2_leak"])
+
 		# Different parameters for adaptive/non-adaptive neurons
 		if layer_settings["l1"]["adaptive"]: 
 			self.params_learnable_l1["leak_t"] = param_init["l1_leak_t"]
@@ -56,16 +58,19 @@ class LIF_SNN(BASE_LIF_SNN):
 		else:
 			self.params_learnable_l1["thresh"] = param_init["l1_thres"]
 
-		self.params_learnable_l2 = dict(leak = param_init["l2_leak"])
-
+	
 		# Either use the recurrent linear layer or the baselinear layer
-		if layer_settings["l1"]["recurrent"]== True:
-			self.l1 = RecurrentLinearLIF(self.input_features,self.neurons,self.params_fixed_l1,self.params_learnable_l1,get_spike_fn("ArcTan", 1.0, 20.0), layer_settings["l1"])
+		if layer_settings["l1"]["recurrent"]:
+			if layer_settings["l1"]["adaptive"]:
+				self.l1 = RecurrentLinearALIF(self.input_features,self.neurons,self.params_fixed_l1,self.params_learnable_l1,get_spike_fn("ArcTan", 1.0, 20.0), layer_settings["l1"])
+			else:
+				self.l1 = RecurrentLinearLIF(self.input_features,self.neurons,self.params_fixed_l1,self.params_learnable_l1,get_spike_fn("ArcTan", 1.0, 20.0), layer_settings["l1"])
 			self.l1.rec.weight = torch.nn.parameter.Parameter(param_init["l1_weights_rec"])
-		elif layer_settings["l1"]["adaptive"] == True:
-			self.l1 = LinearALIF(self.input_features,self.neurons,self.params_fixed_l1,self.params_learnable_l1,get_spike_fn("ArcTan", 1.0, 20.0), layer_settings["l1"])
-		else: 
-			self.l1 = LinearLIF(self.input_features,self.neurons,self.params_fixed_l1,self.params_learnable_l1,get_spike_fn("ArcTan", 1.0, 20.0), layer_settings["l1"])
+		else:
+			if layer_settings["l1"]["adaptive"]:
+				self.l1 = LinearALIF(self.input_features,self.neurons,self.params_fixed_l1,self.params_learnable_l1,get_spike_fn("ArcTan", 1.0, 20.0), layer_settings["l1"])
+			else: 
+				self.l1 = LinearLIF(self.input_features,self.neurons,self.params_fixed_l1,self.params_learnable_l1,get_spike_fn("ArcTan", 1.0, 20.0), layer_settings["l1"])
 
 		self.l2 = Linear_LI_filter(self.neurons,1,self.params_fixed_l2,self.params_learnable_l2,None, layer_settings["l2"])
 
@@ -82,9 +87,7 @@ def init_empty(neurons,layer_set):
 	init_param["l1_leak_v"]	= torch.ones(neurons).float()
 	init_param["l2_leak"] 	= torch.ones(1).float()
 
-	if layer_set["l1"]["recurrent"] == True:
-		init_param["l1_weights_rec"]= torch.ones(neurons,neurons).float()
-
+	# Init W1 & B1
 	if layer_set["l1"]["shared_weight_and_bias"] == True: 
 		init_param["l1_weights"]= torch.ones((int(neurons/2),1)).float() 	#NOTE: shape must be (neurons,1)
 		init_param["l1_bias"]	= torch.ones((int(neurons/2))).float()
@@ -92,21 +95,27 @@ def init_empty(neurons,layer_set):
 		init_param["l1_weights"]= torch.ones((neurons,1)).float()			#NOTE: shape must be (neurons,1)
 		init_param["l1_bias"]	= torch.ones(neurons).float()
 	
+	# Init Leak_i
 	if layer_set["l1"]["shared_leak_i"] == True:
 		init_param["l1_leak_i"] = torch.ones((int(neurons/2)))
 	else: 
 		init_param["l1_leak_i"]	= torch.ones(neurons).float() 
 
-
+	# Init W2
 	if layer_set["l2"]["shared_weight_and_bias"] == True:
 		init_param["l2_weights"]= torch.ones((1,int(neurons/2))).float()	#NOTE: shape must be (1, neurons)
 	else:
 		init_param["l2_weights"]= torch.ones((1,neurons)).float()			#NOTE: shape must be (1, neurons)
 	
+	# Init Adaptive parameters
 	if layer_set["l1"]["adaptive"] ==  True:
 		init_param["l1_leak_t"] = torch.ones(neurons).float()
 		init_param["l1_base_t"] = torch.ones(neurons).float()
 		init_param["l1_add_t"] = torch.ones(neurons).float()
+
+	# Init Recurrent Weights
+	if layer_set["l1"]["recurrent"] == True:
+		init_param["l1_weights_rec"]= torch.ones(neurons,neurons).float()
 
 	
 	return init_param
