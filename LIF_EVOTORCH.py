@@ -89,9 +89,8 @@ class LIF_EA_evotorch(Problem):
 
     def _evaluate(self, solution):
         #### Initialize neuron states (u, v, s) 
-        if self.config["LAYER_SETTING"]["l1"]["adaptive"]: snn_states = torch.zeros(4, 1, self.model.neurons) # frist dim in order [current,mempot,spike]
-        else: snn_states = torch.zeros(3, 1, self.model.neurons) # frist dim in order [current,mempot,spike]
-        LI_state = torch.zeros(1,1)
+        snn_states = torch.zeros(self.model.l1.neuron.state_size, 1, self.model.neurons) # frist dim in order [current,mempot,spike]
+        LI_state = torch.zeros(self.model.l2.neuron.state_size,1)
 
         solution_np = solution.values.detach().numpy() #numpy array of all parameters
         controller = copy.deepcopy(self.model)
@@ -256,9 +255,8 @@ def test_solution(problem, solution):
     input_data, fitness_target = get_dataset(problem.config, None, problem.config["SIM_TIME"])
     
     #################    Test sequence       ############################
-    if problem.config["LAYER_SETTING"]["l1"]["adaptive"]: snn_states = torch.zeros(4, 1, problem.model.neurons) # frist dim in order [current,mempot,spike]
-    else: snn_states = torch.zeros(3, 1, problem.model.neurons) # frist dim in order [current,mempot,spike]
-    LI_state = torch.zeros(1,1)
+    snn_states = torch.zeros(problem.model.l1.neuron.state_size, 1, problem.model.neurons) # frist dim in order [current,mempot,spike]
+    LI_state = torch.zeros(problem.model.l2.neuron.state_size,1)
 
     solution_np = solution.values.detach().numpy() #numpy array of all parameters
     controller = copy.deepcopy(problem.model)

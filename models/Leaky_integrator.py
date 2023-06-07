@@ -12,12 +12,14 @@ class Leaky_integrator_neuron(BaseNeuron):
     state_size = 1
     neuron_params = ["leak"]
 
-    def __init__(self, fixed_params, learnable_params, spike_fn, _layer_setting):
+    def __init__(self, fixed_params, learnable_params, spike_fn, layer_setting):
         super().__init__(self.state_size, fixed_params, learnable_params)
 
         # check parameters are there
         for p in ["leak"]:
             assert hasattr(self, p), f"{p} not found in {self}"
+
+        self.complemetary_leak = layer_setting["complementary_leak"]
 
         # spike mechanism
         self.spike = spike_fn
@@ -29,8 +31,10 @@ class Leaky_integrator_neuron(BaseNeuron):
         # get parameters
         leak = self.get_leak()
 
-        # voltage update: leak, reset, integrate
-        v = self.update_mem(v, leak, input_)
+        # voltage update: check if complementary, then the input and leak are weighted to one
+        if self.complemetary_leak: v = self.update_mem_complemnt(v, leak, input_)
+        else:                      v = self.update_mem(v,leak,input_)
+        
         
         # return none for output, since it is non spiking
         return v, None
@@ -39,8 +43,12 @@ class Leaky_integrator_neuron(BaseNeuron):
         return torch.clamp(self.leak, min=0, max=1)
     
     @staticmethod
-    def update_mem(v,leak,input):
+    def update_mem_complemnt(v,leak,input):
         return v * leak + (1-leak)*input
+    
+    @staticmethod	
+    def update_mem(v,leak,input):
+        return v * leak + input
 
 
 

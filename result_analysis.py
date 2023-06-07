@@ -20,25 +20,25 @@ from LIF_EVOTORCH import get_dataset, run_controller, run_controller_dynamics, e
 import copy
 
 # for dataset_number in range(10):
-sim_time = 40
+sim_time = 2
 dataset_number = None                                                    # None is the test_dataset
-filename = 188                                                          #None --> highest number, or int or str (withou .pkl)
+filename = None                                                          #None --> highest number, or int or str (withou .pkl)
 folder_of_model = "Blimp"                                               # all folder under the folder Results_EA
 lib_algorithm = "evotorch"                                              # evotorch or pygad
 SNN_TYPE = "LIF"                                                        # either LIF or IZH
 window_size =1
-# config["DATASET_DIR"] = "Sim_data/height_control_PID/fast_steps"
+#config["DATASET_DIR"] = "Sim_data/height_control_PID/fast_steps"
+
 
 ####################
-exclude_non_spiking_neurons = True
-# excluded_neurons = [3,11,19,20,21,22] #idx start at 1
+exclude_non_spiking_neurons = False
 excluded_neurons=[]
-new_dataset = "fast_steps"
-new_dataset_number = 0
+new_dataset = None
+new_dataset_number = None
 
 
 
-create_plots                    = True
+create_plots                    = False
 plot_with_best_testrun          = True  #True: solution = best performance on manual dataset      False: solution = best performance overall (can be easy dataset)
 muliple_test_runs_error_plot    = False  
 plot_last_generation            = False
@@ -48,10 +48,6 @@ spike_count_plot                = True
 create_table                    = True
 
 
-create_csv_file                 = False
-plot_sigma                      = False
-spectal_analysis                = False
-plot_parameters_evolution       = False
 
 
 #Pick last file name
@@ -86,7 +82,8 @@ def full_parameter_list(final_parameters):
 def run_sim(fitness_mode, config, controller,solution,input_dataset, save=True):
     #The solution is defined in a numpy array shape
 
-    snn_states = torch.zeros(3, 1, controller.neurons) # frist dim in order [current,mempot,spike]
+    snn_states = torch.zeros(controller.l1.neuron.state_size, 1, controller.neurons) # frist dim in order [current,mempot,spike]
+    LI_state = torch.zeros(controller.l2.neuron.state_size,1)
     LI_state = torch.zeros(1,1)
     sys_output = None
 
@@ -108,6 +105,26 @@ def torch_delete(tensor, indices):
     mask = torch.ones(tensor.numel(), dtype=torch.bool)
     mask[indices] = False
     return tensor[mask]
+
+# Function that assigns the correct varaible to eachother, based on wheter they are adaptive or not
+def set_variables(final_parameters,config,control_state):
+    # Convert to tensors since it is required for the other part of the script
+    final_parameters = full_parameter_list(final_parameters)
+    if config["LAYER_SETTING"]["l1"]["adaptive"]: 
+        thresholds = final_parameters["l1.neuron.base_t"].detach().numpy()
+        l1_current = control_state[:,0,0,:]  #(timesteps,neurons)
+        l1_mem_pot = control_state[:,1,0,:]  #(timesteps,neurons)
+        l1_thres   = control_state[:,2,0,:]  #(timesteps,neurons)
+        l1_spikes  = control_state[:,3,0,:]  #(timesteps,neurons)
+
+    else:                                         
+        thresholds = final_parameters["l1.neuron.thresh"].detach().numpy() 
+        l1_current = control_state[:,0,0,:]  #(timesteps,neurons)
+        l1_mem_pot = control_state[:,1,0,:]  #(timesteps,neurons)
+        l1_spikes  = control_state[:,2,0,:]  #(timesteps,neurons)
+        l1_thres = None
+    return thresholds,l1_current,l1_mem_pot,l1_thres,l1_spikes
+
 
 #########################################################################################
 if lib_algorithm == "pygad":
@@ -143,20 +160,15 @@ if lib_algorithm == "evotorch":
     else: print("Solution: Best evaluated solution (note: can be the result of an easy training dataset)")
 
 
-
-
 ### Select LIF or IZH mode
 if SNN_TYPE == "LIF":
-     
-    # with open("configs/config_LIF_DEFAULT.yaml","r") as f:
-    #     config = yaml.safe_load(f)
     config = dict_solutions["config"]
     number_of_neurons = config["NEURONS"]
+    #//TODO GET rid of beun fixes here
+    # config["LAYER_SETTING"]["l1"]["clamp_v"] = False 
+    config["LAYER_SETTING"]["l2"]["complementary_leak"] = True 
     controller = LIF_SNN(None,number_of_neurons, config["LAYER_SETTING"])
 
-    # #### Initialize neuron states (I, V, spikes) 
-    # snn_states = torch.zeros(3, 1, controller.neurons)
-    # LI_state = torch.zeros(1,1)
 
 elif SNN_TYPE == "IZH":
     with open("config_Izh_LI_EA.yaml","r") as f:
@@ -172,17 +184,18 @@ elif SNN_TYPE == "IZH":
 
 
 time_step = config["TIME_STEP"]
+
 total_time_steps = int(sim_time/time_step)
 
 # Initialize varibales from problem Class
+print("\nDataset used = ", config["DATASET_DIR"], "\nDatasetnumber = ", dataset_number)
 input_data, fitness_target = get_dataset(config, dataset_number, sim_time)
 fitness_mode = config["TARGET_FITNESS"]
 
 
-
 ##################           RUN SIM                ########################################################
 fitness_measured, control_input, control_state ,control_output ,final_parameters = run_sim(fitness_mode, config,controller,solution,input_data,True)
-
+thresholds,l1_current,l1_mem_pot, l1_thres,l1_spikes = set_variables(final_parameters,config,control_state)
 ######################################################
 if excluded_neurons or exclude_non_spiking_neurons:
     if excluded_neurons: #if there are entrys
@@ -191,7 +204,7 @@ if excluded_neurons or exclude_non_spiking_neurons:
     # Check which neurons are non-spiking
     if exclude_non_spiking_neurons ==True:
         for neuron in range(controller.neurons):
-            if not control_state[:,2,0,neuron].any():
+            if not l1_spikes[:,neuron].any():
                 excluded_neurons.append(neuron)
 
     # Pre process the second run with the selected neurons only
@@ -211,20 +224,30 @@ if excluded_neurons or exclude_non_spiking_neurons:
     sparse_config["LAYER_SETTING"]["l1"]["shared_leak_i"]          = False
     sparse_config["LAYER_SETTING"]["l1"]["shared_weight_and_bias"] = False
     sparse_config["LAYER_SETTING"]["l2"]["shared_weight_and_bias"] = False
-    sparse_config["DATASET_DIR"] = "Sim_data/height_control_PID/" + new_dataset
+    if new_dataset is not None:
+        sparse_config["DATASET_DIR"] = "Sim_data/height_control_PID/" + new_dataset
+        dataset_number = new_dataset_number
+
 
     sparse_controller = LIF_SNN(None,new_number_of_neurons, sparse_config["LAYER_SETTING"])
-    new_input_data, fitness_target = get_dataset(sparse_config, new_dataset_number, sim_time)
+    print("\nNEW Dataset used = ", sparse_config["DATASET_DIR"], "\nNEW Datasetnumber = ", dataset_number)
+    new_input_data, fitness_target = get_dataset(sparse_config, dataset_number, sim_time)
 
     fitness_measured, control_input, control_state ,control_output ,final_parameters = run_sim(fitness_mode, sparse_config,sparse_controller,sparse_np_solution,new_input_data, True)
+    thresholds,l1_current,l1_mem_pot, l1_thres,l1_spikes = set_variables(final_parameters,config, control_state)
+
     controller = sparse_controller
     number_of_neurons = new_number_of_neurons
-    ideal_pid_response = fitness_target
     input_data = new_input_data
+
+    sparse_config["TARGET_FITNESS"] = 1 #since the target of mode 1 is the pid response
+    _, ideal_pid_response = get_dataset(sparse_config, dataset_number, sim_time)
+
 #####################################################
-else: #Override TARGET_FITNESS in config dict to load ideal pid response
+else:
     config["TARGET_FITNESS"] = 1 #since the target of mode 1 is the pid response
     _, ideal_pid_response = get_dataset(config, dataset_number, sim_time)
+
 
 
 # Calculate the fitness value
@@ -269,23 +292,15 @@ if create_plots == False:
     plt.show()
 
 
-# Convert to tensors since it is required for the other part of the script
-l1_state = torch.from_numpy(control_state)
-l1_spikes = torch.from_numpy(control_state[:,:,0,:])
-final_parameters = full_parameter_list(final_parameters)
-
 
 
 ### Calculate spiking sliding window count
 spike_count_window = None
-spikes_snn = l1_spikes[:,2,:] # spikes_izh of shape (timesteps,neurons)
 
 sliding_window = nn.AvgPool1d(window_size,stride=1)
-
-for neuron in range(spikes_snn.size(dim=1)):
-    spike_count = spikes_snn[:,neuron].detach().numpy()
-    spike_count = torch.tensor([spike_count])
-    _slided_count = sliding_window(spike_count).detach().numpy()
+l1_spikes_torch = torch.from_numpy(l1_spikes).unsqueeze(0) #(batch, sequence L, neurons)
+for neuron in range(l1_spikes_torch.size(dim=2)):
+    _slided_count = sliding_window(l1_spikes_torch[:,:,neuron]).detach().numpy()
 
     ### Fill in the slided window with zeros (at beginning and end to make it samen size)
     for _ in range(int(window_size/2)):
@@ -300,7 +315,6 @@ for neuron in range(spikes_snn.size(dim=1)):
 
 
 if create_plots == True:
-
     # Create function that can get the indices where a plot is either nega/positive (mode= nonezero) or zero (mode = zero)
     def get_idx_of_non_zero(array,mode):
         if mode == "nonzero":
@@ -329,8 +343,8 @@ if create_plots == True:
     pos_idx_start, pos_idx_end = get_idx_of_non_zero(input_pos, mode="nonzero")
     neg_idx_start, neg_idx_end = get_idx_of_non_zero(input_neg, mode="nonzero")
     zero_idx_start, zero_idx_end = get_idx_of_non_zero(input_data, mode="zero")
-
-    thresholds = final_parameters["l1.neuron.thresh"].detach().numpy()
+    
+    ### Create the sperated spiking plots
     number_of_plots = math.ceil(number_of_neurons/10)
     for idx_plot in range(number_of_plots):
         if idx_plot == number_of_plots-1:
@@ -351,17 +365,13 @@ if create_plots == True:
             sharex=True
         )
 
-
-        recov_or_current = l1_state[:,0,0,:].detach().numpy()
-        mem_pot = l1_state[:,1,0,:].detach().numpy() 
-
         ### plot the raster of U and V of the 10 neurons (5xV, 5xU, 5xV, 5xU)
         for column in range(2):
             neuron = 0+10*idx_plot
             for row in range(neurons_in_plot):
                 
                 if column ==0 or column ==2:
-                    y = mem_pot[:,neuron]
+                    y = l1_mem_pot[:,neuron]
 
                 # Plot in the second column
                 if column ==1 or column ==3:
@@ -369,7 +379,7 @@ if create_plots == True:
                         y=spike_count_window[neuron,:]
 
                     else: 
-                        y = recov_or_current[:,neuron] #LIF --> current and for IZH --> recovery variable
+                        y = l1_current[:,neuron] #LIF --> current and for IZH --> recovery variable
                 
                 if row==5:
                     column = column + 2
@@ -432,9 +442,11 @@ if create_plots == True:
     if create_table == False and spectal_analysis == False and muliple_test_runs_error_plot==False:
         plt.show()
 
-if create_table == True or create_csv_file==True:
+if create_table == True:
     ######################### plot table ##########################
     round_digits = 3
+
+    # Add neuron numbers to data
     neurons = np.array([])
     for neur in range(0,config["NEURONS"]):
         if neur not in excluded_neurons:
@@ -442,10 +454,9 @@ if create_table == True or create_csv_file==True:
     data = neurons
 
     #Add spike count to the data
-    spike_train = l1_state[:,2,0,:].detach().numpy()
-    spike_count = np.array([])
+    spike_count = np.array([],dtype=int)
     for neuron in range(number_of_neurons):
-        spikes = float(np.sum(spike_train[:,neuron]))
+        spikes = int(np.sum(l1_spikes[:,neuron]))
         spike_count = np.append(spike_count,spikes)
     data = np.vstack((data,spike_count))
 
@@ -467,8 +478,15 @@ if create_table == True or create_csv_file==True:
     column_label[3], column_label[ind_w2] = column_label[ind_w2], column_label[3]     # Swap the w1 to 3 row
     data[[ind_w2,3]] = data[[3,ind_w2]]                                               # Swap w2 to row 4
     column_label[2], column_label[ind_w1] = column_label[ind_w1], column_label[2]
+
+    # Add "Impact" score in table (w2*spike count)
+    w2 = final_parameters["l2.ff.weight"].detach().numpy()
+    impact_abs = np.abs(w2*spike_count)
+    impact_norm = np.round(impact_abs/np.max(impact_abs)*10,2)
+    column_label = np.insert(column_label,1,"Impact")
+    data = np.insert(data,1,impact_norm,axis=0)
     
-if create_table ==True:
+    ### Convert to "data" array to a table
     plt.figure(linewidth=1,
             tight_layout={"pad":1})
     table = plt.table(cellText=np.transpose(data), colLabels=column_label, loc='center')
@@ -486,39 +504,26 @@ if create_table ==True:
     plt.box(on=None)
 
     # Colors for highlighting
-    color_mix = {
-        'white':'#FFFFFF',
-        'gray': '#D3D3D3',
-        'black':'#313639',
-        'purple':'#AD688E',
-        'orange':'#D18F77',
-        'yellow':'#E8E190',
-        'ltgreen':'#CCD9C7',
-        'dkgreen':'#96ABA0',
-        'red':'#FFCCCB',
-        }
-
-
+    color_mix = {'white':'#FFFFFF','gray': '#D3D3D3','black':'#313639','purple':'#AD688E','orange':'#D18F77','yellow':'#E8E190','ltgreen':'#CCD9C7','dkgreen':'#96ABA0','red':'#FFCCCB',}
 
     # highlight w1 cells
     idx=1
-    for w in data[2,:]:
+    for w in data[3,:]:
         w = float(w)
-        if w<0:
-            table[idx,2].set_facecolor(color_mix["red"])
+        if float(w)<0:                                      #Since the items in data are strings
+            table[idx,3].set_facecolor(color_mix["red"])
         idx = idx+1
 
     idx=1
-    for w in data[3,:]:
-        w = float(w)
-        if w<0:
-            table[idx,3].set_facecolor(color_mix["red"])
+    for w in data[4,:]:
+        if float(w)<0:
+            table[idx,4].set_facecolor(color_mix["red"])
         idx = idx+1
 
     #greyout the non spiking neurons (NOTE: data is later inversed, sot it is column,row now)
     row=1
-    for spike_count in data[1,:]:
-        if float(spike_count) == 0:
+    for spike_count in data[2,:]:
+        if int(spike_count) == 0:
             for col in range(len(data)):
                 table[row,col].set_facecolor(color_mix["gray"])
         row +=1
@@ -555,25 +560,6 @@ if create_table ==True:
         plt.box(on=None)
         plt.show()
 
-if create_csv_file == True:
-    ### Create a matlab file with parameters
-    data_mat = np.transpose(np.vstack((w1,w2,thres,a,b,c,d,v2,v1,v0,utau)))
-    np.savetxt("test_matlab.csv", data_mat)
-
-
-if spectal_analysis == True:
-    N = len(predictions)
-    T= 1./500.
-    x = np.linspace(0,N*T,N,endpoint=False)
-    y = predictions
-
-    yf= fft(y)
-    xf= fftfreq(N,T)[:N//2]
-
-    plt.figure()
-    plt.plot(xf,2.0/N*np.abs(yf[0:N//2]))
-    plt.grid()
-    plt.show()
 
 if muliple_test_runs_error_plot == True:
     plt.figure()
@@ -589,56 +575,80 @@ if muliple_test_runs_error_plot == True:
     if plot_sigma == False:
         plt.show()
 
-if plot_sigma == True:
-    sigma = dict_solutions["sigma"]
-    gen_arr = np.arange(0, len(sigma))
-    plt.figure()
-    plt.title("Stepsize over generations")
-    plt.xlabel("Generations [-]")
-    plt.ylabel("Stepsize [-]")
-    plt.plot(gen_arr,sigma)
-    plt.grid()
-    plt.show()
-
-if plot_parameters_evolution == True:
-
-    generations = np.size(dict_solutions["mean"],0)
-    parameters_mean = dict_solutions["mean"] #shape (generations, parameters)
-    final_parameters =torchga.model_weights_as_dict(model, parameters_mean[0,:])
-
-    ## Initialize dictonary structre{param: [params_gen1, params_gen2 etc..].}
-    full_solution_dict = {key:None for key, _ in final_parameters.items()}
 
 
+# if create_csv_file == True:
+#     ### Create a matlab file with parameters
+#     data_mat = np.transpose(np.vstack((w1,w2,thres,a,b,c,d,v2,v1,v0,utau)))
+#     np.savetxt("test_matlab.csv", data_mat)
 
-    ### Fill the dictornary
-    for param in full_solution_dict:
-        for gen in range(generations):
-            gen_parameters =torchga.model_weights_as_dict(model, parameters_mean[gen,:])
-            for name, value in gen_parameters.items():
-                if param == name:
-                    value = torch.flatten(value).detach().numpy()
-                    if full_solution_dict[param] is None: #Check is dict is empty 
-                        full_solution_dict[param] = value
-                    else:
-                        full_solution_dict[param] = np.vstack((full_solution_dict[param],value))
+# if spectal_analysis == True:
+#     N = len(predictions)
+#     T= 1./500.
+#     x = np.linspace(0,N*T,N,endpoint=False)
+#     y = predictions
 
-                    break
+#     yf= fft(y)
+#     xf= fftfreq(N,T)[:N//2]
+
+#     plt.figure()
+#     plt.plot(xf,2.0/N*np.abs(yf[0:N//2]))
+#     plt.grid()
+#     plt.show()
 
 
-    ### Plot the different diagrams
-    gen_arr = np.arange(0,generations)
-    for param in full_solution_dict:
-        plt.figure()
-        for num_param in range(len(full_solution_dict[param][0,:])):
-            param_per_gen = full_solution_dict[param][:,num_param]
-            param_per_gen = param_per_gen.flatten()
-            plt.plot(gen_arr,param_per_gen,label=str(num_param))
-        plt.title("Evolution of " + str(param))
-        plt.xlabel("Generations [-]")
-        plt.xticks(gen_arr)
-        plt.legend()
-        plt.grid()
-    plt.show()
+
+
+# if plot_sigma == True:
+#     sigma = dict_solutions["sigma"]
+#     gen_arr = np.arange(0, len(sigma))
+#     plt.figure()
+#     plt.title("Stepsize over generations")
+#     plt.xlabel("Generations [-]")
+#     plt.ylabel("Stepsize [-]")
+#     plt.plot(gen_arr,sigma)
+#     plt.grid()
+#     plt.show()
+
+# if plot_parameters_evolution == True:
+
+#     generations = np.size(dict_solutions["mean"],0)
+#     parameters_mean = dict_solutions["mean"] #shape (generations, parameters)
+#     final_parameters =torchga.model_weights_as_dict(model, parameters_mean[0,:])
+
+#     ## Initialize dictonary structre{param: [params_gen1, params_gen2 etc..].}
+#     full_solution_dict = {key:None for key, _ in final_parameters.items()}
+
+
+
+#     ### Fill the dictornary
+#     for param in full_solution_dict:
+#         for gen in range(generations):
+#             gen_parameters =torchga.model_weights_as_dict(model, parameters_mean[gen,:])
+#             for name, value in gen_parameters.items():
+#                 if param == name:
+#                     value = torch.flatten(value).detach().numpy()
+#                     if full_solution_dict[param] is None: #Check is dict is empty 
+#                         full_solution_dict[param] = value
+#                     else:
+#                         full_solution_dict[param] = np.vstack((full_solution_dict[param],value))
+
+#                     break
+
+
+#     ### Plot the different diagrams
+#     gen_arr = np.arange(0,generations)
+#     for param in full_solution_dict:
+#         plt.figure()
+#         for num_param in range(len(full_solution_dict[param][0,:])):
+#             param_per_gen = full_solution_dict[param][:,num_param]
+#             param_per_gen = param_per_gen.flatten()
+#             plt.plot(gen_arr,param_per_gen,label=str(num_param))
+#         plt.title("Evolution of " + str(param))
+#         plt.xlabel("Generations [-]")
+#         plt.xticks(gen_arr)
+#         plt.legend()
+#         plt.grid()
+#     plt.show()
         
                     

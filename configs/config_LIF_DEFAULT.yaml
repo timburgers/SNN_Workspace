@@ -1,8 +1,8 @@
 
 ### Hyperparameters
-NEURONS: 10
+NEURONS: 20
 INDIVIDUALS: 10
-GENERATIONS: 12
+GENERATIONS: 2
 NUMBER_PROCESSES: 10
 SIM_TIME: 25            # max 40 secs
 
@@ -25,6 +25,7 @@ LAYER_SETTING:
 
   l2:
      bias:                   False           # always set to fals
+     complementary_leak:     True
      shared_weight_and_bias: True
 
 TARGET_FITNESS: 3   
@@ -94,6 +95,7 @@ manual:
   l1.neuron.leak_i: [0.01,0.01,0.01,0.01, 0.2,0.1,0.2,0.1, 0.01,0.01,0.01,0.01, 0.2,0.1,0.2,0.1,]
 
 ### Gaussian and range
+#The Bound Booleans are only valid when the coresponding shared layer setting is set to false
 INIT_LEAKI_HALF_ZERO: False                # Set the leak_i of the first 5 neurons to close to zero
 INIT_W2_Q2_Q4_NEG:    True
 INIT_W1_H2_NEG:       True
@@ -115,11 +117,11 @@ range: #keep all positive
   l1.rec.weight:    [0.001 , 0.002]
   l1.ff.weight:     [1     , 1.5]
   l1.ff.bias:       [0.2   , 0.8]
-  l1.neuron.leak_t: [0.1, 0.9]
-  l1.neuron.base_t: [1,2]
-  l1.neuron.add_t: [0.001,0.3]
-  l2.neuron.leak:   [0.899   , 0.901]
-  l2.ff.weight:     [0.15  , 0.25] 
+  l1.neuron.leak_t: [0.1   , 0.9]
+  l1.neuron.base_t: [1     , 2]
+  l1.neuron.add_t:  [0.001 , 0.3]
+  l2.neuron.leak:   [0.899 , 0.901]
+  l2.ff.weight:     [0.1  , 0.15] 
 
 ######## STD
 PERCENT_INTIIAL_STEPSIZE: 0.005
@@ -146,6 +148,6 @@ PARAMETER_BOUNDS: #null if None in python
   l1.ff.bias: {"low": -1,"high": 1}  #also negative!
 
   l2.neuron.leak: {"low": 0.88,"high": 0.92}
-  l2.ff.weight:   {"low": -0.25,"high": 0.25} #also negative!
+  l2.ff.weight:   {"low": -0.15,"high": 0.15} #also negative!
 
 
