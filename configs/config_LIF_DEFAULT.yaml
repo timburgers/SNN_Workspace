@@ -3,7 +3,7 @@
 NEURONS: 20
 INDIVIDUALS: 10
 GENERATIONS: 2
-NUMBER_PROCESSES: 10
+NUMBER_PROCESSES: 0
 SIM_TIME: 25            # max 40 secs
 
 # Dataset loading and saving options
@@ -16,15 +16,14 @@ START_DATASETS_IN_MIDDLE: False
 
 LAYER_SETTING:
   l1:
-     recurrent:              False
+     recurrent:              True
      adaptive:               True
-     clamp_v:                True  # BaseLIF  
+     clamp_v:                False  # BaseLIF  
      shared_leak_i:          True
      bias:                   True  # BaseLinear(Rec)Layers
      shared_weight_and_bias: True
 
   l2:
-     bias:                   False           # always set to fals
      complementary_leak:     True
      shared_weight_and_bias: True
 
@@ -34,8 +33,8 @@ TARGET_FITNESS: 3
 #3) "pid system output" : Dynamic system simulated        Fitness: MSE + Pearson
 
 # //TODO ONLY USE THESE WHEN DIFFERENT STRUCTURE OF DATASET IS USE
-ALTERNATIVE_LABEL_INPUT: null
-ALTERNATIVE_LABEL_TARGET: null
+ALTERNATIVE_INPUT_COLUMN: null
+ALTERNATIVE_TARGET_COLUMN: null
 
 ###################################
 ###################################

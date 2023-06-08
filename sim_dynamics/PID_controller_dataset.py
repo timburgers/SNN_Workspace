@@ -25,7 +25,7 @@ antiWindup = False	# If set to true, no windup will take place when the trust li
 
 #---PID GAINS--- 
 KP = 3
-KI = 1
+KI = 2
 KD = 3
 #---------------
 

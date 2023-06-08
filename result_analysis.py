@@ -20,32 +20,34 @@ from LIF_EVOTORCH import get_dataset, run_controller, run_controller_dynamics, e
 import copy
 
 # for dataset_number in range(10):
-sim_time = 2
-dataset_number = None                                                    # None is the test_dataset
-filename = None                                                          #None --> highest number, or int or str (withou .pkl)
+sim_time = 100
+dataset_number = 1                                                    # None is the test_dataset
+filename = 224                                                          #None --> highest number, or int or str (withou .pkl)
 folder_of_model = "Blimp"                                               # all folder under the folder Results_EA
 lib_algorithm = "evotorch"                                              # evotorch or pygad
 SNN_TYPE = "LIF"                                                        # either LIF or IZH
-window_size =1
+window_size =6      #even numbers
 #config["DATASET_DIR"] = "Sim_data/height_control_PID/fast_steps"
 
 
 ####################
-exclude_non_spiking_neurons = False
-excluded_neurons=[]
+exclude_non_spiking_neurons = True
+# excluded_neurons=[1,2,23,24,29,30]
+excluded_neurons =[]
 new_dataset = None
-new_dataset_number = None
+new_dataset_number = 0
+new_input_column = []
+new_target_column = []
 
-
-
-create_plots                    = False
+create_plots                    = True
+create_table                    = True
 plot_with_best_testrun          = True  #True: solution = best performance on manual dataset      False: solution = best performance overall (can be easy dataset)
 muliple_test_runs_error_plot    = False  
 plot_last_generation            = False
 
 colored_background              = True
 spike_count_plot                = True
-create_table                    = True
+
 
 
 
@@ -107,23 +109,20 @@ def torch_delete(tensor, indices):
     return tensor[mask]
 
 # Function that assigns the correct varaible to eachother, based on wheter they are adaptive or not
-def set_variables(final_parameters,config,control_state):
+def set_variables(config,control_state):
     # Convert to tensors since it is required for the other part of the script
-    final_parameters = full_parameter_list(final_parameters)
     if config["LAYER_SETTING"]["l1"]["adaptive"]: 
-        thresholds = final_parameters["l1.neuron.base_t"].detach().numpy()
         l1_current = control_state[:,0,0,:]  #(timesteps,neurons)
         l1_mem_pot = control_state[:,1,0,:]  #(timesteps,neurons)
         l1_thres   = control_state[:,2,0,:]  #(timesteps,neurons)
         l1_spikes  = control_state[:,3,0,:]  #(timesteps,neurons)
 
     else:                                         
-        thresholds = final_parameters["l1.neuron.thresh"].detach().numpy() 
         l1_current = control_state[:,0,0,:]  #(timesteps,neurons)
         l1_mem_pot = control_state[:,1,0,:]  #(timesteps,neurons)
         l1_spikes  = control_state[:,2,0,:]  #(timesteps,neurons)
         l1_thres = None
-    return thresholds,l1_current,l1_mem_pot,l1_thres,l1_spikes
+    return l1_current,l1_mem_pot,l1_thres,l1_spikes
 
 
 #########################################################################################
@@ -165,8 +164,9 @@ if SNN_TYPE == "LIF":
     config = dict_solutions["config"]
     number_of_neurons = config["NEURONS"]
     #//TODO GET rid of beun fixes here
-    # config["LAYER_SETTING"]["l1"]["clamp_v"] = False 
     config["LAYER_SETTING"]["l2"]["complementary_leak"] = True 
+    config["ALTERNATIVE_INPUT_COLUMN"] = config["ALTERNATIVE_LABEL_INPUT"]
+    config["ALTERNATIVE_TARGET_COLUMN"] = config["ALTERNATIVE_LABEL_TARGET"]
     controller = LIF_SNN(None,number_of_neurons, config["LAYER_SETTING"])
 
 
@@ -194,51 +194,57 @@ fitness_mode = config["TARGET_FITNESS"]
 
 
 ##################           RUN SIM                ########################################################
-fitness_measured, control_input, control_state ,control_output ,final_parameters = run_sim(fitness_mode, config,controller,solution,input_data,True)
-thresholds,l1_current,l1_mem_pot, l1_thres,l1_spikes = set_variables(final_parameters,config,control_state)
+fitness_measured, control_input, control_state ,control_output ,trained_parameters = run_sim(fitness_mode, config,controller,solution,input_data,True)
+all_parameters = full_parameter_list(trained_parameters)        #Convert the dict of only trained paramaters, to a dict with all parameters per neuron
+l1_current,l1_mem_pot, l1_thres,l1_spikes = set_variables(config,control_state)
 ######################################################
 if excluded_neurons or exclude_non_spiking_neurons:
+
+    manually_excluded_neurons = 0
     if excluded_neurons: #if there are entrys
         excluded_neurons = [i - 1 for i in excluded_neurons] #since ind start at zero for further calulcations
+        manually_excluded_neurons = len(excluded_neurons)
 
     # Check which neurons are non-spiking
     if exclude_non_spiking_neurons ==True:
         for neuron in range(controller.neurons):
             if not l1_spikes[:,neuron].any():
                 excluded_neurons.append(neuron)
-
+    print("\nNon firing neurons excluded = ", (len(excluded_neurons)-manually_excluded_neurons), "\nManually excluded neurons = ", manually_excluded_neurons)
+    
     # Pre process the second run with the selected neurons only
-    all_params = full_parameter_list(final_parameters)
-    sparse_params = copy.deepcopy(all_params)
     new_number_of_neurons = number_of_neurons-len(excluded_neurons)
     sparse_np_solution = np.array([])
-    for name, param in all_params.items():
-        sparse_params = param
+    for name, param in all_parameters.items():
+        sparse_param = param                                        #for the parameters that do no pass if statement
         if torch.flatten(param).shape[0] == number_of_neurons:
-            sparse_params=torch_delete(param,excluded_neurons)
-        sparse_np_solution = np.append(sparse_np_solution,sparse_params)
-
+            sparse_param=torch_delete(param,excluded_neurons)
+        sparse_np_solution = np.append(sparse_np_solution,sparse_param)
+  
 
     sparse_config = copy.deepcopy(config)
     sparse_config["NEURONS"] = new_number_of_neurons
-    sparse_config["LAYER_SETTING"]["l1"]["shared_leak_i"]          = False
+    sparse_config["LAYER_SETTING"]["l1"]["shared_leak_i"]          = False          #Set all shared weight to false, since then no parameters are shared in the second simulation
     sparse_config["LAYER_SETTING"]["l1"]["shared_weight_and_bias"] = False
     sparse_config["LAYER_SETTING"]["l2"]["shared_weight_and_bias"] = False
     if new_dataset is not None:
         sparse_config["DATASET_DIR"] = "Sim_data/height_control_PID/" + new_dataset
         dataset_number = new_dataset_number
-
+    if new_input_column or new_target_column:
+        sparse_config["ALTERNATIVE_INPUT_COLUMN"] = new_input_column
+        sparse_config["ALTERNATIVE_TARGET_COLUMN"] = new_target_column
 
     sparse_controller = LIF_SNN(None,new_number_of_neurons, sparse_config["LAYER_SETTING"])
     print("\nNEW Dataset used = ", sparse_config["DATASET_DIR"], "\nNEW Datasetnumber = ", dataset_number)
     new_input_data, fitness_target = get_dataset(sparse_config, dataset_number, sim_time)
 
-    fitness_measured, control_input, control_state ,control_output ,final_parameters = run_sim(fitness_mode, sparse_config,sparse_controller,sparse_np_solution,new_input_data, True)
-    thresholds,l1_current,l1_mem_pot, l1_thres,l1_spikes = set_variables(final_parameters,config, control_state)
+    fitness_measured, control_input, control_state ,control_output ,all_sparse_parameters = run_sim(fitness_mode, sparse_config,sparse_controller,sparse_np_solution,new_input_data, True)
+    l1_current,l1_mem_pot, l1_thres,l1_spikes = set_variables(config, control_state)
 
     controller = sparse_controller
     number_of_neurons = new_number_of_neurons
     input_data = new_input_data
+    all_parameters = all_sparse_parameters
 
     sparse_config["TARGET_FITNESS"] = 1 #since the target of mode 1 is the pid response
     _, ideal_pid_response = get_dataset(sparse_config, dataset_number, sim_time)
@@ -392,7 +398,16 @@ if create_plots == True:
 
                 ### only plot in V plots
                 if column ==0 or column ==2:
-                    axis1[str(row)+","+str(column)].axhline(thresholds[neuron],color="r")
+                    # Show the threshold 
+                    if config["LAYER_SETTING"]["l1"]["adaptive"]:
+                        t = l1_thres[:,neuron]
+                        base_t = all_parameters["l1.neuron.base_t"].detach().numpy()[neuron]
+                        add_t = all_parameters["l1.neuron.add_t"].detach().numpy()[neuron]
+                        threshold = t *add_t + base_t
+                        axis1[str(row)+","+str(column)].plot(time_arr, threshold, color="r")
+                    else:
+                        threshold = all_parameters["l1.neuron.thresh"].detach().numpy()[neuron]
+                        axis1[str(row)+","+str(column)].axhline(threshold,color="r")
 
                     # Plot the different background, corresponding with target sign
                     if colored_background == True:
@@ -439,7 +454,7 @@ if create_plots == True:
     plt.legend()
 
     # Otherwise the plot and table are shown on the same moment
-    if create_table == False and spectal_analysis == False and muliple_test_runs_error_plot==False:
+    if create_table == False and muliple_test_runs_error_plot==False:
         plt.show()
 
 if create_table == True:
@@ -462,9 +477,9 @@ if create_table == True:
 
     column_label = ["Neuron", "Spike count"]
 
-    # Add all trained parameters to the data array
-    for parameter in final_parameters.keys():
-        data_param = np.round(torch.flatten(final_parameters[parameter]).detach().numpy(),round_digits)
+    # Add all parameters to the data array
+    for parameter in all_parameters.keys():
+        data_param = np.round(torch.flatten(all_parameters[parameter]).detach().numpy(),round_digits)
         # Only add the parameters which has one param per neurons( so not leak l2 and rec connections)
         if data_param.size == neurons.size:
             data =np.vstack((data,data_param))
@@ -480,7 +495,7 @@ if create_table == True:
     column_label[2], column_label[ind_w1] = column_label[ind_w1], column_label[2]
 
     # Add "Impact" score in table (w2*spike count)
-    w2 = final_parameters["l2.ff.weight"].detach().numpy()
+    w2 = all_parameters["l2.ff.weight"].detach().numpy()
     impact_abs = np.abs(w2*spike_count)
     impact_norm = np.round(impact_abs/np.max(impact_abs)*10,2)
     column_label = np.insert(column_label,1,"Impact")
@@ -531,13 +546,13 @@ if create_table == True:
 
 
 
-    if "l1.rec.weight" not in final_parameters:
+    if "l1.rec.weight" not in all_parameters:
         plt.show()
 
     # Create the recurrent table
-    if "l1.rec.weight" in final_parameters:
+    if "l1.rec.weight" in all_parameters:
         # data = neurons[..., np.newaxis]
-        data = np.round(final_parameters["l1.rec.weight"].detach().numpy(),round_digits)
+        data = np.round(all_parameters["l1.rec.weight"].detach().numpy(),round_digits)
 
         norm = plt.Normalize(data.min(), data.max())
         colours = plt.cm.RdYlGn(norm(data))
@@ -572,8 +587,7 @@ if muliple_test_runs_error_plot == True:
     plt.xlabel("Generations [-]")
     plt.ylabel("Error [-]")
     plt.grid()
-    if plot_sigma == False:
-        plt.show()
+    plt.show()
 
 
 

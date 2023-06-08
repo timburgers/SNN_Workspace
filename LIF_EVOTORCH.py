@@ -566,7 +566,7 @@ def get_dataset(config, dataset_num, sim_time):
     
     # Select the correct input and target datasets, based on the "TARGET_FITNESS" in the config
     #column =   0)Z   1)Z_ref   2)Error   3)Kp*error    4)Kd*error    5)PD_output
-    if config["ALTERNATIVE_LABEL_INPUT"] != None and config["ALTERNATIVE_LABEL_TARGET"] != None: input_col = config["ALTERNATIVE_LABEL_INPUT"]; target_col = config["ALTERNATIVE_LABEL_TARGET"]
+    if config["ALTERNATIVE_INPUT_COLUMN"] != None and config["ALTERNATIVE_TARGET_COLUMN"] != None: input_col = config["ALTERNATIVE_INPUT_COLUMN"]; target_col = config["ALTERNATIVE_TARGET_COLUMN"]
     elif config["TARGET_FITNESS"] == 1:     input_col = [2]; target_col = [5]
     elif config["TARGET_FITNESS"] == 2:     input_col = [1]; target_col = [1]
     elif config["TARGET_FITNESS"] == 3:     input_col = [1]; target_col = [0]

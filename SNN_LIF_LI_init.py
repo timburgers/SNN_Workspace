@@ -59,7 +59,7 @@ class LIF_SNN(BASE_LIF_SNN):
 			self.params_learnable_l1["thresh"] = param_init["l1_thres"]
 
 	
-		# Either use the recurrent linear layer or the baselinear layer
+		# Initializing the first layer
 		if layer_settings["l1"]["recurrent"]:
 			if layer_settings["l1"]["adaptive"]:
 				self.l1 = RecurrentLinearALIF(self.input_features,self.neurons,self.params_fixed_l1,self.params_learnable_l1,get_spike_fn("ArcTan", 1.0, 20.0), layer_settings["l1"])
