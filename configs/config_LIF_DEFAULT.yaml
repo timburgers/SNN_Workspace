@@ -15,12 +15,21 @@ START_DATASETS_IN_MIDDLE: False
 
 
 LAYER_SETTING:
+  l0:
+    enabled:                 True
+    neurons:                 4   #Only when l1_diagonal is false and should be EVEN when shared is true
+    bias:                    True
+    shared_weight_and_bias:  True
+    shared_leak_i:           False
+    clamp_v:                 False
+  
   l1:
+     diagonal:               False
      recurrent:              True
      adaptive:               True
      clamp_v:                False  # BaseLIF  
      shared_leak_i:          True
-     bias:                   True  # BaseLinear(Rec)Layers
+     bias:                   False  # BaseLinear(Rec)Layers
      shared_weight_and_bias: True
 
   l2:
@@ -110,15 +119,22 @@ gaussian:
   l2.ff.weight: 0.20 
 
 range: #keep all positive
+  l0.neuron.leak_i: [0.1   , 0.9]
+  l0.neuron.leak_v: [0.1   , 0.9]
+  l0.neuron.thresh: [0.8   , 1.2]
+  l0.ff.weight:     [1     , 1.5]
+  l0.ff.bias:       [0.2   , 0.5]
+
   l1.neuron.leak_i: [0.1   , 0.9]
   l1.neuron.leak_v: [0.1   , 0.9]
   l1.neuron.thresh: [0.8   , 1.2]
   l1.rec.weight:    [0.001 , 0.002]
   l1.ff.weight:     [1     , 1.5]
-  l1.ff.bias:       [0.2   , 0.8]
+  l1.ff.bias:       [0.2   , 0.5]
   l1.neuron.leak_t: [0.1   , 0.9]
   l1.neuron.base_t: [1     , 2]
   l1.neuron.add_t:  [0.001 , 0.3]
+
   l2.neuron.leak:   [0.899 , 0.901]
   l2.ff.weight:     [0.1  , 0.15] 
 
@@ -136,17 +152,23 @@ BOUND_W2_Q2_Q4_NEG: True    #Q1,Q3 postive and Q2,Q4 negative
 BOUNDS_W1_H2_NEG: True      #Second half of neurons w1 is zero
 
 PARAMETER_BOUNDS: #null if None in python
-  l1.neuron.leak_i: {"low": 0,"high": 0.99}
-  l1.neuron.leak_v: {"low": 0,"high": 1}
-  l1.neuron.thresh: {"low": 0.8,"high": 10}
-  l1.neuron.leak_t: {"low": 0,"high": 0.99}
-  l1.neuron.base_t: {"low": 0,"high": 2}
-  l1.neuron.add_t: {"low": -1,"high": 1}
-  l1.rec.weight: {"low": -0.2,"high": 0.2}
-  l1.ff.weight: {"low": -1.5,"high": 1.5}  #also negative!
-  l1.ff.bias: {"low": -1,"high": 1}  #also negative!
+  l0.ff.weight:     {"low": -1.5, "high": 1.5 }  #also negative!
+  l0.ff.bias:       {"low": -1,   "high": 1   }  #also negative!
+  l0.neuron.leak_i: {"low": 0,    "high": 0.99}
+  l0.neuron.leak_v: {"low": 0,    "high": 1   }
+  l0.neuron.thresh: {"low": 0.8,  "high": 10  }
 
-  l2.neuron.leak: {"low": 0.88,"high": 0.92}
-  l2.ff.weight:   {"low": -0.15,"high": 0.15} #also negative!
+  l1.neuron.leak_i: {"low": 0,    "high": 0.99}
+  l1.neuron.leak_v: {"low": 0,    "high": 1   }
+  l1.neuron.thresh: {"low": 0.8,  "high": 10  }
+  l1.neuron.leak_t: {"low": 0,    "high": 0.99}
+  l1.neuron.base_t: {"low": 0,    "high": 2   }
+  l1.neuron.add_t:  {"low": -1,   "high": 1   }
+  l1.rec.weight:    {"low": -0.2, "high": 0.2 }
+  l1.ff.weight:     {"low": -1.5, "high": 1.5 }  #also negative!
+  l1.ff.bias:       {"low": -1,   "high": 1   }  #also negative!
+
+  l2.neuron.leak:   {"low": 0.88, "high": 0.92}
+  l2.ff.weight:     {"low": -0.15,"high": 0.15}  #also negative!
 
 

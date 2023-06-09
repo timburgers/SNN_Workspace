@@ -1,7 +1,7 @@
 
 import torch
 import pygad.torchga as torchga
-from SNN_LIF_LI_init import LIF_SNN
+from SNN_LIF_LI_init import L1_Decoding_SNN, Encoding_L1_Decoding_SNN
 from wandb_log_functions import number_first_wandb_name
 import yaml
 import numpy as np
@@ -45,7 +45,9 @@ class LIF_EA_evotorch(Problem):
             self.config = yaml.safe_load(f)
         
         # Select model
-        self.model = LIF_SNN(None, self.config["NEURONS"], self.config["LAYER_SETTING"])
+        self.encoding_layer = self.config["LAYER_SETTING"]["l0"]["enabled"]
+        if self.encoding_layer: self.model = Encoding_L1_Decoding_SNN(None, self.config["NEURONS"], self.config["LAYER_SETTING"])
+        else:                   self.model = L1_Decoding_SNN(None, self.config["NEURONS"], self.config["LAYER_SETTING"])
         self.number_parameters = 0
 
         # Log the structure of the model that is used
@@ -63,6 +65,7 @@ class LIF_EA_evotorch(Problem):
         self.train_datasets=np.array([])
         self.manual_dataset_prev = False
         self.fitness_mode = self.config["TARGET_FITNESS"]
+        
 
         # Get the number of datasets (with only the word 'datatset' before the _)
         all_files_in_folder = os.listdir(self.prefix + self.config["DATASET_DIR"])
@@ -88,19 +91,15 @@ class LIF_EA_evotorch(Problem):
 
 
     def _evaluate(self, solution):
-        #### Initialize neuron states (u, v, s) 
-        snn_states = torch.zeros(self.model.l1.neuron.state_size, 1, self.model.neurons) # frist dim in order [current,mempot,spike]
-        LI_state = torch.zeros(self.model.l2.neuron.state_size,1)
-
         solution_np = solution.values.detach().numpy() #numpy array of all parameters
         controller = copy.deepcopy(self.model)
         final_parameters =torchga.model_weights_as_dict(controller, solution_np)
         controller.load_state_dict(final_parameters)
 
         if  self.fitness_mode== 1: #Only controller simlation
-            fitness_measured = run_controller(controller,self.input_data, snn_states,LI_state, save_mode = False)
+            fitness_measured = run_controller(controller,self.input_data, save_mode = False)
         elif self.fitness_mode == 2 or self.fitness_mode == 3:#Also simulate the dyanmics
-            fitness_measured = run_controller_dynamics(self.config,controller,self.input_data, snn_states,LI_state, save_mode = False)
+            fitness_measured = run_controller_dynamics(self.config,controller,self.input_data, save_mode = False)
 
         # Calculate the fitness value
         fitness_value = evaluate_fitness(self.fitness_mode, fitness_measured, self.target_data)
@@ -109,61 +108,113 @@ class LIF_EA_evotorch(Problem):
         solution.set_evals(fitness_value)
 
 
-def run_controller(controller,input, snn_states, LI_state,save_mode):
-    control_output = np.array([])
+def run_controller(controller,input,save_mode):
+    # Initialize neurons states
+    if controller.encoding_layer: state_l0 = torch.zeros(controller.l0.neuron.state_size, 1, controller.l1_input)
+    state_l1                               = torch.zeros(controller.l1.neuron.state_size, 1, controller.neurons) 
+    state_l2                               = torch.zeros(controller.l2.neuron.state_size,1)
+
+    state_l2_arr = np.array([])
     if save_mode == False:
         for t in range(input.shape[1]):
             error = input[:,t,:]
-            snn_spikes, snn_states, LI_state = controller(error, snn_states, LI_state)
+
+            # Run controller
+            if controller.encoding_layer: state_l0, state_l1, state_l2 = controller(error,state_l0, state_l1, state_l2)
+            else:                         state_l1, state_l2 = controller(error, state_l1, state_l2)
 
             # Append states to array
-            control_output = np.append(control_output,LI_state.detach().numpy())
-        return control_output
-    
+            state_l2_arr = np.append(state_l2_arr,state_l2.detach().numpy())
+        return state_l2_arr
+
     elif save_mode == True:
+        # Return None when encodig layer is disabled
+        state_l0_arr = None
+
         for t in range(input.shape[1]):
             error = input[:,t,:]
-            snn_spikes, snn_states, LI_state = controller(error, snn_states, LI_state)
+            
+            # Run controller
+            if controller.encoding_layer: state_l0, state_l1, state_l2 = controller(error,state_l0, state_l1, state_l2)
+            else:                         state_l1, state_l2 = controller(error, state_l1, state_l2)
 
-            # Append states to array
-            if t==0: control_state = snn_states.detach().numpy()[np.newaxis,...]
-            else: control_state = np.concatenate((control_state, snn_states.detach().numpy()[np.newaxis, ...]))
-            control_output = np.append(control_output,LI_state.detach().numpy())
-        return control_output, control_state
+            # If applicable, append states of l0 to array
+            if controller.encoding_layer:
+                if t==0: state_l0_arr = state_l0.detach().numpy()[np.newaxis,...]
+                else: state_l0_arr = np.concatenate((state_l0_arr, state_l0.detach().numpy()[np.newaxis, ...]))       # Append in this manner to conserve state
+
+            # Append states of l1 to array
+            if t==0: state_l1_arr = state_l1.detach().numpy()[np.newaxis,...]
+            else: state_l1_arr = np.concatenate((state_l1_arr, state_l1.detach().numpy()[np.newaxis, ...]))       # Append in this manner to conserve state
+
+            # Append states of l2 to array
+            state_l2_arr = np.append(state_l2_arr,state_l2.detach().numpy())
+
+        return state_l2_arr, state_l1_arr, state_l0_arr
 
 
-def run_controller_dynamics(config,controller,input, snn_states, LI_state, save_mode):
+def run_controller_dynamics(config,controller,input, save_mode):
+    # Initialize neurons states
+    if controller.encoding_layer: state_l0 = torch.zeros(controller.l0.neuron.state_size, 1, controller.l1_input)
+    state_l1                               = torch.zeros(controller.l1.neuron.state_size, 1, controller.neurons) 
+    state_l2                               = torch.zeros(controller.l2.neuron.state_size,1)
+
+    #Initilaize dyanmic system
     dyn_system = Blimp(config)
+
+    #Initilaize output arrray
     sys_output = np.array([0])
     
     if save_mode == False:
         for t in range(input.shape[1]):
             ref = input[:,t,:]
             error = ref - sys_output[-1]
-            snn_spikes, snn_states, LI_state = controller(error, snn_states, LI_state)
-            dyn_system.sim_dynamics(LI_state.detach().numpy())
+
+            # Run controller
+            if controller.encoding_layer: state_l0, state_l1, state_l2 = controller(error,state_l0, state_l1, state_l2)
+            else:                         state_l1, state_l2 = controller(error, state_l1, state_l2)
+
+            # Simulate dyanmics
+            dyn_system.sim_dynamics(state_l2.detach().numpy())
 
             #Append states to array
             sys_output = np.append(sys_output,dyn_system.get_z())
         return sys_output[1:] # Skip the first 0 height input
 
     if save_mode==True:
-        control_input = np.array([])
-        control_output = np.array([])
+        # Return None when encodig layer is disabled
+        state_l0_arr = None
+        error_arr = np.array([])
+        state_l2_arr = np.array([])
 
         for t in range(input.shape[1]):
             ref = input[:,t,:]
             error = ref - sys_output[-1]
-            snn_spikes, snn_states, LI_state = controller(error, snn_states, LI_state)
-            dyn_system.sim_dynamics(LI_state.detach().numpy())
 
-            #Append states to array
-            if t==0: control_state = snn_states.detach().numpy()[np.newaxis,...]
-            else: control_state = np.concatenate((control_state, snn_states.detach().numpy()[np.newaxis, ...]))
-            control_input = np.append(control_input, error.detach().numpy())
-            control_output = np.append(control_output, LI_state.detach().numpy())
+            # Run controller
+            if controller.encoding_layer: state_l0, state_l1, state_l2 = controller(error,state_l0, state_l1, state_l2)
+            else:                         state_l1, state_l2 = controller(error, state_l1, state_l2)
+
+            # Simulate dyanmics
+            dyn_system.sim_dynamics(state_l2.detach().numpy())
+
+            # If applicable, append states of l0 to array
+            if controller.encoding_layer:
+                if t==0: state_l0_arr = state_l0.detach().numpy()[np.newaxis,...]
+                else: state_l0_arr = np.concatenate((state_l0_arr, state_l0.detach().numpy()[np.newaxis, ...]))       # Append in this manner to conserve state
+
+            # Append states of l1 to array
+            if t==0: state_l1_arr = state_l1.detach().numpy()[np.newaxis,...]
+            else: state_l1_arr = np.concatenate((state_l1_arr, state_l1.detach().numpy()[np.newaxis, ...]))
+
+            # Append states of l1 to array
+            state_l2_arr = np.append(state_l2_arr, state_l2.detach().numpy())
+
+            error_arr = np.append(error_arr, error.detach().numpy())
+
             sys_output = np.append(sys_output,dyn_system.get_z())
-        return sys_output[1:], control_input, control_state, control_output # Skip the first 0 height input
+            
+        return sys_output[1:], error_arr, state_l0_arr, state_l1_arr, state_l2_arr # Skip the first 0 height input
 
 
 def evaluate_fitness(fitness_mode, fitness_measured, fitness_target):
@@ -255,18 +306,15 @@ def test_solution(problem, solution):
     input_data, fitness_target = get_dataset(problem.config, None, problem.config["SIM_TIME"])
     
     #################    Test sequence       ############################
-    snn_states = torch.zeros(problem.model.l1.neuron.state_size, 1, problem.model.neurons) # frist dim in order [current,mempot,spike]
-    LI_state = torch.zeros(problem.model.l2.neuron.state_size,1)
-
     solution_np = solution.values.detach().numpy() #numpy array of all parameters
     controller = copy.deepcopy(problem.model)
     final_parameters =torchga.model_weights_as_dict(controller, solution_np)
     controller.load_state_dict(final_parameters)
 
     if  problem.fitness_mode== 1: #Only controller simlation
-        fitness_measured, control_state = run_controller(controller,input_data, snn_states,LI_state, save_mode=True)
+        fitness_measured, state_l1_arr, state_l0_arr = run_controller(controller,input_data, save_mode=True)
     elif problem.fitness_mode == 2 or problem.fitness_mode == 3:#Also simulate the dyanmics
-        fitness_measured, control_input, control_state, control_output = run_controller_dynamics(problem.config,controller,input_data, snn_states,LI_state, save_mode=True)
+        fitness_measured, error, state_l0_arr, state_l1_arr, state_l2_arr = run_controller_dynamics(problem.config,controller,input_data, save_mode=True)
 
     # Calculate the fitness value
     fitness_value = evaluate_fitness(problem.fitness_mode, fitness_measured, fitness_target)
@@ -283,7 +331,7 @@ def test_solution(problem, solution):
     time_test = np.arange(0,problem.config["SIM_TIME"],problem.config["TIME_STEP"])
     if problem.fitness_mode == 2 or problem.fitness_mode == 3:
         title = "Height control of the Blimp"
-        plt.plot(time_test, control_output, linestyle = "--", color = "k", label = "Control output")
+        plt.plot(time_test, state_l2_arr, linestyle = "--", color = "k", label = "Control output")
     if problem.fitness_mode == 3:
         plt.plot(time_test, torch.flatten(input_data), linestyle = "--", color = "r", label = "Reference input")
     

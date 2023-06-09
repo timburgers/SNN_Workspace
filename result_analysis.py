@@ -2,7 +2,7 @@ import torch
 import pygad
 import pygad.torchga as torchga
 from IZH.SNN_Izh_LI_init import Izhikevich_SNN
-from SNN_LIF_LI_init import LIF_SNN
+from SNN_LIF_LI_init import L1_Decoding_SNN
 import yaml
 import matplotlib.pyplot as plt
 import numpy as np
@@ -33,7 +33,7 @@ window_size =6      #even numbers
 ####################
 exclude_non_spiking_neurons = True
 # excluded_neurons=[1,2,23,24,29,30]
-excluded_neurons =[]
+excluded_neurons =[1,2,23,24]
 new_dataset = None
 new_dataset_number = 0
 new_input_column = []
@@ -167,7 +167,7 @@ if SNN_TYPE == "LIF":
     config["LAYER_SETTING"]["l2"]["complementary_leak"] = True 
     config["ALTERNATIVE_INPUT_COLUMN"] = config["ALTERNATIVE_LABEL_INPUT"]
     config["ALTERNATIVE_TARGET_COLUMN"] = config["ALTERNATIVE_LABEL_TARGET"]
-    controller = LIF_SNN(None,number_of_neurons, config["LAYER_SETTING"])
+    controller = L1_Decoding_SNN(None,number_of_neurons, config["LAYER_SETTING"])
 
 
 elif SNN_TYPE == "IZH":
@@ -234,7 +234,7 @@ if excluded_neurons or exclude_non_spiking_neurons:
         sparse_config["ALTERNATIVE_INPUT_COLUMN"] = new_input_column
         sparse_config["ALTERNATIVE_TARGET_COLUMN"] = new_target_column
 
-    sparse_controller = LIF_SNN(None,new_number_of_neurons, sparse_config["LAYER_SETTING"])
+    sparse_controller = L1_Decoding_SNN(None,new_number_of_neurons, sparse_config["LAYER_SETTING"])
     print("\nNEW Dataset used = ", sparse_config["DATASET_DIR"], "\nNEW Datasetnumber = ", dataset_number)
     new_input_data, fitness_target = get_dataset(sparse_config, dataset_number, sim_time)
 

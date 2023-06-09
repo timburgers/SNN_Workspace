@@ -48,16 +48,24 @@ import torch
 
 
 # print([1]*111)
+neurons_l0 = 6
+neurons_l1 = 2
+a_or = torch.tensor([[1,2,3],[4,5,6]])
+a_flat = torch.flatten(a_or)
+a = torch.stack((a_flat,-a_flat),dim=1)
+a = torch.flatten(a)
+a = a.reshape((neurons_l1,neurons_l0))
 
-a = torch.ones(8)
-b= torch.ones(8)*2
-
+print(a_or)
+print(a)
 # print (a)
 # print(b)
 
-cat = torch.stack((a,b),dim=1)
-flat = torch.flatten(cat)
-print(cat)
-print(flat)
-print(flat.shape)
+# cat = torch.stack((a,b),dim=1)
+# flat = torch.flatten(cat)
+# print(cat)
+# print(flat)
+# print(flat.shape)
 # weight = torch.flatten(torch.cat((self.ff.weight,-1*self.ff.weight),dim=1)).unsqueeze(0)
+
+a 
