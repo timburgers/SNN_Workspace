@@ -2,7 +2,7 @@ import torch
 import pygad
 import pygad.torchga as torchga
 from IZH.SNN_Izh_LI_init import Izhikevich_SNN
-from SNN_LIF_LI_init import L1_Decoding_SNN
+from SNN_LIF_LI_init import L1_Decoding_SNN, Encoding_L1_Decoding_SNN
 import yaml
 import matplotlib.pyplot as plt
 import numpy as np
@@ -21,8 +21,8 @@ import copy
 
 # for dataset_number in range(10):
 sim_time = 100
-dataset_number = 1                                                    # None is the test_dataset
-filename = 224                                                          #None --> highest number, or int or str (withou .pkl)
+dataset_number = 0                                                    # None is the test_dataset
+filename = None                                                          #None --> highest number, or int or str (withou .pkl)
 folder_of_model = "Blimp"                                               # all folder under the folder Results_EA
 lib_algorithm = "evotorch"                                              # evotorch or pygad
 SNN_TYPE = "LIF"                                                        # either LIF or IZH
@@ -31,17 +31,17 @@ window_size =6      #even numbers
 
 
 ####################
-exclude_non_spiking_neurons = True
+exclude_non_spiking_neurons = False
 # excluded_neurons=[1,2,23,24,29,30]
-excluded_neurons =[1,2,23,24]
+excluded_neurons =[]
 new_dataset = None
 new_dataset_number = 0
 new_input_column = []
 new_target_column = []
 
-create_plots                    = True
-create_table                    = True
-plot_with_best_testrun          = True  #True: solution = best performance on manual dataset      False: solution = best performance overall (can be easy dataset)
+create_plots                    = False
+create_table                    = False
+plot_with_best_testrun          = False  #True: solution = best performance on manual dataset      False: solution = best performance overall (can be easy dataset)
 muliple_test_runs_error_plot    = False  
 plot_last_generation            = False
 
@@ -67,41 +67,28 @@ if type(filename) == int:
     filename = all_files[index_file].split(".")[0] #get rid of .pkl
     print("\nFilename used = ", filename)
 
-####### Functions
-# Add the shared weight in the coorect way to the solutions
-def full_parameter_list(final_parameters):
-    for name, param in final_parameters.items():
-        if torch.flatten(param).shape[0] == number_of_neurons/2:
-            if name =="l1.ff.weight":
-                final_parameters[name] = torch.flatten(torch.cat((param,-1*param),dim=1))
-            if name == "l2.ff.weight":
-                final_parameters[name] = torch.flatten(torch.transpose(torch.cat((param,-1*param)),0,1))
-            if name =="l1.ff.bias" or name=="l1.neuron.leak_i":
-                final_parameters[name] = torch.flatten(torch.stack((param,param),dim=1))
-    return final_parameters       
 
 # Run the simulation
 def run_sim(fitness_mode, config, controller,solution,input_dataset, save=True):
     #The solution is defined in a numpy array shape
-
-    snn_states = torch.zeros(controller.l1.neuron.state_size, 1, controller.neurons) # frist dim in order [current,mempot,spike]
-    LI_state = torch.zeros(controller.l2.neuron.state_size,1)
-    LI_state = torch.zeros(1,1)
     sys_output = None
 
     final_parameters =torchga.model_weights_as_dict(controller, solution)
     controller.load_state_dict(final_parameters)
 
+    if encoding_layer: controller.l0.init_reshape()
+    controller.l1.init_reshape()
+    controller.l2.init_reshape()
+
     if  fitness_mode== 1: #Only controller simlation
-        fitness_measured, control_state = run_controller(controller,input_dataset, snn_states,LI_state, save_mode=save)
-        control_output = fitness_measured
-        control_input = torch.flatten(input_dataset).detach().numpy()
+        state_l2_arr, state_l1_arr, state_l0_arr = run_controller(controller,input_dataset, save_mode=save)
+        fitness_measured = state_l2_arr
+        error_arr = torch.flatten(input_dataset).detach().numpy()
 
     elif fitness_mode == 2 or fitness_mode == 3:#Also simulate the dyanmics
-        fitness_measured, control_input, control_state, control_output = run_controller_dynamics(config,controller,input_dataset, snn_states,LI_state, save_mode=save)
-        sys_output = fitness_measured
+        fitness_measured, error_arr, state_l0_arr, state_l1_arr, state_l2_arr = run_controller_dynamics(config,controller,input_dataset, save_mode=save)
 
-    return fitness_measured, control_input, control_state ,control_output ,final_parameters
+    return fitness_measured, error_arr, state_l0_arr ,state_l1_arr ,state_l2_arr, final_parameters
 
 def torch_delete(tensor, indices):
     mask = torch.ones(tensor.numel(), dtype=torch.bool)
@@ -164,10 +151,9 @@ if SNN_TYPE == "LIF":
     config = dict_solutions["config"]
     number_of_neurons = config["NEURONS"]
     #//TODO GET rid of beun fixes here
-    config["LAYER_SETTING"]["l2"]["complementary_leak"] = True 
-    config["ALTERNATIVE_INPUT_COLUMN"] = config["ALTERNATIVE_LABEL_INPUT"]
-    config["ALTERNATIVE_TARGET_COLUMN"] = config["ALTERNATIVE_LABEL_TARGET"]
-    controller = L1_Decoding_SNN(None,number_of_neurons, config["LAYER_SETTING"])
+    encoding_layer = config["LAYER_SETTING"]["l0"]["enabled"]
+    if encoding_layer: controller = Encoding_L1_Decoding_SNN(None, config["NEURONS"], config["LAYER_SETTING"])
+    else:              controller = L1_Decoding_SNN(None, config["NEURONS"], config["LAYER_SETTING"])
 
 
 elif SNN_TYPE == "IZH":
@@ -194,9 +180,9 @@ fitness_mode = config["TARGET_FITNESS"]
 
 
 ##################           RUN SIM                ########################################################
-fitness_measured, control_input, control_state ,control_output ,trained_parameters = run_sim(fitness_mode, config,controller,solution,input_data,True)
-all_parameters = full_parameter_list(trained_parameters)        #Convert the dict of only trained paramaters, to a dict with all parameters per neuron
-l1_current,l1_mem_pot, l1_thres,l1_spikes = set_variables(config,control_state)
+fitness_measured, error_arr, state_l0_arr ,state_l1_arr ,state_l2_arr ,trained_parameters = run_sim(fitness_mode, config,controller,solution,input_data,True)
+all_parameters = controller.state_dict()       #Convert the dict of only trained paramaters, to a dict with all parameters per neuron
+l1_current,l1_mem_pot, l1_thres,l1_spikes = set_variables(config,state_l1_arr)
 ######################################################
 if excluded_neurons or exclude_non_spiking_neurons:
 
@@ -217,6 +203,7 @@ if excluded_neurons or exclude_non_spiking_neurons:
     sparse_np_solution = np.array([])
     for name, param in all_parameters.items():
         sparse_param = param                                        #for the parameters that do no pass if statement
+        # //TODO Does not work for recurrent, diagonal input matrix
         if torch.flatten(param).shape[0] == number_of_neurons:
             sparse_param=torch_delete(param,excluded_neurons)
         sparse_np_solution = np.append(sparse_np_solution,sparse_param)
@@ -238,8 +225,8 @@ if excluded_neurons or exclude_non_spiking_neurons:
     print("\nNEW Dataset used = ", sparse_config["DATASET_DIR"], "\nNEW Datasetnumber = ", dataset_number)
     new_input_data, fitness_target = get_dataset(sparse_config, dataset_number, sim_time)
 
-    fitness_measured, control_input, control_state ,control_output ,all_sparse_parameters = run_sim(fitness_mode, sparse_config,sparse_controller,sparse_np_solution,new_input_data, True)
-    l1_current,l1_mem_pot, l1_thres,l1_spikes = set_variables(config, control_state)
+    fitness_measured, error_arr, state_l0_arr ,state_l1_arr ,state_l2_arr ,all_sparse_parameters = run_sim(fitness_mode, sparse_config,sparse_controller,sparse_np_solution,new_input_data, True)
+    l1_current,l1_mem_pot, l1_thres,l1_spikes = set_variables(config, state_l1_arr)
 
     controller = sparse_controller
     number_of_neurons = new_number_of_neurons
@@ -343,8 +330,8 @@ if create_plots == True:
 
         return filt_start_idx, filt_end_idx
 
-    input_neg = np.clip(control_input,a_min=None, a_max=0)
-    input_pos = np.clip(control_input, a_min=0, a_max=None)
+    input_neg = np.clip(error_arr,a_min=None, a_max=0)
+    input_pos = np.clip(error_arr, a_min=0, a_max=None)
 
     pos_idx_start, pos_idx_end = get_idx_of_non_zero(input_pos, mode="nonzero")
     neg_idx_start, neg_idx_end = get_idx_of_non_zero(input_neg, mode="nonzero")
@@ -435,8 +422,8 @@ if create_plots == True:
 
         time_arr = np.arange(0,sim_time,time_step)
         ### Plot the lowest figure
-        axis1["input"].plot(time_arr,control_input, label = "SNN input")
-        axis1["input"].plot(time_arr,control_output, label = "SNN output")
+        axis1["input"].plot(time_arr,error_arr, label = "SNN input")
+        axis1["input"].plot(time_arr,state_l2_arr, label = "SNN output")
         axis1["input"].plot(time_arr,ideal_pid_response, label = "PID reponse")
         axis1["input"].axhline(0,linestyle="--", color="k")
         axis1["input"].xaxis.grid()
@@ -445,8 +432,8 @@ if create_plots == True:
 
     plt.figure()
     ### Plot the lowest figure
-    plt.plot(time_arr,control_input, label = "SNN input")
-    plt.plot(time_arr,control_output, label = "SNN output")
+    plt.plot(time_arr,error_arr, label = "SNN input")
+    plt.plot(time_arr,state_l2_arr, label = "SNN output")
     plt.plot(time_arr,ideal_pid_response, label = "PID reponse")
     plt.axhline(0,linestyle="--", color="k")
     plt.grid()

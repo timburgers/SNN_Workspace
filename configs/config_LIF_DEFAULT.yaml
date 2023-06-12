@@ -1,15 +1,15 @@
 
 ### Hyperparameters
-NEURONS: 20
-INDIVIDUALS: 10
-GENERATIONS: 2
-NUMBER_PROCESSES: 0
-SIM_TIME: 25            # max 40 secs
+NEURONS: 30
+INDIVIDUALS: 5
+GENERATIONS: 20
+NUMBER_PROCESSES: 10
+SIM_TIME: 30            # max 40 secs
 
 # Dataset loading and saving options
 ANTI_OVERFITTING:         True
 DIFFERENT_DATASET_EVERY_GENERATION: 1
-SAVE_TEST_SOLUTION_STEPSIZE: 25  #every .. steps the solution to the test case is calculated and saved
+SAVE_TEST_SOLUTION_STEPSIZE: 50  #every .. steps the solution to the test case is calculated and saved
 DATASET_DIR: "Sim_data/height_control_PID/slow_steps"
 START_DATASETS_IN_MIDDLE: False
 
@@ -17,10 +17,10 @@ START_DATASETS_IN_MIDDLE: False
 LAYER_SETTING:
   l0:
     enabled:                 True
-    neurons:                 4   #Only when l1_diagonal is false and should be EVEN when shared is true
+    neurons:                 20   #Only when l1_diagonal is false and should be EVEN when shared is true
     bias:                    True
     shared_weight_and_bias:  True
-    shared_leak_i:           False
+    shared_leak_i:           True
     clamp_v:                 False
   
   l1:

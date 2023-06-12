@@ -142,13 +142,13 @@ def init_l1_l2(neurons,layer_set):
 	
 	if encoding_layer:
 		if l1_w_diagonal:
-			if l1_shared_wb: num_param_l1_weight= int(num_neurons_l1/2)
+			if l1_shared_wb: num_param_l1_weight= int(num_neurons_l1/4)
 			else: 			 num_param_l1_weight = num_neurons_l1
 		else:
-			if l1_shared_wb: num_param_l1_weight= int(num_neurons_l1*num_neurons_l0/2)
+			if l1_shared_wb: num_param_l1_weight= int(num_neurons_l1*num_neurons_l0/4)
 			else:			 num_param_l1_weight =int(num_neurons_l1*num_neurons_l0)
 	else:
-		if l1_shared_wb:	 num_param_l1_weight = int(num_neurons_l1/2)
+		if l1_shared_wb:	 num_param_l1_weight = int(num_neurons_l1/4)
 		else: 				 num_param_l1_weight = num_neurons_l1
 
 
@@ -186,10 +186,12 @@ def init_l1_l2(neurons,layer_set):
 def init_l0_l1_l2(neurons,layer_set, init_param):
 	neurons_l0 = layer_set["l0"]["neurons"]
 	num_param_l0_wb 	= int(neurons_l0/2) if layer_set["l0"]["shared_weight_and_bias"]  	else neurons_l0
+	num_param_l0_leaki 	= int(neurons_l0/2) if layer_set["l0"]["shared_leak_i"]  			else neurons_l0
 
 	init_param["l0_thres"]	 = torch.ones(neurons_l0).float()
 	init_param["l0_leak_v"]	 = torch.ones(neurons_l0).float()
-	init_param["l0_leak_i"]  = torch.ones(neurons_l0).float()          			
+
+	init_param["l0_leak_i"]  = torch.ones(num_param_l0_leaki).float()          			
 	init_param["l0_weights"] = torch.ones(num_param_l0_wb).float()	# Shpae (out,in)
 	if layer_set["l0"]["bias"]: 
 		init_param["l0_bias"]	= torch.ones(num_param_l0_wb).float()

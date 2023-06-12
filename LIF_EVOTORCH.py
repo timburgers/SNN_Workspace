@@ -60,6 +60,7 @@ class LIF_EA_evotorch(Problem):
         self.input_data, self.target_data = get_dataset(self.config, self.config["DATASET_NUMBER"], self.config["SIM_TIME"])
         self.bounds = create_bounds(self, self.model, self.config)
         self.prefix = ""
+        self.all_param_test_solutions = dict()
         self.test_solutions= np.zeros(self.number_parameters)
         self.error_test_solutions= np.array([])
         self.train_datasets=np.array([])
@@ -95,6 +96,11 @@ class LIF_EA_evotorch(Problem):
         controller = copy.deepcopy(self.model)
         final_parameters =torchga.model_weights_as_dict(controller, solution_np)
         controller.load_state_dict(final_parameters)
+
+        # Convert the final parameters in the correct shape
+        if self.config["LAYER_SETTING"]["l0"]["enabled"]: controller.l0.init_reshape()
+        controller.l1.init_reshape()
+        controller.l2.init_reshape()
 
         if  self.fitness_mode== 1: #Only controller simlation
             fitness_measured = run_controller(controller,self.input_data, save_mode = False)
@@ -224,7 +230,7 @@ def evaluate_fitness(fitness_mode, fitness_measured, fitness_target):
     fitness_target = torch.flatten(fitness_target)
     fitness_measured = torch.from_numpy(fitness_measured)
     fitness_value = mse(fitness_measured,fitness_target)
-    if fitness_mode == 1 or fitness_mode == 3:
+    if fitness_mode == 1:
         fitness_value += (1-pearson(fitness_measured,fitness_target)) #pearson of 1 means linear correlation
     return fitness_value
         
@@ -311,6 +317,11 @@ def test_solution(problem, solution):
     final_parameters =torchga.model_weights_as_dict(controller, solution_np)
     controller.load_state_dict(final_parameters)
 
+    # Convert the final parameters in the correct shape
+    if problem.config["LAYER_SETTING"]["l0"]["enabled"]: controller.l0.init_reshape()
+    controller.l1.init_reshape()
+    controller.l2.init_reshape()
+
     if  problem.fitness_mode== 1: #Only controller simlation
         fitness_measured, state_l1_arr, state_l0_arr = run_controller(controller,input_data, save_mode=True)
     elif problem.fitness_mode == 2 or problem.fitness_mode == 3:#Also simulate the dyanmics
@@ -345,7 +356,7 @@ def test_solution(problem, solution):
     if problem.config["WANDB_LOG"] == True:
         wandb.log({title: plt})
 
-    plt.show()
+    # plt.show()
 
 def create_bounds(problem, model,config):
     bound_config = config["PARAMETER_BOUNDS"]
@@ -427,7 +438,8 @@ def save_solution(best_solution, problem):
                          "mean": problem.mean,
                          "sigma":problem.sigma,
                          "model_structure": problem.dict_model_structure,
-                         "config": problem.config}
+                         "config": problem.config,
+                         "all_param_sol": problem.all_param_test_solutions}
         pickle.dump(test_solutions, pickle_out)
         pickle_out.close()
 
@@ -495,9 +507,21 @@ def evaluate_manual_dataset():
     #Evaluate every 50 generations
     if searcher.step_count%problem.config["SAVE_TEST_SOLUTION_STEPSIZE"] ==0 or searcher.step_count==1 or searcher.steps_count ==problem.config["GENERATIONS"]:
         best_in_pop = torch.argmin(searcher.population._evdata)
-        best_sol = searcher.population.values[best_in_pop].detach().numpy()
+        best_sol_np = searcher.population.values[best_in_pop].detach().numpy()
         problem.error_test_solutions = np.append(problem.error_test_solutions, searcher.population._evdata[best_in_pop])
-        problem.test_solutions = np.vstack((problem.test_solutions, best_sol))
+        problem.test_solutions = np.vstack((problem.test_solutions, best_sol_np))
+
+
+        controller = copy.deepcopy(problem.model)
+        final_parameters =torchga.model_weights_as_dict(controller, best_sol_np)
+        controller.load_state_dict(final_parameters)
+        
+        # Convert the final parameters in the correct shape
+        if problem.config["LAYER_SETTING"]["l0"]["enabled"]: controller.l0.init_reshape()
+        controller.l1.init_reshape()
+        controller.l2.init_reshape()
+        all_param_dict = controller.state_dict()
+        problem.all_param_test_solutions[str(searcher.step_count)] = all_param_dict
 
         # Save the results during the session
         best_solution = searcher.status["best"]
@@ -519,31 +543,32 @@ def plot_evolution_parameters(problem):
 
     ### Fill the dictornary
     for param in full_solution_dict_mean:
-        for gen in range(generations):
+        for gen in range(parameters_mean.shape[0]):
             gen_parameters_mean =torchga.model_weights_as_dict(problem.model, parameters_mean[gen,:])
-            for name, value in gen_parameters_mean.items():
-                if param == name:
-                    value = torch.flatten(value).detach().numpy()
-                    if full_solution_dict_mean[param] is None: #Check is dict is empty 
-                        full_solution_dict_mean[param] = value
-                    else:
-                        full_solution_dict_mean[param] = np.vstack((full_solution_dict_mean[param],value))
-                    break
+            value = gen_parameters_mean[param]
+            value = torch.flatten(value).detach().numpy()
+            if full_solution_dict_mean[param] is None: #Check is dict is empty 
+                full_solution_dict_mean[param] = value
+            else:
+                full_solution_dict_mean[param] = np.vstack((full_solution_dict_mean[param],value))
+            
 
             gen_parameters_stds =torchga.model_weights_as_dict(problem.model, parameters_stds[gen,:])
-            for name, value in gen_parameters_stds.items():
-                if param == name:
-                    value = torch.flatten(value).detach().numpy()
-                    if full_solution_dict_stds[param] is None: #Check is dict is empty 
-                        full_solution_dict_stds[param] = value
-                    else:
-                        full_solution_dict_stds[param] = np.vstack((full_solution_dict_stds[param],value))
-                    break
+            value = gen_parameters_stds[param]
+            value = torch.flatten(value).detach().numpy()
+            if full_solution_dict_stds[param] is None: #Check is dict is empty 
+                full_solution_dict_stds[param] = value
+            else:
+                full_solution_dict_stds[param] = np.vstack((full_solution_dict_stds[param],value))
+
 
 
     ### Plot the different diagrams
     gen_arr = np.arange(0,generations)
     for param in full_solution_dict_mean:
+        # Do not save the recurrent and l1 if siz is larger than the number of neurons, to save time during plotting
+        if len(full_solution_dict_mean[param][0,:]) > problem.config["NEURONS"]:
+            continue
         plt.figure()
         for num_param in range(len(full_solution_dict_mean[param][0,:])):
             param_per_gen = full_solution_dict_mean[param][:,num_param]
@@ -673,7 +698,6 @@ if __name__ == "__main__":
 
 
     searcher.run(problem.config["GENERATIONS"])
-
     best_solution = searcher.status["best"]
     save_solution(best_solution,problem)
     test_solution(problem,best_solution)
