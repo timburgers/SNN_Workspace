@@ -527,6 +527,10 @@ def evaluate_manual_dataset():
         best_solution = searcher.status["best"]
         save_solution(best_solution,problem)
 
+    if problem.config["GENERATIONS"] >= 1000 and searcher.step_count% int(problem.config["GENERATIONS"]/10) == 0:
+        best_solution = searcher.status["best"] 
+        test_solution(problem,best_solution)
+
 def plot_evolution_parameters(problem):
     generations = np.size(problem.mean,0)
     parameters_mean = problem.mean #shape (generations, parameters)
