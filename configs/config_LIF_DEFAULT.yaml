@@ -3,7 +3,7 @@
 NEURONS: 30
 INDIVIDUALS: 10
 GENERATIONS: 100
-NUMBER_PROCESSES: 0
+NUMBER_PROCESSES: 10
 SIM_TIME: 30            # max 40 secs
 
 # Dataset loading and saving options
@@ -33,7 +33,7 @@ LAYER_SETTING:
 
      bias:                     False  # REQ: -                                            #NOTE: -
      w_diagonal:               True  # REQ: -                                             #NOTE: If true --> 1x1 diag, unless w_diag_2x2 is true
-     w_diagonal_2x2:           False  # REQ: w_diagonal                                            #NOTE: -     
+     w_diagonal_2x2:           True  # REQ: w_diagonal                                            #NOTE: -     
      shared_weight_and_bias:   True   # REQ: -                                            #NOTE: [[w1,w1,w2,w2,w3,w3],[w1,w1,w2,w2,w3,w3],[w4,w4,w5,w5,w6,w6], ....] shape(out,in)
 
      shared_leak_i:            True   # REQ: -                                            #NOTE: leak_i = [l1, l1, l2, l2, l3, l3 ...]
