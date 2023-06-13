@@ -3,7 +3,7 @@
 NEURONS: 30
 INDIVIDUALS: 10
 GENERATIONS: 100
-NUMBER_PROCESSES: 10
+NUMBER_PROCESSES: 0
 SIM_TIME: 30            # max 40 secs
 
 # Dataset loading and saving options
@@ -24,7 +24,7 @@ LAYER_SETTING:
     clamp_v:                   False  # REQ: -                                            #NOTE: -
 
   l1:   
-     recurrent:                True   # REQ: -                                            #NOTE: -
+     recurrent:                False   # REQ: -                                            #NOTE: -
 
      adaptive:                 True   # REQ: -                                            #NOTE: -
      adapt_thres_input_spikes: True   # REQ: adaptive & (diagonal or size l0 = l1)        #NOTE: t is not calc based on own spikes but incomming spikes.
