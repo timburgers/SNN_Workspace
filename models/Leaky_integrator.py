@@ -24,7 +24,7 @@ class Leaky_integrator_neuron(BaseNeuron):
         # spike mechanism
         self.spike = spike_fn
 
-    def activation(self, state, input_):
+    def activation(self, state, input_, _):
         # unpack state; spikes always last
         v = state
 

@@ -50,17 +50,21 @@ import torch
 # print([1]*111)
 neurons_l0 = 4
 neurons_l1 = 12
-a_or = torch.tensor([[1,2,3,4,5,6,7,8,9,10,11,12]])
-a_flat = torch.flatten(a_or)
-a = torch.stack((a_flat,a_flat),dim=1)
-a = torch.flatten(a)
+a = torch.tensor([[1,2],[3,4]])
+b = torch.tensor([[5,6],[7,8]])
 
-a_new = a.reshape((int(neurons_l1/2),neurons_l0))
-a_new_new = torch.stack((a_new,a_new),dim=1)
-a_new_new = torch.flatten(a_new_new)
-a_new_new = a_new_new.reshape((neurons_l1,neurons_l0))
-# print(a_or)
-print(a_new_new)
+ab = torch.block_diag(a,b)
+
+# a_flat = torch.flatten(a_or)
+# a = torch.stack((a_flat,a_flat),dim=1)
+# a = torch.flatten(a)
+
+# a_new = a.reshape((int(neurons_l1/2),neurons_l0))
+# a_new_new = torch.stack((a_new,a_new),dim=1)
+# a_new_new = torch.flatten(a_new_new)
+# a_new_new = a_new_new.reshape((neurons_l1,neurons_l0))
+# # print(a_or)
+print(ab)
 # print (a)
 # print(b)
 

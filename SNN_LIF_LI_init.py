@@ -13,7 +13,7 @@ class L1_Decoding_SNN(nn.Module):
 		# Select the number of inputs to the first layer depending wheter encoding layer is present
 		if layer_settings["l0"]["enabled"]: 
 			self.encoding_layer = True
-			self.l1_input = neurons if layer_settings["l1"]["diagonal"] else layer_settings["l0"]["neurons"]
+			self.l1_input = neurons if layer_settings["l1"]["w_diagonal"] else layer_settings["l0"]["neurons"]
 			self.l1_name = "middle"
 		else:
 			self.encoding_layer = False 
@@ -125,14 +125,17 @@ class Encoding_L1_Decoding_SNN(L1_Decoding_SNN):
 
 	
 def init_l1_l2(neurons,layer_set):
-	# Set local cariables
+	# Set local variables
 	init_param = {}
-	l1_adapt		= layer_set["l1"]["adaptive"]
-	l1_recur		= layer_set["l1"]["recurrent"]
-	encoding_layer	= layer_set["l0"]["enabled"]
-	l1_shared_wb 	= layer_set["l1"]["shared_weight_and_bias"]
-	l2_shared_wb 	= layer_set["l2"]["shared_weight_and_bias"]
-	l1_w_diagonal 	= layer_set["l1"]["diagonal"]
+	l1_adapt				= layer_set["l1"]["adaptive"]
+	l1_recur				= layer_set["l1"]["recurrent"]
+	encoding_layer			= layer_set["l0"]["enabled"]
+	l1_shared_wb 			= layer_set["l1"]["shared_weight_and_bias"]
+	l2_shared_wb 			= layer_set["l2"]["shared_weight_and_bias"]
+	l1_w_diagonal 			= layer_set["l1"]["w_diagonal"]
+	l1_w_2x2				= layer_set["l1"]["w_diagonal_2x2"]
+	l1_adapt_2x2 			= layer_set["l1"]["adapt_2x2_connection"]
+	l1_adapt_share_addt		= layer_set["l1"]["adapt_share_add_t"]
 
 	num_neurons_l1 = neurons
 	# Determine the number of parameters that will be trained
@@ -142,19 +145,37 @@ def init_l1_l2(neurons,layer_set):
 	
 	if encoding_layer:
 		if l1_w_diagonal:
-			if l1_shared_wb: num_param_l1_weight= int(num_neurons_l1/4)
-			else: 			 num_param_l1_weight = num_neurons_l1
+			# Encoded, Diagonal (1x1 or 2x2 diag), Shared
+			if l1_shared_wb: num_param_l1_weight= int(num_neurons_l1/2)
+
+			# Encoded, Diagonal, Not Shared
+			else:
+				# Encoded, Diagonal (2x2), Not Shared 			
+				if l1_w_2x2:
+					num_param_l1_weight = int(num_neurons_l1*2)
+				# Encoded, Diagonal (1x1), Not Shared
+				else: 
+					num_param_l1_weight = num_neurons_l1
 		else:
+			# Encoded, NOT Diagonal, Shared
 			if l1_shared_wb: num_param_l1_weight= int(num_neurons_l1*num_neurons_l0/4)
+
+			# Encoded, NOT Diagonal, Not Shared
 			else:			 num_param_l1_weight =int(num_neurons_l1*num_neurons_l0)
 	else:
-		if l1_shared_wb:	 num_param_l1_weight = int(num_neurons_l1/4)
+		# NOT Encoded, Shared
+		if l1_shared_wb:	 num_param_l1_weight = int(num_neurons_l1/2)
+
+		# NOT Encoded, NOT Shared
 		else: 				 num_param_l1_weight = num_neurons_l1
 
 
 	num_param_l1_bias 	= int(num_neurons_l1/2) if l1_shared_wb						else num_neurons_l1
 	num_param_l1_leaki 	= int(num_neurons_l1/2) if layer_set["l1"]["shared_leak_i"]	else num_neurons_l1 
 	num_param_l2_wb 	= int(num_neurons_l1/2) if l2_shared_wb  					else num_neurons_l1   
+
+	num_param_l1_addt 	= int(num_neurons_l1*2) if l1_adapt_2x2						else num_neurons_l1
+	if l1_adapt_share_addt: num_param_l1_addt = int(num_neurons_l1/2)
 
 	
 	init_param["l1_thres"]	= torch.ones(num_neurons_l1).float()
@@ -173,13 +194,13 @@ def init_l1_l2(neurons,layer_set):
 	
 	# Init Adaptive parameters
 	if l1_adapt:
-		init_param["l1_leak_t"] = torch.ones(neurons).float()
-		init_param["l1_base_t"] = torch.ones(neurons).float()
-		init_param["l1_add_t"] = torch.ones(neurons).float()
+		init_param["l1_leak_t"] = torch.ones(num_neurons_l1).float()
+		init_param["l1_base_t"] = torch.ones(num_neurons_l1).float()
+		init_param["l1_add_t"] = torch.ones(int(num_param_l1_addt)).float()
 
 	# Init Recurrent Weights
 	if l1_recur:
-		init_param["l1_weights_rec"]= torch.ones(neurons,neurons).float()
+		init_param["l1_weights_rec"]= torch.ones(num_neurons_l1,num_neurons_l1).float()
 	return init_param
 
 
