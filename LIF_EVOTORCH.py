@@ -43,7 +43,9 @@ class LIF_EA_evotorch(Problem):
         ### Read config file
         with open(self.prefix + config_path + ".yaml","r") as f:
             self.config = yaml.safe_load(f)
-        
+        self.config = fix_requirements_in_config(self.config)
+        show_layer_settings(self.config)
+
         # Select model
         self.encoding_layer = self.config["LAYER_SETTING"]["l0"]["enabled"]
         if self.encoding_layer: self.model = Encoding_L1_Decoding_SNN(None, self.config["NEURONS"], self.config["LAYER_SETTING"])
@@ -90,7 +92,6 @@ class LIF_EA_evotorch(Problem):
             bounds=self.bounds,
         )
 
-
     def _evaluate(self, solution):
         solution_np = solution.values.detach().numpy() #numpy array of all parameters
         controller = copy.deepcopy(self.model)
@@ -112,6 +113,59 @@ class LIF_EA_evotorch(Problem):
 
         print(fitness_value)
         solution.set_evals(fitness_value)
+
+def fix_requirements_in_config(config):
+    l0 = config["LAYER_SETTING"]["l0"]
+    l1 = config["LAYER_SETTING"]["l1"]
+    l2 = config["LAYER_SETTING"]["l2"]
+    
+    # Check when l0-l1 is same number of neurons
+    if l0["enabled"] and (l0["neurons"] == config["NEURONS"] or l1["w_diagonal"]):
+        l0_l1_square = True
+        print("\nL0 and L1 have the same number of neurons")
+    else:l0_l1_square = False
+
+
+    if l0_l1_square and l1["w_diagonal"]:
+        config["LAYER_SETTING"]["l0"]["neurons"] = None
+    
+    if l0_l1_square == False or l1["adaptive"] == False:
+        config["LAYER_SETTING"]["l1"]["adapt_thres_input_spikes"] = False
+        config["LAYER_SETTING"]["l1"]["adapt_2x2_connection"] = False
+        config["LAYER_SETTING"]["l1"]["adapt_share_add_t"] = False
+        print("\nSet all adapt parameters to False since l0-l1 is not squared")
+    
+    if l0["enabled"] and l1["w_diagonal"] == False:
+        config["LAYER_SETTING"]["l1"]["w_diagonal_2x2"] = False
+        print("\nSet w_diagonal_2x2 to False since l0-l1 is not squared")    
+    return config
+
+def show_layer_settings(config):
+    lay_set = config["LAYER_SETTING"]
+    neurons_l1 = config["NEURONS"]
+    if lay_set["l1"]["w_diagonal"]: neurons_l0 = neurons_l1
+    else:                           neurons_l0 = lay_set["l0"]["neurons"]
+
+    for layer_name, layer_settings in lay_set.items():
+
+        if  layer_name=="l0":
+            if lay_set["l0"]["enabled"]: print("\n--------- Encoding Layer (",neurons_l0,") -----------")
+            else: continue
+
+        if layer_name=="l1": print("\n--------- Main Layer (",neurons_l1,")-----------")
+        if layer_name=="l2": print("\n--------- Decoding Layer (1) -----------")
+
+        for set_name, set_value in layer_settings.items():
+            if set_value == True:
+                print(set_name)
+        print("------------------------------------------\n")
+
+# def create_wandb_description(config):
+#     desciption = ""
+#     lay_set = config["LAYER_SETTING"]
+#     for layer_name, layer_settings in lay_set.items():
+#         for set_name, set_value in layer_settings.items():
+#             if set_value == True:
 
 
 def run_controller(controller,input,save_mode):

@@ -22,7 +22,7 @@ import copy
 # for dataset_number in range(10):
 sim_time = 100
 dataset_number = 0                                                    # None is the test_dataset
-filename = None                                                          #None --> highest number, or int or str (withou .pkl)
+filename = 302                                                          #None --> highest number, or int or str (withou .pkl)
 folder_of_model = "Blimp"                                               # all folder under the folder Results_EA
 lib_algorithm = "evotorch"                                              # evotorch or pygad
 SNN_TYPE = "LIF"                                                        # either LIF or IZH
@@ -151,6 +151,12 @@ if SNN_TYPE == "LIF":
     config = dict_solutions["config"]
     number_of_neurons = config["NEURONS"]
     #//TODO GET rid of beun fixes here
+    config["LAYER_SETTING"]["l1"]["w_diagonal"] = config["LAYER_SETTING"]["l1"]["diagonal"]
+    config["LAYER_SETTING"]["l1"]["w_diagonal_2x2"] = False
+    config["LAYER_SETTING"]["l1"]["adapt_2x2_connection"] = False
+    config["LAYER_SETTING"]["l1"]["adapt_share_add_t"] = False
+    config["LAYER_SETTING"]["l1"]["adapt_share_add_t"] = False
+
     encoding_layer = config["LAYER_SETTING"]["l0"]["enabled"]
     if encoding_layer: controller = Encoding_L1_Decoding_SNN(None, config["NEURONS"], config["LAYER_SETTING"])
     else:              controller = L1_Decoding_SNN(None, config["NEURONS"], config["LAYER_SETTING"])

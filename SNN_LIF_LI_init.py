@@ -204,8 +204,10 @@ def init_l1_l2(neurons,layer_set):
 	return init_param
 
 
-def init_l0_l1_l2(neurons,layer_set, init_param):
-	neurons_l0 = layer_set["l0"]["neurons"]
+def init_l0_l1_l2(neurons_l1,layer_set, init_param):
+	if layer_set["l1"]["w_diagonal"]: neurons_l0 = neurons_l1
+	else:  							  neurons_l0 = layer_set["l0"]["neurons"]
+	
 	num_param_l0_wb 	= int(neurons_l0/2) if layer_set["l0"]["shared_weight_and_bias"]  	else neurons_l0
 	num_param_l0_leaki 	= int(neurons_l0/2) if layer_set["l0"]["shared_leak_i"]  			else neurons_l0
 
