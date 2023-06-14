@@ -278,12 +278,13 @@ def run_controller_dynamics(config,controller,input, save_mode):
 
 
 def evaluate_fitness(fitness_mode, fitness_measured, fitness_target):
-    mse = torch.nn.MSELoss()
-    pearson = PearsonCorrCoef()
+    # mse = torch.nn.MSELoss()
+    mae = torch.nn.L1Loss()
+    # pearson = PearsonCorrCoef()
     #Evaluate fitness using MSE and additionally pearson if there should be a linear correlation between target and output
     fitness_target = torch.flatten(fitness_target)
     fitness_measured = torch.from_numpy(fitness_measured)
-    fitness_value = mse(fitness_measured,fitness_target)
+    fitness_value = mae(fitness_measured,fitness_target)
     if fitness_mode == 1:
         fitness_value += (1-pearson(fitness_measured,fitness_target)) #pearson of 1 means linear correlation
     return fitness_value
