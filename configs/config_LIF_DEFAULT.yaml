@@ -1,9 +1,9 @@
 
 ### Hyperparameters
 NEURONS: 30
-INDIVIDUALS: 10
-GENERATIONS: 5
-NUMBER_PROCESSES: 10
+INDIVIDUALS: 60
+GENERATIONS: 20000
+NUMBER_PROCESSES: 30
 SIM_TIME: 30            # max 40 secs
 
 # Dataset loading and saving options
@@ -24,19 +24,19 @@ LAYER_SETTING:
     clamp_v:                   False  # REQ: -                                            #NOTE: -
 
   l1:   
-     recurrent:                False   # REQ: -                                            #NOTE: -
+     recurrent:                True   # REQ: -                                            #NOTE: -
 
      adaptive:                 True   # REQ: -                                            #NOTE: -
      adapt_thres_input_spikes: True   # REQ: adaptive & (diagonal or size l0 = l1)        #NOTE: t is not calc based on own spikes but incomming spikes.
      adapt_2x2_connection:     True   # REQ: adaptive & (diagonal or size l0 = l1)        #NOTE: add_t = diagonal_block_diagram(2x2)
-     adapt_share_add_t:        False   # REQ: adapt_2x2_connection                         #NOTE: 2x2 blocks are linked ([[-a1,a1],[a1,-a1]])
+     adapt_share_add_t:        True   # REQ: adapt_2x2_connection                         #NOTE: 2x2 blocks are linked ([[-a1,a1],[a1,-a1]])
 
      bias:                     False  # REQ: -                                            #NOTE: -
-     w_diagonal:               False  # REQ: -                                             #NOTE: If true --> 1x1 diag, unless w_diag_2x2 is true
+     w_diagonal:               True  # REQ: -                                             #NOTE: If true --> 1x1 diag, unless w_diag_2x2 is true
      w_diagonal_2x2:           True  # REQ: w_diagonal                                    #NOTE: -     
-     shared_weight_and_bias:   False   # REQ: -                                            #NOTE: [[w1,w1,w2,w2,w3,w3],[w1,w1,w2,w2,w3,w3],[w4,w4,w5,w5,w6,w6], ....] shape(out,in)
+     shared_weight_and_bias:   True   # REQ: -                                            #NOTE: [[w1,w1,w2,w2,w3,w3],[w1,w1,w2,w2,w3,w3],[w4,w4,w5,w5,w6,w6], ....] shape(out,in)
 
-     shared_leak_i:            False   # REQ: -                                            #NOTE: leak_i = [l1, l1, l2, l2, l3, l3 ...]
+     shared_leak_i:            True   # REQ: -                                            #NOTE: leak_i = [l1, l1, l2, l2, l3, l3 ...]
      clamp_v:                  False  # REQ: -                                            #NOTE: clamp the mem pot to zero  
 
   l2: 
@@ -177,6 +177,6 @@ PARAMETER_BOUNDS: #null if None in python
   l1.ff.bias:       {"low": -1,   "high": 1   }  #also negative!
 
   l2.neuron.leak:   {"low": 0.88, "high": 0.92}
-  l2.ff.weight:     {"low": -0.25,"high": 0.25}  #also negative!
+  l2.ff.weight:     {"low": -0.30,"high": 0.30}  #also negative!
 
 

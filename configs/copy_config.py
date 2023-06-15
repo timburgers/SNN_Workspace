@@ -22,6 +22,8 @@ for l1_neur in [30,40,50]:
                     config["LAYER_SETTING"]["l1"]["shared_leak_i"] = shared
 
                     config["LAYER_SETTING"]["l1"]["w_diagonal"] = w_diag
+                    if w_diag == False:
+                        config["LAYER_SETTING"]["l0"]["neurons"] = l1_neur
 
                     file=open("configs\config_LIF_"+ str(ind) +".yaml","w")
                     yaml.dump(config,file)
