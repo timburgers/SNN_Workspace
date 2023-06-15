@@ -68,7 +68,7 @@ class LIF_EA_evotorch(Problem):
         self.train_datasets=np.array([])
         self.manual_dataset_prev = False
         self.fitness_mode = self.config["TARGET_FITNESS"]
-        
+        self.fitness_func = self.config["FITNESS_FUNCTION"]
 
         # Get the number of datasets (with only the word 'datatset' before the _)
         all_files_in_folder = os.listdir(self.prefix + self.config["DATASET_DIR"])
@@ -109,7 +109,7 @@ class LIF_EA_evotorch(Problem):
             fitness_measured = run_controller_dynamics(self.config,controller,self.input_data, save_mode = False)
 
         # Calculate the fitness value
-        fitness_value = evaluate_fitness(self.fitness_mode, fitness_measured, self.target_data)
+        fitness_value = evaluate_fitness(self.fitness_func, fitness_measured, self.target_data)
 
         print(fitness_value)
         solution.set_evals(fitness_value)
@@ -125,9 +125,15 @@ def fix_requirements_in_config(config):
         print("\nL0 and L1 have the same number of neurons")
     else:l0_l1_square = False
 
+    if l0["enabled"] == False:
+        config["LAYER_SETTING"]["l0"]["neurons"] = None
+        config["LAYER_SETTING"]["l0"]["bias"] = False
+        config["LAYER_SETTING"]["l0"]["shared_weight_and_bias"] = False
+        config["LAYER_SETTING"]["l0"]["shared_leak_i"] = False
+        config["LAYER_SETTING"]["l0"]["clamp_v"] = False
 
     if l0_l1_square and l1["w_diagonal"]:
-        config["LAYER_SETTING"]["l0"]["neurons"] = None
+        config["LAYER_SETTING"]["l0"]["neurons"] = config["NEURONS"]
     
     if l0_l1_square == False or l1["adaptive"] == False:
         config["LAYER_SETTING"]["l1"]["adapt_thres_input_spikes"] = False
@@ -277,16 +283,20 @@ def run_controller_dynamics(config,controller,input, save_mode):
         return sys_output[1:], error_arr, state_l0_arr, state_l1_arr, state_l2_arr # Skip the first 0 height input
 
 
-def evaluate_fitness(fitness_mode, fitness_measured, fitness_target):
-    # mse = torch.nn.MSELoss()
-    mae = torch.nn.L1Loss()
-    # pearson = PearsonCorrCoef()
+def evaluate_fitness(fitness_func, fitness_measured, fitness_target):
+
+    if fitness_func == "mse" or fitness_func == "mse+p": fitt_fn1 = torch.nn.MSELoss()
+    if fitness_func == "mae" or fitness_func == "mae+p": fitt_fn1 = torch.nn.L1Loss()
+
+
     #Evaluate fitness using MSE and additionally pearson if there should be a linear correlation between target and output
     fitness_target = torch.flatten(fitness_target)
     fitness_measured = torch.from_numpy(fitness_measured)
-    fitness_value = mae(fitness_measured,fitness_target)
-    if fitness_mode == 1:
-        fitness_value += (1-pearson(fitness_measured,fitness_target)) #pearson of 1 means linear correlation
+    fitness_value = fitt_fn1(fitness_measured,fitness_target)
+
+    if fitness_func == "mse+p" or fitness_func == "mae+p":
+        fitt_fn2 = PearsonCorrCoef()
+        fitness_value += (1-fitt_fn2(fitness_measured,fitness_target)) #pearson of 1 means linear correlation
     return fitness_value
         
 
@@ -383,7 +393,7 @@ def test_solution(problem, solution):
         fitness_measured, error, state_l0_arr, state_l1_arr, state_l2_arr = run_controller_dynamics(problem.config,controller,input_data, save_mode=True)
 
     # Calculate the fitness value
-    fitness_value = evaluate_fitness(problem.fitness_mode, fitness_measured, fitness_target)
+    fitness_value = evaluate_fitness(problem.fitness_func, fitness_measured, fitness_target)
 
     # Print the parameters of the best solution to the terminal
     for key, value in final_parameters.items():
@@ -715,6 +725,37 @@ def get_dataset(config, dataset_num, sim_time):
 
     return input_data, target_data
 
+def changes_names_in_table_wandb(config):
+    config_cop = copy.deepcopy(config)
+    lay_set = config_cop["LAYER_SETTING"]
+    for layer_name, layer_settings in lay_set.items():
+        for set_name, set_value in layer_settings.items():
+            if set_value == False or set_value == None:
+                config_cop["LAYER_SETTING"][layer_name][set_name] = "-"
+            if set_value == True:
+                config_cop["LAYER_SETTING"][layer_name][set_name] = "X"
+
+    wandb.config.update({   "0) En":   config_cop["LAYER_SETTING"]["l0"]["enabled"],
+                            "0) N":    config_cop["LAYER_SETTING"]["l0"]["neurons"],
+                            "0) b":    config_cop["LAYER_SETTING"]["l0"]["bias"],
+                            "0) wbS":  config_cop["LAYER_SETTING"]["l0"]["shared_weight_and_bias"],
+                            "0) iS":   config_cop["LAYER_SETTING"]["l0"]["shared_leak_i"],
+
+                            "1) N":    config_cop["NEURONS"],
+                            "1) R":    config_cop["LAYER_SETTING"]["l1"]["recurrent"],
+                            "1) R":    config_cop["LAYER_SETTING"]["l1"]["recurrent"],
+                            "1) A":    config_cop["LAYER_SETTING"]["l1"]["adaptive"],
+                            "1) AI":   config_cop["LAYER_SETTING"]["l1"]["adapt_thres_input_spikes"],
+                            "1) A2x2": config_cop["LAYER_SETTING"]["l1"]["adapt_2x2_connection"],
+                            "1) AS":   config_cop["LAYER_SETTING"]["l1"]["adapt_share_add_t"],
+                            "1) b":    config_cop["LAYER_SETTING"]["l1"]["bias"],
+                            "1) wD":   config_cop["LAYER_SETTING"]["l1"]["w_diagonal"],
+                            "1) wD2x2":config_cop["LAYER_SETTING"]["l1"]["w_diagonal_2x2"],
+                            "1) wbS":  config_cop["LAYER_SETTING"]["l1"]["shared_weight_and_bias"],
+                            "1) iS":   config_cop["LAYER_SETTING"]["l1"]["shared_leak_i"],
+
+                            "2) ComL": config_cop["LAYER_SETTING"]["l2"]["complementary_leak"],
+                            "2) wbS":  config_cop["LAYER_SETTING"]["l2"]["shared_weight_and_bias"]})
 
 if __name__ == "__main__":
     config_folder = "configs/"
@@ -742,13 +783,9 @@ if __name__ == "__main__":
 
     if problem.config["WANDB_LOG"] == True:
         _ = WandbLogger(searcher, project = "SNN_BLIMP", config=problem.config)
+        changes_names_in_table_wandb(problem.config)
         wandb.config.update({"OS": platform.system(),
-                             "leak_i shared": problem.config["LAYER_SETTING"]["l1"]["shared_leak_i"],
-                             "w1&b1 shared": problem.config["LAYER_SETTING"]["l1"]["shared_weight_and_bias"],
-                             "b1": problem.config["LAYER_SETTING"]["l1"]["bias"],
-                             "clamp V": problem.config["LAYER_SETTING"]["l1"]["clamp_v"],
-                             "recurrent": problem.config["LAYER_SETTING"]["l1"]["recurrent"],
-                             "w2 shared":problem.config["LAYER_SETTING"]["l2"]["shared_weight_and_bias"]})
+                             "Fit_Fn": problem.config["FITNESS_FUNCTION"]})
         if problem.config["MEAN_SETTING"]== "same for all": wandb.config.update({"MEAN_SETTING": problem.config["SAME_FOR_ALL"]},allow_val_change = True)
         if problem.config["MEAN_SETTING"]== "previous": wandb.config.update({"MEAN_SETTING": problem.config["PREVIOUS_SOLUTION"]},allow_val_change = True)
 

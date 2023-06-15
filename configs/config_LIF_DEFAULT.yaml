@@ -2,8 +2,8 @@
 ### Hyperparameters
 NEURONS: 30
 INDIVIDUALS: 10
-GENERATIONS: 10
-NUMBER_PROCESSES: 0
+GENERATIONS: 5
+NUMBER_PROCESSES: 10
 SIM_TIME: 30            # max 40 secs
 
 # Dataset loading and saving options
@@ -17,7 +17,7 @@ START_DATASETS_IN_MIDDLE: False
 LAYER_SETTING:
   l0:
     enabled:                   True   # REQ: -                                            #NOTE: 
-    neurons:                   10     # REQ: w_diagonal false, when shared N must be even #NOTE: 
+    neurons:                   16     # REQ: w_diagonal false, when shared N must be even #NOTE: 
     bias:                      True   # REQ: -                                            #NOTE: -
     shared_weight_and_bias:    True   # REQ: -                                            #NOTE: -
     shared_leak_i:             True   # REQ: -                                            #NOTE: -
@@ -32,7 +32,7 @@ LAYER_SETTING:
      adapt_share_add_t:        False   # REQ: adapt_2x2_connection                         #NOTE: 2x2 blocks are linked ([[-a1,a1],[a1,-a1]])
 
      bias:                     False  # REQ: -                                            #NOTE: -
-     w_diagonal:               True  # REQ: -                                             #NOTE: If true --> 1x1 diag, unless w_diag_2x2 is true
+     w_diagonal:               False  # REQ: -                                             #NOTE: If true --> 1x1 diag, unless w_diag_2x2 is true
      w_diagonal_2x2:           True  # REQ: w_diagonal                                    #NOTE: -     
      shared_weight_and_bias:   False   # REQ: -                                            #NOTE: [[w1,w1,w2,w2,w3,w3],[w1,w1,w2,w2,w3,w3],[w4,w4,w5,w5,w6,w6], ....] shape(out,in)
 
@@ -43,6 +43,7 @@ LAYER_SETTING:
      complementary_leak:       True   # REQ: -                                            #NOTE: -
      shared_weight_and_bias:   True   # REQ: -                                            #NOTE: -
 
+FITNESS_FUNCTION: "mae"       #"mse", "mse+p", "mae" or "mae+p"
 TARGET_FITNESS: 3   
 #1) "pid output"        : NO dynamic system simulated     Fitness: MSE + Pearson
 #2) "system reference"  : Dynamic system simulated        Fitness: MSE
@@ -104,10 +105,10 @@ CUSTOM:
 
 
 ### Manual
-manual:
-  l1.ff.weight: [1.2, 1.2, 1.2, 1.2, 1,1,1,1, -1.2,-1.2,-1.2,-1.2, -1, -1, -1, -1]
-  l2.ff.weight: [0.25,0.25,0.25,0.25, -0.25,-0.25,-0.25,-0.25, 0.25,0.25,0.25,0.25, -0.25,-0.25,-0.25,-0.25]
-  l1.neuron.leak_i: [0.01,0.01,0.01,0.01, 0.2,0.1,0.2,0.1, 0.01,0.01,0.01,0.01, 0.2,0.1,0.2,0.1,]
+# manual:
+#   l1.ff.weight: [1.2, 1.2, 1.2, 1.2, 1,1,1,1, -1.2,-1.2,-1.2,-1.2, -1, -1, -1, -1]
+#   l2.ff.weight: [0.25,0.25,0.25,0.25, -0.25,-0.25,-0.25,-0.25, 0.25,0.25,0.25,0.25, -0.25,-0.25,-0.25,-0.25]
+#   l1.neuron.leak_i: [0.01,0.01,0.01,0.01, 0.2,0.1,0.2,0.1, 0.01,0.01,0.01,0.01, 0.2,0.1,0.2,0.1,]
 
 ### Gaussian and range
 #The Bound Booleans are only valid when the coresponding shared layer setting is set to false

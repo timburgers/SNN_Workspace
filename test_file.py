@@ -48,12 +48,12 @@ import torch
 
 
 # print([1]*111)
-neurons_l0 = 4
-neurons_l1 = 12
-a = torch.tensor([[1,2],[3,4]])
-b = torch.tensor([[5,6],[7,8]])
+# neurons_l0 = 4
+# neurons_l1 = 12
+# a = torch.tensor([[1,2],[3,4]])
+# b = torch.tensor([[5,6],[7,8]])
 
-ab = torch.block_diag(a,b)
+# ab = torch.block_diag(a,b)
 
 # a_flat = torch.flatten(a_or)
 # a = torch.stack((a_flat,a_flat),dim=1)
@@ -64,7 +64,7 @@ ab = torch.block_diag(a,b)
 # a_new_new = torch.flatten(a_new_new)
 # a_new_new = a_new_new.reshape((neurons_l1,neurons_l0))
 # # print(a_or)
-print(ab)
+print(16)
 # print (a)
 # print(b)
 

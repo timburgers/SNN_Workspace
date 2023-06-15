@@ -20,9 +20,9 @@ from LIF_EVOTORCH import get_dataset, run_controller, run_controller_dynamics, e
 import copy
 
 # for dataset_number in range(10):
-sim_time = 30
+sim_time = 5
 dataset_number = None                                                    # None is the test_dataset
-filename = 470                                                          #None --> highest number, or int or str (withou .pkl)
+filename = None                                                          #None --> highest number, or int or str (withou .pkl)
 folder_of_model = "Blimp"                                               # all folder under the folder Results_EA
 lib_algorithm = "evotorch"                                              # evotorch or pygad
 SNN_TYPE = "LIF"                                                        # either LIF or IZH
@@ -39,10 +39,10 @@ new_dataset_number = 0
 new_input_column = []
 new_target_column = []
 
-create_plots                    = False
-create_table                    = True
+create_plots                    = True
+create_table                    = False
 plot_with_best_testrun          = True  #True: solution = best performance on manual dataset      False: solution = best performance overall (can be easy dataset)
-muliple_test_runs_error_plot    = False  
+muliple_test_runs_error_plot    = True  
 plot_last_generation            = False
 
 colored_background              = True
@@ -187,6 +187,7 @@ fitness_mode = config["TARGET_FITNESS"]
 ##################           RUN SIM                ########################################################
 fitness_measured, error_arr, state_l0_arr ,state_l1_arr ,state_l2_arr ,trained_parameters = run_sim(fitness_mode, config,controller,solution,input_data,True)
 all_parameters = controller.state_dict()       #Convert the dict of only trained paramaters, to a dict with all parameters per neuron
+
 l1_current,l1_mem_pot, l1_thres,l1_spikes = set_variables(config["LAYER_SETTING"]["l1"]["adaptive"],state_l1_arr)
 l0_current,l0_mem_pot, _ ,l0_spikes = set_variables(False,state_l0_arr)
 ######################################################
@@ -293,26 +294,25 @@ if create_plots == False and create_table == False and muliple_test_runs_error_p
 
 
 
-def calc_spike_moving_averge(spike_array):
-    ### Calculate spiking sliding window count
-    spike_count_window = None
 
-    sliding_window = nn.AvgPool1d(window_size,stride=1)
-    spike_array_torch = torch.from_numpy(spike_array).unsqueeze(0) #(batch, sequence L, neurons)
+### Calculate spiking sliding window count
+spike_count_window = None
 
-    for neuron in range(spike_array_torch.size(dim=2)):
-        _slided_count = sliding_window(spike_array_torch[:,:,neuron]).detach().numpy()
+sliding_window = nn.AvgPool1d(window_size,stride=1)
+l1_spikes_torch = torch.from_numpy(l1_spikes).unsqueeze(0) #(batch, sequence L, neurons)
+for neuron in range(l1_spikes_torch.size(dim=2)):
+    _slided_count = sliding_window(l1_spikes_torch[:,:,neuron]).detach().numpy()
 
-        ### Fill in the slided window with zeros (at beginning and end to make it samen size)
-        for _ in range(int(window_size/2)):
-            _slided_count = np.insert(_slided_count,[0],[0])
-        for _ in range(int(window_size/2)-1):
-            _slided_count = np.append(_slided_count,[0])
+    ### Fill in the slided window with zeros (at beginning and end to make it samen size)
+    for _ in range(int(window_size/2)):
+        _slided_count = np.insert(_slided_count,[0],[0])
+    for _ in range(int(window_size/2)-1):
+        _slided_count = np.append(_slided_count,[0])
 
-        if not hasattr(spike_count_window, "shape"):
-            spike_count_window = _slided_count
-        else: spike_count_window = np.vstack((spike_count_window,_slided_count))
-    return spike_count_window
+    if not hasattr(spike_count_window, "shape"):
+        spike_count_window = _slided_count
+    else: spike_count_window = np.vstack((spike_count_window,_slided_count))
+
 
 
 if create_plots == True:
@@ -338,15 +338,15 @@ if create_plots == True:
 
         return filt_start_idx, filt_end_idx
 
-    #Get list for the colored background
-    input_neg = np.clip(error_arr,a_min=None, a_max=0)
-    input_pos = np.clip(error_arr, a_min=0, a_max=None)
-
-    pos_idx_start, pos_idx_end = get_idx_of_non_zero(input_pos, mode="nonzero")
-    neg_idx_start, neg_idx_end = get_idx_of_non_zero(input_neg, mode="nonzero")
-    zero_idx_start, zero_idx_end = get_idx_of_non_zero(input_data, mode="zero")
-
     if config["LAYER_SETTING"]["l0"]["enabled"] == False:
+        input_neg = np.clip(error_arr,a_min=None, a_max=0)
+        input_pos = np.clip(error_arr, a_min=0, a_max=None)
+
+        pos_idx_start, pos_idx_end = get_idx_of_non_zero(input_pos, mode="nonzero")
+        neg_idx_start, neg_idx_end = get_idx_of_non_zero(input_neg, mode="nonzero")
+        zero_idx_start, zero_idx_end = get_idx_of_non_zero(input_data, mode="zero")
+        
+        
         ### Create the sperated spiking plots
         number_of_plots = math.ceil(number_of_neurons/10)
         for idx_plot in range(number_of_plots):
@@ -368,30 +368,29 @@ if create_plots == True:
                 sharex=True
             )
 
-            ### plot the raster of U and V of the 10 neurons (5xV, 5xU, 5xV, 5xU)
-            for column in range(2):
-                neuron = 0+10*idx_plot
-                for row in range(neurons_in_plot):
-                    
-                    if column ==0 or column ==2:
-                        y = l1_mem_pot[:,neuron]
+        ### plot the raster of U and V of the 10 neurons (5xV, 5xU, 5xV, 5xU)
+        for column in range(2):
+            neuron = 0+10*idx_plot
+            for row in range(neurons_in_plot):
+                
+                if column ==0 or column ==2:
+                    y = l1_mem_pot[:,neuron]
 
-                    # Plot in the second column
-                    if column ==1 or column ==3:
-                        if spike_count_plot== True:
-                            y=spike_count_window[neuron,:]
+                # Plot in the second column
+                if column ==1 or column ==3:
+                    if spike_count_plot== True:
+                        y=spike_count_window[neuron,:]
 
-                        else: 
-                            y = l1_current[:,neuron] #LIF --> current and for IZH --> recovery variable
-                    
-                    if row==5:
-                        column = column + 2
-                    if row>4:
-                        row = row -5
-                    
-                    axis1[str(row)+","+str(column)].plot(time_arr,y)
-
-                    axis1[str(row)+","+str(column)].xaxis.grid()
+                    else: 
+                        y = l1_current[:,neuron] #LIF --> current and for IZH --> recovery variable
+                
+                if row==5:
+                    column = column + 2
+                if row>4:
+                    row = row -5
+                
+                axis1[str(row)+","+str(column)].plot(time_arr,y)
+                axis1[str(row)+","+str(column)].xaxis.grid()
 
                     ### only plot in V plots
                     if column ==0 or column ==2:
@@ -440,13 +439,8 @@ if create_plots == True:
         plt.legend()
 
     if config["LAYER_SETTING"]["l0"]["enabled"] == True:
-
         neurons_l0 = config["LAYER_SETTING"]["l0"]["neurons"]
         neurons_l1 = config["NEURONS"]
-        neurons_l0 = config["NEURONS"]        #//TODO remove this line!!!
-
-        l0_spike_count = calc_spike_moving_averge(l0_spikes)
-        l1_spike_count = calc_spike_moving_averge(l1_spikes)
 
         ### Create the sperated spiking plots
         number_of_plots = max(math.ceil(neurons_l0/5), math.ceil(neurons_l1/5))
@@ -469,61 +463,44 @@ if create_plots == True:
             )
 
             # Loop over columns and rows of each plot
-            for column in range(4):
-                first_neuron_in_plot = 0+5*idx_plot
-                neuron = first_neuron_in_plot
-                for row in range(max(l0_neurons_in_plot, l1_neurons_in_plot)):
+            for column in range(2):
+                neuron = 0+10*idx_plot
+                for row in range(neurons_in_plot):
                     
-                    if column ==0:  # mem_pot shape (steps, neurons)
-                        if neuron> neurons_l0-1: break
+                    if column ==0:
                         y = l0_mem_pot[:,neuron]
 
-                    if column ==1:  # spike count shape (neurons, steps)
-                        if neuron> neurons_l0-1: break
-                        y= l0_spike_count[neuron,:]
-
                     if column ==2:
-                        if neuron> neurons_l1-1: break
                         y = l1_mem_pot[:,neuron]
+
+                    # Plot in the second column : spike_count_window
+                    if column ==1:
+                        y=l0_spike_count[neuron,:]
                         
                     # Plot in the second column
                     if column ==3:
-                        if neuron> neurons_l1-1: break
                         y=l1_spike_count[neuron,:]
                     
-                    if neuron == first_neuron_in_plot:
-                        if column == 0: title_plot = "L0 membrame potential"
-                        if column == 1: title_plot = "L0 Spike Count"
-                        if column == 2: title_plot = "L1 membrame potential"
-                        if column == 3: title_plot = "L2 Spike Count"
-                        axis1[str(row)+","+str(column)].set_title(title_plot)
+                    if row==5:
+                        column = column + 2
+                    if row>4:
+                        row = row -5
                     
-                    if column ==2:
-                        axis1[str(row)+","+str(column)].set_ylabel(str(neuron+1), rotation=0, fontsize= 15, labelpad=13)
-
                     axis1[str(row)+","+str(column)].plot(time_arr,y)
+
                     axis1[str(row)+","+str(column)].xaxis.grid()
 
-                    ### only plot in Mem Pot plots
+                    ### only plot in V plots
                     if column ==0 or column ==2:
                         # Show the threshold 
-                        if column == 2 and config["LAYER_SETTING"]["l1"]["adaptive"]:
+                        if config["LAYER_SETTING"]["l1"]["adaptive"]:
                             t = l1_thres[:,neuron]
                             base_t = all_parameters["l1.neuron.base_t"].detach().numpy()[neuron]
                             add_t = all_parameters["l1.neuron.add_t"].detach().numpy()[neuron]
-
-                            if config["LAYER_SETTING"]["l1"]["adapt_2x2_connection"]: #t = (1,N) self.add_t = (N,N)
-                                threshold = base_t +torch.matmul(t, add_t)
-                            else:                      #t = (1,N) self.add_t = (N)
-                                threshold = base_t +add_t * t
-
+                            threshold = t *add_t + base_t
                             axis1[str(row)+","+str(column)].plot(time_arr, threshold, color="r")
                         else:
-                            if column == 0:
-                                threshold = all_parameters["l0.neuron.thresh"].detach().numpy()[neuron]
-                            if column == 2:
-                                threshold = all_parameters["l1.neuron.thresh"].detach().numpy()[neuron]   
-
+                            threshold = all_parameters["l1.neuron.thresh"].detach().numpy()[neuron]
                             axis1[str(row)+","+str(column)].axhline(threshold,color="r")
 
                         # Plot the different background, corresponding with target sign
@@ -534,11 +511,10 @@ if create_plots == True:
                                 axis1[str(row)+","+str(column)].axvspan(neg_idx_start[i]*time_step, neg_idx_end[i]*time_step, facecolor="r", alpha= 0.2)
                             for i in range(len(zero_idx_start)):
                                 axis1[str(row)+","+str(column)].axvspan(zero_idx_start[i]*time_step, zero_idx_end[i]*time_step, facecolor="k", alpha= 0.2)
-
-                    ### only plot in Spike Count plots
+                    
+                    ### only plot in U plots
                     if column ==1 or column ==3:
-                        #Bound the spike count plot between 0 and 1
-                        axis1[str(row)+","+str(column)].set_ylim(-0.05,1.1)
+                        axis1[str(row)+","+str(column)].axhline(0,linestyle="--",color="k")
                         
                         # Plot the different background, corresponding with target sign
                         if colored_background == True and spike_count_plot==True:
@@ -549,16 +525,7 @@ if create_plots == True:
                             for i in range(len(zero_idx_start)):
                                 axis1[str(row)+","+str(column)].axvspan(zero_idx_start[i]*time_step, zero_idx_end[i]*time_step, facecolor="k", alpha= 0.2)
                     neuron = neuron +1
-            time_arr = np.arange(0,sim_time,time_step)
-
-            ### Plot the lowest figure
-            axis1["input"].plot(time_arr,error_arr, label = "SNN input")
-            axis1["input"].plot(time_arr,state_l2_arr, label = "SNN output")
-            axis1["input"].plot(time_arr,ideal_pid_response, label = "PID reponse")
-            axis1["input"].axhline(0,linestyle="--", color="k")
-            axis1["input"].xaxis.grid()
-        plt.legend()
-
+                column = 0
 
     # ### Plot the lowest figure
     # plt.figure()
@@ -575,225 +542,6 @@ if create_plots == True:
         plt.show()
 
 if create_table == True:
-    round_digits = 2
-    neurons_l0_total = config["LAYER_SETTING"]["l0"]["neurons"]
-    neurons_l0_total = config["NEURONS"]        #//TODO remove this line!!!
-    neurons_l1_total = config["NEURONS"]
-
-    # Colors for highlighting
-    color_mix = {'white':'#FFFFFF','gray': '#D3D3D3','black':'#313639','purple':'#AD688E','orange':'#D18F77','yellow':'#E8E190','ltgreen':'#CCD9C7','dkgreen':'#96ABA0','red':'#FFCCCB',}
-    
-    #create table for L0 parameters
-    if encoding_layer:
-        # Add neuron numbers to data
-        l0_neurons = np.array([])
-        for neur in range(0,neurons_l0_total):
-            if neur not in excluded_neurons:
-                l0_neurons = np.append(l0_neurons,str(neur+1))
-        l0_data = l0_neurons
-        l0_column_label = ["Neuron"]
-
-        #Add spike count to the data
-        spike_count = np.array([],dtype=int)
-        for neuron in range(neurons_l0_total):
-            spikes = int(np.sum(l0_spikes[:,neuron]))
-            spike_count = np.append(spike_count,spikes)
-        l0_data = np.vstack((l0_data,spike_count))
-        l0_column_label.append("Spike count")
-
-        # Add all parameters of l0 to the data array
-        for parameter in all_parameters.keys():
-            if parameter.split(".")[0] != "l0":
-                continue
-            data_param = np.round(torch.flatten(all_parameters[parameter]).detach().numpy(),round_digits)
-            # Only add the parameters which has one param per neurons( so not leak l2 and rec connections)
-            if data_param.size == l0_neurons.size:
-                l0_data =np.vstack((l0_data,data_param))
-                l0_column_label.append(parameter)
-            else: print("Parameter named ", parameter, " is not included in the table")
-        
-        ### Convert to "data" array to a table
-        fig = plt.figure(linewidth=1, tight_layout={"pad":1})
-        table = plt.table(cellText=np.transpose(l0_data), colLabels=l0_column_label, loc='center')
-
-        # Set font size
-        table.auto_set_font_size(False)
-        table.set_fontsize(15)
-
-        # Hide axes
-        ax = plt.gca()
-        ax.get_xaxis().set_visible(False)
-        ax.get_yaxis().set_visible(False)
-        fig.suptitle("L0 parameters")
-
-        # Hide axes border
-        plt.box(on=None)
-
-        # highlight w1 cells
-        idx=1
-        for w in l0_data[2,:]:
-            w = float(w)
-            if float(w)<0:                                      #Since the items in data are strings
-                table[idx,2].set_facecolor(color_mix["red"])
-            idx = idx+1
-    ##########          end of table l0             ############
-
-    #create table for L1 parameters
-    # Add neuron numbers to data
-    l1_neurons = np.array([])
-    for neur in range(0,neurons_l1_total):
-        if neur not in excluded_neurons:
-            l1_neurons = np.append(l1_neurons,str(neur+1))
-    l1_data = l1_neurons
-    l1_column_label = ["Neuron"]
-
-    #Add spike count to the data
-    spike_count = np.array([],dtype=int)
-    for neuron in range(neurons_l1_total):
-        spikes = int(np.sum(l1_spikes[:,neuron]))
-        spike_count = np.append(spike_count,spikes)
-    l1_data = np.vstack((l1_data,spike_count))
-    l1_column_label.append("Spike count")
-
-    # Add all parameters of l0 to the data array
-    param_not_in_main_table =[]
-    for parameter in all_parameters.keys():
-        if parameter.split(".")[0] != "l1" and parameter != "l2.ff.weight":
-            continue
-        data_param = np.round(torch.flatten(all_parameters[parameter]).detach().numpy(),round_digits)
-        # Only add the parameters which has one param per neurons( so not leak l2 and rec connections)
-        if data_param.size == l1_neurons.size:
-            l1_data =np.vstack((l1_data,data_param))
-            l1_column_label.append(parameter)
-        else: 
-            print("Parameter named ", parameter, " is not included in the table")
-            param_not_in_main_table.append(parameter)
-    
-    if "l1.ff.weight" not in param_not_in_main_table:
-        #find row with w1 and w2 and swap them such they are in the beginning of the table
-        ind_w1 = l1_column_label.index("l1.ff.weight")
-        l1_data[[ind_w1,2]] = l1_data[[2,ind_w1]]
-        l1_column_label[2], l1_column_label[ind_w1] = l1_column_label[ind_w1], l1_column_label[2]
-
-        ind_w2 = l1_column_label.index("l2.ff.weight")
-        l1_column_label[3], l1_column_label[ind_w2] = l1_column_label[ind_w2], l1_column_label[3]     # Swap the w1 to 3 row
-        l1_data[[ind_w2,3]] = l1_data[[3,ind_w2]]     
-    else:
-        ind_w2 = l1_column_label.index("l2.ff.weight")
-        l1_column_label[2], l1_column_label[ind_w2] = l1_column_label[ind_w2], l1_column_label[2]     # Swap the w1 to 3 row
-        l1_data[[ind_w2,2]] = l1_data[[2,ind_w2]]  
-
-
-    ### Convert to "data" array to a table
-    fig = plt.figure(linewidth=1, tight_layout={"pad":1})
-    table = plt.table(cellText=np.transpose(l1_data), colLabels=l1_column_label, loc='center')
-
-    # Set font size
-    table.auto_set_font_size(False)
-    table.set_fontsize(15)
-
-    # Hide axes
-    ax = plt.gca()
-    ax.get_xaxis().set_visible(False)
-    ax.get_yaxis().set_visible(False)
-    fig.suptitle("L1 & L2 parameters")
-
-    # Hide axes border
-    plt.box(on=None)
-
-
-
-                                          # Swap w2 to row 4
-    
-    # highlight weight cells in third column
-    idx=1
-    for w in l1_data[2,:]:
-        w = float(w)
-        if float(w)<0:                                      #Since the items in data are strings
-            table[idx,2].set_facecolor(color_mix["red"])
-        idx = idx+1
-
-    if "l1.ff.weight" not in param_not_in_main_table:
-        # highlight w1 cells
-        idx=1
-        for w in l1_data[3,:]:
-            w = float(w)
-            if float(w)<0:                                      #Since the items in data are strings
-                table[idx,3].set_facecolor(color_mix["red"])
-            idx = idx+1
-
-    ######          End main table l1           #######
-    for param in param_not_in_main_table:
-        if param == "l1.ff.weight":
-            data_l1_ff_weight = np.round(all_parameters[param].detach().numpy(),round_digits)
-            neur_l0_list = []
-            neur_l1_list = []
-            for i in range(1,neurons_l0_total+1): neur_l0_list.append(str(i))
-            for i in range(1,neurons_l1_total+1): neur_l1_list.append(str(i))
-
-            fig = plt.figure(linewidth=1, tight_layout={"pad":1})
-            table = plt.table(cellText=data_l1_ff_weight, colLabels=neur_l0_list, rowLabels=neur_l1_list, loc='center')
-
-            # Set font size
-            table.auto_set_font_size(False)
-            table.set_fontsize(13)
-
-            # Hide axes
-            ax = plt.gca()
-            ax.get_xaxis().set_visible(False)
-            ax.get_yaxis().set_visible(False)
-
-            fig.suptitle("L1 ff Weight (L1 neurons, L0 neurons)")
-
-            # Hide axes border
-            plt.box(on=None)
-
-            # highlight negative cells
-            for row in range(len(neur_l1_list)):
-                for column in range(len(neur_l0_list)):
-                    w = float(data_l1_ff_weight[row,column])
-                    if float(w)<0:                                     
-                        table[row,column].set_facecolor(color_mix["red"])
-
-
-            # plt.show()
-
-        if param == "l1.rec.weight":
-            data_l1_rec_weight = np.round(all_parameters[param].detach().numpy(),round_digits)
-
-            neur_l1_list = []
-            for i in range(1,neurons_l1_total+1): neur_l1_list.append(str(i))
-
-            fig = plt.figure(linewidth=1, tight_layout={"pad":1})
-            table = plt.table(cellText=data_l1_rec_weight, colLabels=neur_l1_list, rowLabels=neur_l1_list, loc='center')
-
-            # Set font size
-            table.auto_set_font_size(False)
-            table.set_fontsize(13)
-
-            # Hide axes
-            ax = plt.gca()
-            ax.get_xaxis().set_visible(False)
-            ax.get_yaxis().set_visible(False)
-
-            fig.suptitle("L1 Recurrent Weight (To, From)")
-
-            # Hide axes border
-            plt.box(on=None)
-
-            # highlight negative cells
-            for row in range(len(neur_l1_list)):
-                for column in range(len(neur_l0_list)):
-                    w = float(data_l1_rec_weight[row,column])
-                    if float(w)<0:                                     
-                        table[row+1,column].set_facecolor(color_mix["red"])
-
-            plt.show()
-    ####      End plots Rec and FF weight   ###########
-
-
-    
-if create_table_old == True:
     ######################### plot table ##########################
     round_digits = 3
 
@@ -878,6 +626,8 @@ if create_table_old == True:
             for col in range(len(data)):
                 table[row,col].set_facecolor(color_mix["gray"])
         row +=1
+
+
 
 
     if "l1.rec.weight" not in all_parameters:
