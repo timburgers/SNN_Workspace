@@ -1,9 +1,9 @@
 
 ### Hyperparameters
 NEURONS: 30
-INDIVIDUALS: 60
-GENERATIONS: 20000
-NUMBER_PROCESSES: 30
+INDIVIDUALS: 10
+GENERATIONS: 10
+NUMBER_PROCESSES: 10
 SIM_TIME: 30            # max 40 secs
 
 # Dataset loading and saving options

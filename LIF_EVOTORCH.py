@@ -143,7 +143,7 @@ def fix_requirements_in_config(config):
     
     if l0["enabled"] and l1["w_diagonal"] == False:
         config["LAYER_SETTING"]["l1"]["w_diagonal_2x2"] = False
-        print("\nSet w_diagonal_2x2 to False since l0-l1 is not squared")    
+        print("\nSet w_diagonal_2x2 to False since l0-l1 is not diagonal")    
     return config
 
 def show_layer_settings(config):
@@ -508,6 +508,8 @@ def save_solution(best_solution, problem):
         pickle.dump(test_solutions, pickle_out)
         pickle_out.close()
 
+
+
 def create_new_training_set():
     # Insert the test dataset every ... times, otherwise choose a random sequence
     if searcher.step_count%problem.config["SAVE_TEST_SOLUTION_STEPSIZE"] == problem.config["SAVE_TEST_SOLUTION_STEPSIZE"]-1 or searcher.step_count==0 or searcher.steps_count ==problem.config["GENERATIONS"]-1:
@@ -591,6 +593,7 @@ def evaluate_manual_dataset():
         # Save the results during the session
         best_solution = searcher.status["best"]
         save_solution(best_solution,problem)
+        wandb.config.update({"test_error": np.min(problem.error_test_solutions)},allow_val_change = True)
 
     if problem.config["GENERATIONS"] >= 1000 and searcher.step_count% int(problem.config["GENERATIONS"]/10) == 0:
         best_solution = searcher.status["best"] 
