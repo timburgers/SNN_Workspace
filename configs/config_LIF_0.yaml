@@ -19,7 +19,7 @@ DATASET_NUMBER: null
 DIFFERENT_DATASET_EVERY_GENERATION: 1
 DZ_INITIAL: 0
 FITNESS_FUNCTION: mae
-GENERATIONS: 20000
+GENERATIONS: 40000
 INDIVIDUALS: 60
 INIT_LEAKI_HALF_ZERO: false
 INIT_W1_H2_NEG: false
@@ -29,7 +29,7 @@ LAYER_SETTING:
     bias: true
     clamp_v: false
     enabled: true
-    neurons: 16
+    neurons: 30
     shared_leak_i: true
     shared_weight_and_bias: true
   l1:

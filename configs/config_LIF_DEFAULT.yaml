@@ -1,9 +1,9 @@
 
 ### Hyperparameters
 NEURONS: 30
-INDIVIDUALS: 10
-GENERATIONS: 10
-NUMBER_PROCESSES: 10
+INDIVIDUALS: 60
+GENERATIONS: 40000
+NUMBER_PROCESSES: 30
 SIM_TIME: 30            # max 40 secs
 
 # Dataset loading and saving options
@@ -17,7 +17,7 @@ START_DATASETS_IN_MIDDLE: False
 LAYER_SETTING:
   l0:
     enabled:                   True   # REQ: -                                            #NOTE: 
-    neurons:                   16     # REQ: w_diagonal false, when shared N must be even #NOTE: 
+    neurons:                   30     # REQ: w_diagonal false, when shared N must be even #NOTE: 
     bias:                      True   # REQ: -                                            #NOTE: -
     shared_weight_and_bias:    True   # REQ: -                                            #NOTE: -
     shared_leak_i:             True   # REQ: -                                            #NOTE: -
