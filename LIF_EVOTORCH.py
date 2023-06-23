@@ -514,7 +514,7 @@ def create_new_training_set():
     # Insert the test dataset every ... times, otherwise choose a random sequence
     if searcher.step_count%problem.config["SAVE_TEST_SOLUTION_STEPSIZE"] == problem.config["SAVE_TEST_SOLUTION_STEPSIZE"]-1 or searcher.step_count==0 or searcher.steps_count ==problem.config["GENERATIONS"]-1:
         problem.dataset=None
-        problem.input_data_new,problem.target_data_new = get_dataset(problem.config,problem.dataset,problem.config["SIM_TIME"])
+        problem.input_data_new,problem.target_data_new = get_dataset(problem.config,problem.dataset,100)
         problem.manual_dataset_prev = True
         
     elif searcher.step_count%problem.config["DIFFERENT_DATASET_EVERY_GENERATION"]==0 or problem.manual_dataset_prev==True:
@@ -593,7 +593,8 @@ def evaluate_manual_dataset():
         # Save the results during the session
         best_solution = searcher.status["best"]
         save_solution(best_solution,problem)
-        wandb.config.update({"test_error": np.min(problem.error_test_solutions)},allow_val_change = True)
+        if problem.config["WANDB_LOG"]:
+            wandb.config.update({"test_error": np.min(problem.error_test_solutions)},allow_val_change = True)
 
     if problem.config["GENERATIONS"] >= 1000 and searcher.step_count% int(problem.config["GENERATIONS"]/10) == 0:
         best_solution = searcher.status["best"] 

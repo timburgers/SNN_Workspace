@@ -4,13 +4,13 @@ NEURONS: 30
 INDIVIDUALS: 60
 GENERATIONS: 40000
 NUMBER_PROCESSES: 30
-SIM_TIME: 30            # max 40 secs
+SIM_TIME: 40            # max 40 secs
 
 # Dataset loading and saving options
 ANTI_OVERFITTING:         True
 DIFFERENT_DATASET_EVERY_GENERATION: 1
-SAVE_TEST_SOLUTION_STEPSIZE: 50  #every .. steps the solution to the test case is calculated and saved
-DATASET_DIR: "Sim_data/height_control_PID/slow_steps"
+SAVE_TEST_SOLUTION_STEPSIZE: 100  #every .. steps the solution to the test case is calculated and saved
+DATASET_DIR: "Sim_data/height_control_PID/medium_steps"
 START_DATASETS_IN_MIDDLE: False
 
 

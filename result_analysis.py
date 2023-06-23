@@ -20,9 +20,9 @@ from LIF_EVOTORCH import get_dataset, run_controller, run_controller_dynamics, e
 import copy
 
 # for dataset_number in range(10):
-sim_time = 30
-dataset_number = None                                                    # None is the test_dataset
-filename = 470                                                          #None --> highest number, or int or str (withou .pkl)
+sim_time = 100
+dataset_number = 0                                                  # None is the test_dataset
+filename = 546                                                          #None --> highest number, or int or str (withou .pkl)
 folder_of_model = "Blimp"                                               # all folder under the folder Results_EA
 lib_algorithm = "evotorch"                                              # evotorch or pygad
 SNN_TYPE = "LIF"                                                        # either LIF or IZH
@@ -40,7 +40,7 @@ new_input_column = []
 new_target_column = []
 
 create_plots                    = False
-create_table                    = True
+create_table                    = False
 plot_with_best_testrun          = True  #True: solution = best performance on manual dataset      False: solution = best performance overall (can be easy dataset)
 muliple_test_runs_error_plot    = False  
 plot_last_generation            = False
@@ -793,121 +793,121 @@ if create_table == True:
 
 
     
-if create_table_old == True:
-    ######################### plot table ##########################
-    round_digits = 3
+# if create_table_old == True:
+#     ######################### plot table ##########################
+#     round_digits = 3
 
-    # Add neuron numbers to data
-    neurons = np.array([])
-    for neur in range(0,config["NEURONS"]):
-        if neur not in excluded_neurons:
-            neurons = np.append(neurons,str(neur+1))
-    data = neurons
+#     # Add neuron numbers to data
+#     neurons = np.array([])
+#     for neur in range(0,config["NEURONS"]):
+#         if neur not in excluded_neurons:
+#             neurons = np.append(neurons,str(neur+1))
+#     data = neurons
 
-    #Add spike count to the data
-    spike_count = np.array([],dtype=int)
-    for neuron in range(number_of_neurons):
-        spikes = int(np.sum(l1_spikes[:,neuron]))
-        spike_count = np.append(spike_count,spikes)
-    data = np.vstack((data,spike_count))
+#     #Add spike count to the data
+#     spike_count = np.array([],dtype=int)
+#     for neuron in range(number_of_neurons):
+#         spikes = int(np.sum(l1_spikes[:,neuron]))
+#         spike_count = np.append(spike_count,spikes)
+#     data = np.vstack((data,spike_count))
 
-    column_label = ["Neuron", "Spike count"]
+#     column_label = ["Neuron", "Spike count"]
 
-    # Add all parameters to the data array
-    for parameter in all_parameters.keys():
-        data_param = np.round(torch.flatten(all_parameters[parameter]).detach().numpy(),round_digits)
-        # Only add the parameters which has one param per neurons( so not leak l2 and rec connections)
-        if data_param.size == neurons.size:
-            data =np.vstack((data,data_param))
-            column_label.append(parameter)
-        else: print("Parameter named ", parameter, " is not included in the table")
+#     # Add all parameters to the data array
+#     for parameter in all_parameters.keys():
+#         data_param = np.round(torch.flatten(all_parameters[parameter]).detach().numpy(),round_digits)
+#         # Only add the parameters which has one param per neurons( so not leak l2 and rec connections)
+#         if data_param.size == neurons.size:
+#             data =np.vstack((data,data_param))
+#             column_label.append(parameter)
+#         else: print("Parameter named ", parameter, " is not included in the table")
 
-    #find row with w1 and w2 and swap them such they are in the beginning of the table
-    ind_w1 = column_label.index("l1.ff.weight")
-    ind_w2 = column_label.index("l2.ff.weight")
-    data[[ind_w1,2]] = data[[2,ind_w1]]
-    column_label[3], column_label[ind_w2] = column_label[ind_w2], column_label[3]     # Swap the w1 to 3 row
-    data[[ind_w2,3]] = data[[3,ind_w2]]                                               # Swap w2 to row 4
-    column_label[2], column_label[ind_w1] = column_label[ind_w1], column_label[2]
+#     #find row with w1 and w2 and swap them such they are in the beginning of the table
+#     ind_w1 = column_label.index("l1.ff.weight")
+#     ind_w2 = column_label.index("l2.ff.weight")
+#     data[[ind_w1,2]] = data[[2,ind_w1]]
+#     column_label[3], column_label[ind_w2] = column_label[ind_w2], column_label[3]     # Swap the w1 to 3 row
+#     data[[ind_w2,3]] = data[[3,ind_w2]]                                               # Swap w2 to row 4
+#     column_label[2], column_label[ind_w1] = column_label[ind_w1], column_label[2]
 
-    # Add "Impact" score in table (w2*spike count)
-    w2 = all_parameters["l2.ff.weight"].detach().numpy()
-    impact_abs = np.abs(w2*spike_count)
-    impact_norm = np.round(impact_abs/np.max(impact_abs)*10,2)
-    column_label = np.insert(column_label,1,"Impact")
-    data = np.insert(data,1,impact_norm,axis=0)
+#     # Add "Impact" score in table (w2*spike count)
+#     w2 = all_parameters["l2.ff.weight"].detach().numpy()
+#     impact_abs = np.abs(w2*spike_count)
+#     impact_norm = np.round(impact_abs/np.max(impact_abs)*10,2)
+#     column_label = np.insert(column_label,1,"Impact")
+#     data = np.insert(data,1,impact_norm,axis=0)
     
-    ### Convert to "data" array to a table
-    plt.figure(linewidth=1,
-            tight_layout={"pad":1})
-    table = plt.table(cellText=np.transpose(data), colLabels=column_label, loc='center')
+#     ### Convert to "data" array to a table
+#     plt.figure(linewidth=1,
+#             tight_layout={"pad":1})
+#     table = plt.table(cellText=np.transpose(data), colLabels=column_label, loc='center')
 
-    # Set font size
-    table.auto_set_font_size(False)
-    table.set_fontsize(15)
+#     # Set font size
+#     table.auto_set_font_size(False)
+#     table.set_fontsize(15)
 
-    # Hide axes
-    ax = plt.gca()
-    ax.get_xaxis().set_visible(False)
-    ax.get_yaxis().set_visible(False)
+#     # Hide axes
+#     ax = plt.gca()
+#     ax.get_xaxis().set_visible(False)
+#     ax.get_yaxis().set_visible(False)
 
-    # Hide axes border
-    plt.box(on=None)
+#     # Hide axes border
+#     plt.box(on=None)
 
-    # Colors for highlighting
-    color_mix = {'white':'#FFFFFF','gray': '#D3D3D3','black':'#313639','purple':'#AD688E','orange':'#D18F77','yellow':'#E8E190','ltgreen':'#CCD9C7','dkgreen':'#96ABA0','red':'#FFCCCB',}
+#     # Colors for highlighting
+#     color_mix = {'white':'#FFFFFF','gray': '#D3D3D3','black':'#313639','purple':'#AD688E','orange':'#D18F77','yellow':'#E8E190','ltgreen':'#CCD9C7','dkgreen':'#96ABA0','red':'#FFCCCB',}
 
-    # highlight w1 cells
-    idx=1
-    for w in data[3,:]:
-        w = float(w)
-        if float(w)<0:                                      #Since the items in data are strings
-            table[idx,3].set_facecolor(color_mix["red"])
-        idx = idx+1
+#     # highlight w1 cells
+#     idx=1
+#     for w in data[3,:]:
+#         w = float(w)
+#         if float(w)<0:                                      #Since the items in data are strings
+#             table[idx,3].set_facecolor(color_mix["red"])
+#         idx = idx+1
 
-    idx=1
-    for w in data[4,:]:
-        if float(w)<0:
-            table[idx,4].set_facecolor(color_mix["red"])
-        idx = idx+1
+#     idx=1
+#     for w in data[4,:]:
+#         if float(w)<0:
+#             table[idx,4].set_facecolor(color_mix["red"])
+#         idx = idx+1
 
-    #greyout the non spiking neurons (NOTE: data is later inversed, sot it is column,row now)
-    row=1
-    for spike_count in data[2,:]:
-        if int(spike_count) == 0:
-            for col in range(len(data)):
-                table[row,col].set_facecolor(color_mix["gray"])
-        row +=1
+#     #greyout the non spiking neurons (NOTE: data is later inversed, sot it is column,row now)
+#     row=1
+#     for spike_count in data[2,:]:
+#         if int(spike_count) == 0:
+#             for col in range(len(data)):
+#                 table[row,col].set_facecolor(color_mix["gray"])
+#         row +=1
 
 
-    if "l1.rec.weight" not in all_parameters:
-        plt.show()
+#     if "l1.rec.weight" not in all_parameters:
+#         plt.show()
 
-    # Create the recurrent table
-    if "l1.rec.weight" in all_parameters:
-        # data = neurons[..., np.newaxis]
-        data = np.round(all_parameters["l1.rec.weight"].detach().numpy(),round_digits)
+#     # Create the recurrent table
+#     if "l1.rec.weight" in all_parameters:
+#         # data = neurons[..., np.newaxis]
+#         data = np.round(all_parameters["l1.rec.weight"].detach().numpy(),round_digits)
 
-        norm = plt.Normalize(data.min(), data.max())
-        colours = plt.cm.RdYlGn(norm(data))
+#         norm = plt.Normalize(data.min(), data.max())
+#         colours = plt.cm.RdYlGn(norm(data))
 
-        column_label = [str(i) for i in range(1,number_of_neurons+1)]
-        plt.figure(linewidth=1,
-                tight_layout={"pad":1})
-        table = plt.table(cellText=data, colLabels=column_label, rowLabels=column_label, cellColours=colours, loc='center')
+#         column_label = [str(i) for i in range(1,number_of_neurons+1)]
+#         plt.figure(linewidth=1,
+#                 tight_layout={"pad":1})
+#         table = plt.table(cellText=data, colLabels=column_label, rowLabels=column_label, cellColours=colours, loc='center')
 
-        # Set font size
-        table.auto_set_font_size(False)
-        table.set_fontsize(15)
+#         # Set font size
+#         table.auto_set_font_size(False)
+#         table.set_fontsize(15)
 
-        # Hide axes
-        ax = plt.gca()
-        ax.get_xaxis().set_visible(False)
-        ax.get_yaxis().set_visible(False)
+#         # Hide axes
+#         ax = plt.gca()
+#         ax.get_xaxis().set_visible(False)
+#         ax.get_yaxis().set_visible(False)
 
-        # Hide axes border
-        plt.box(on=None)
-        plt.show()
+#         # Hide axes border
+#         plt.box(on=None)
+#         plt.show()
 
 
 if muliple_test_runs_error_plot == True:

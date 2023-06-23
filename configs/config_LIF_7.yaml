@@ -14,7 +14,7 @@ CUSTOM:
   l1.rec.weight: range
   l2.ff.weight: range
   l2.neuron.leak: range
-DATASET_DIR: Sim_data/height_control_PID/slow_steps
+DATASET_DIR: Sim_data/height_control_PID/medium_steps
 DATASET_NUMBER: null
 DIFFERENT_DATASET_EVERY_GENERATION: 1
 DZ_INITIAL: 0
@@ -103,9 +103,9 @@ PERCENT_INTIIAL_STEPSIZE: 0.005
 PREVIOUS_SOLUTION: 38-smart-blaze
 SAME_FOR_ALL: range
 SAVE_LAST_SOLUTION: true
-SAVE_TEST_SOLUTION_STEPSIZE: 50
+SAVE_TEST_SOLUTION_STEPSIZE: 100
 SHOW_PLOTS: false
-SIM_TIME: 30
+SIM_TIME: 40
 START_DATASETS_IN_MIDDLE: false
 TARGET_FITNESS: 3
 TEST_DATA_FILE: test_dataset

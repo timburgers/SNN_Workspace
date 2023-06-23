@@ -8,7 +8,7 @@ import yaml
 #GLOBAL PARAMS
 TIME_STEP = 0.01	# The sample time per time step [s]
 SIM_TIME = 100		# Total length of simulation [s]
-SETPOINT_UPDATE_STEP = 10
+SETPOINT_UPDATE_STEP = 5
 MIMIMAL_HEIGHT_CHANGE = 5
 RANDOM_SEED = 2
 
@@ -25,7 +25,7 @@ antiWindup = False	# If set to true, no windup will take place when the trust li
 
 #---PID GAINS--- 
 KP = 3
-KI = 2
+KI = 0
 KD = 3
 #---------------
 
@@ -90,8 +90,8 @@ class Simulation_PID(object):
 			self.prev_interval = update_setpoint(SETPOINT_UPDATE_STEP, self.timer, TIME_STEP, self.prev_interval)
 
 
-		graph(self.times,self.z,self.kpe,self.kde,self.kie,self.thrst,self.z_ref)
-		# save_data(self.z,self.z_ref,self.error,self.kpe,self.kde,self.thrst)
+		# graph(self.times,self.z,self.kpe,self.kde,self.kie,self.thrst,self.z_ref)
+		save_data(self.z,self.z_ref,self.error,self.kpe,self.kde,self.thrst)
 
 def update_setpoint(freq_update, timer, dt, prev_interval):
 	global SETPOINT_Z
@@ -136,7 +136,7 @@ def save_data(z,z_ref,error,kpe,kde, T):
 	kde.shape = [len(kde),1]
 	T.shape = [len(T),1]
 	
-	np.savetxt("Sim_data/height_control_PID/slow_steps/dataset_" + str(idx)+ ".csv",np.concatenate([z,z_ref,error,kpe,kde,T],axis=1) , delimiter=',', header= "timestep = " + str(TIME_STEP)+ ", sim time = "+ str(SIM_TIME)+ ", new_ref_freq = "+ str(SETPOINT_UPDATE_STEP)+ ", minimal_height_change = " + str(MIMIMAL_HEIGHT_CHANGE))
+	np.savetxt("Sim_data/height_control_PID/medium_steps/dataset_" + str(idx)+ ".csv",np.concatenate([z,z_ref,error,kpe,kde,T],axis=1) , delimiter=',', header= "timestep = " + str(TIME_STEP)+ ", sim time = "+ str(SIM_TIME)+ ", new_ref_freq = "+ str(SETPOINT_UPDATE_STEP)+ ", minimal_height_change = " + str(MIMIMAL_HEIGHT_CHANGE))
 	# np.savetxt("Sim_data/height_control_PID/slow_steps/step_dataset.csv",np.concatenate([z,z_ref,error,kpe,kde,T],axis=1) , delimiter=',', header= "timestep = " + str(TIME_STEP)+ ", sim time = "+ str(SIM_TIME)+ ", new_ref_freq = "+ str(SETPOINT_UPDATE_STEP)+ ", minimal_height_change = " + str(MIMIMAL_HEIGHT_CHANGE))
 
 
@@ -202,11 +202,11 @@ def main():
 	sim = Simulation_PID()
 	sim.PID_cycle()
 
-# idx = 0
-# for SETPOINT_UPDATE_STEP in [10,11,12,13]:
-# 	for MIMIMAL_HEIGHT_CHANGE in [1,2,3,4]:
-# 		for RANDOM_SEED in range(32):
-# 			main()
-# 			idx += 1
+idx = 0
+for SETPOINT_UPDATE_STEP in [4,5,6,7]:
+	for MIMIMAL_HEIGHT_CHANGE in [1,2,3,4]:
+		for RANDOM_SEED in range(32):
+			main()
+			idx += 1
 
-main()
+# main()
