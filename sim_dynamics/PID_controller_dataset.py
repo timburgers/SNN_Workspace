@@ -8,8 +8,8 @@ import yaml
 #GLOBAL PARAMS
 TIME_STEP = 0.01	# The sample time per time step [s]
 SIM_TIME = 100		# Total length of simulation [s]
-SETPOINT_UPDATE_STEP = 5
-MIMIMAL_HEIGHT_CHANGE = 5
+SETPOINT_UPDATE_STEP = 4
+MIMIMAL_HEIGHT_CHANGE = 3
 RANDOM_SEED = 2
 
 
@@ -24,9 +24,9 @@ antiWindup = False	# If set to true, no windup will take place when the trust li
 
 
 #---PID GAINS--- 
-KP = 3
+KP = 10
 KI = 0
-KD = 3
+KD = 6
 #---------------
 
 random.seed(RANDOM_SEED)

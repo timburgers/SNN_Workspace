@@ -374,7 +374,7 @@ def init_conditions(problem):
 
 def test_solution(problem, solution):
     # Initialize varibales from problem Class
-    input_data, fitness_target = get_dataset(problem.config, None, problem.config["SIM_TIME"])
+    input_data, fitness_target = get_dataset(problem.config, None, 100)
     
     #################    Test sequence       ############################
     solution_np = solution.values.detach().numpy() #numpy array of all parameters
