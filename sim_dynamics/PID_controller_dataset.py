@@ -90,8 +90,8 @@ class Simulation_PID(object):
 			self.prev_interval = update_setpoint(SETPOINT_UPDATE_STEP, self.timer, TIME_STEP, self.prev_interval)
 
 
-		# graph(self.times,self.z,self.kpe,self.kde,self.kie,self.thrst,self.z_ref)
-		save_data(self.z,self.z_ref,self.error,self.kpe,self.kde,self.thrst)
+		graph(self.times,self.z,self.kpe,self.kde,self.kie,self.thrst,self.z_ref)
+		# save_data(self.z,self.z_ref,self.error,self.kpe,self.kde,self.thrst)
 
 def update_setpoint(freq_update, timer, dt, prev_interval):
 	global SETPOINT_Z
@@ -202,11 +202,11 @@ def main():
 	sim = Simulation_PID()
 	sim.PID_cycle()
 
-idx = 0
-for SETPOINT_UPDATE_STEP in [4,5,6,7]:
-	for MIMIMAL_HEIGHT_CHANGE in [1,2,3,4]:
-		for RANDOM_SEED in range(32):
-			main()
-			idx += 1
+# idx = 0
+# for SETPOINT_UPDATE_STEP in [4,5,6,7]:
+# 	for MIMIMAL_HEIGHT_CHANGE in [1,2,3,4]:
+# 		for RANDOM_SEED in range(32):
+# 			main()
+# 			idx += 1
 
-# main()
+main()

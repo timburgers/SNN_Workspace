@@ -404,7 +404,7 @@ def test_solution(problem, solution):
     if problem.fitness_mode == 3:   label_fitness_measured = "Blimp Height SNN"; label_fitness_target = "Blimp height PID"
 
     title = "Controller Response"
-    time_test = np.arange(0,problem.config["SIM_TIME"],problem.config["TIME_STEP"])
+    time_test = np.arange(0,100,problem.config["TIME_STEP"])
     if problem.fitness_mode == 2 or problem.fitness_mode == 3:
         title = "Height control of the Blimp"
         plt.plot(time_test, state_l2_arr, linestyle = "--", color = "k", label = "Control output")
