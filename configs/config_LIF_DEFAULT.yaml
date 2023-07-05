@@ -1,9 +1,9 @@
 
 ### Hyperparameters
-NEURONS: 30
-INDIVIDUALS: 60
-GENERATIONS: 40000
-NUMBER_PROCESSES: 30
+NEURONS: 40
+INDIVIDUALS: 40
+GENERATIONS: 30000
+NUMBER_PROCESSES: 20
 SIM_TIME: 40            # max 40 secs
 
 # Dataset loading and saving options
@@ -17,7 +17,7 @@ START_DATASETS_IN_MIDDLE: False
 LAYER_SETTING:
   l0:
     enabled:                   True   # REQ: -                                            #NOTE: 
-    neurons:                   30     # REQ: w_diagonal false, when shared N must be even #NOTE: 
+    neurons:                   40     # REQ: w_diagonal false, when shared N must be even #NOTE: 
     bias:                      True   # REQ: -                                            #NOTE: -
     shared_weight_and_bias:    True   # REQ: -                                            #NOTE: -
     shared_leak_i:             True   # REQ: -                                            #NOTE: -
@@ -27,9 +27,9 @@ LAYER_SETTING:
      recurrent:                True   # REQ: -                                            #NOTE: -
 
      adaptive:                 True   # REQ: -                                            #NOTE: -
-     adapt_thres_input_spikes: True   # REQ: adaptive & (diagonal or size l0 = l1)        #NOTE: t is not calc based on own spikes but incomming spikes.
-     adapt_2x2_connection:     True   # REQ: adaptive & (diagonal or size l0 = l1)        #NOTE: add_t = diagonal_block_diagram(2x2)
-     adapt_share_add_t:        True   # REQ: adapt_2x2_connection                         #NOTE: 2x2 blocks are linked ([[-a1,a1],[a1,-a1]])
+     adapt_thres_input_spikes: False   # REQ: adaptive & (diagonal or size l0 = l1)        #NOTE: t is not calc based on own spikes but incomming spikes.
+     adapt_2x2_connection:     False   # REQ: adaptive & (diagonal or size l0 = l1)        #NOTE: add_t = diagonal_block_diagram(2x2)
+     adapt_share_add_t:        False   # REQ: adapt_2x2_connection                         #NOTE: 2x2 blocks are linked ([[-a1,a1],[a1,-a1]])
 
      bias:                     False  # REQ: -                                            #NOTE: -
      w_diagonal:               True  # REQ: -                                             #NOTE: If true --> 1x1 diag, unless w_diag_2x2 is true

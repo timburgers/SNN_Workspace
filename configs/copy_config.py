@@ -5,30 +5,122 @@ with open("configs\config_LIF_DEFAULT.yaml","r") as f:
 
 ind = 0
 
-for l1_neur in [30,40,50]:
-    for rec in [True,False]:
-        for adapt in [True,False]:
-            for shared in [True,False]:
-                for w_diag in [True, False]:
-                    config["NEURONS"] = l1_neur
-                    config["LAYER_SETTING"]["l1"]["recurrent"] = rec
-                    config["LAYER_SETTING"]["l1"]["adaptive"] = adapt
+# for l1_neur in [40]:
+#     for rec in [True,False]:
+#         for adapt in [True,False]:
+#             for shared in [True,False]:
+#                 for w_diag in [True]:
+#                     config["NEURONS"] = l1_neur
+#                     config["LAYER_SETTING"]["l1"]["recurrent"] = rec
+#                     config["LAYER_SETTING"]["l1"]["adaptive"] = adapt
                     
-                    config["LAYER_SETTING"]["l0"]["shared_weight_and_bias"] = shared
-                    config["LAYER_SETTING"]["l1"]["shared_weight_and_bias"] = shared
-                    config["LAYER_SETTING"]["l2"]["shared_weight_and_bias"] = shared
-                    config["LAYER_SETTING"]["l1"]["adapt_share_add_t"] = shared
-                    config["LAYER_SETTING"]["l0"]["shared_leak_i"] = shared
-                    config["LAYER_SETTING"]["l1"]["shared_leak_i"] = shared
+#                     config["LAYER_SETTING"]["l1"]["adapt_thres_input_spikes"] = None
+#                     config["LAYER_SETTING"]["l0"]["shared_weight_and_bias"] = shared
+#                     config["LAYER_SETTING"]["l1"]["shared_weight_and_bias"] = shared
+#                     config["LAYER_SETTING"]["l2"]["shared_weight_and_bias"] = shared
+#                     config["LAYER_SETTING"]["l1"]["adapt_share_add_t"] = shared
+#                     config["LAYER_SETTING"]["l0"]["shared_leak_i"] = shared
+#                     config["LAYER_SETTING"]["l1"]["shared_leak_i"] = shared
 
-                    config["LAYER_SETTING"]["l1"]["w_diagonal"] = w_diag
-                    if w_diag == False:
-                        config["LAYER_SETTING"]["l0"]["neurons"] = l1_neur
+#                     config["LAYER_SETTING"]["l1"]["w_diagonal"] = w_diag
+#                     if w_diag == False:
+#                         config["LAYER_SETTING"]["l0"]["neurons"] = l1_neur
 
-                    file=open("configs\config_LIF_"+ str(ind) +".yaml","w")
-                    yaml.dump(config,file)
-                    file.close()
-                    ind = ind +1
+#                     file=open("configs\config_LIF_"+ str(ind) +".yaml","w")
+#                     yaml.dump(config,file)
+#                     file.close()
+#                     ind = ind +1
+
+for l1_neur in [40]:
+    for w_diag in [True]:
+        for w_diag_2x2 in [True,False]:
+            for rec in [True,False]:
+                for shared_w in [True,False]:
+                    for shared_i in [True,False]:
+                        for adapt in [True,False]:
+                            if adapt == True:
+                                for adapt_input in [True,False]:
+                                    for adapt_2x2 in [True,False]:
+                                        if adapt_2x2 == True:
+                                            for adapt_shared in [True,False]:
+                                                config["NEURONS"] = l1_neur
+                                                config["LAYER_SETTING"]["l1"]["recurrent"] = rec
+                                                config["LAYER_SETTING"]["l1"]["adaptive"] = adapt
+                                                
+
+                                                config["LAYER_SETTING"]["l1"]["adapt_2x2_connection"] = adapt_2x2
+                                                config["LAYER_SETTING"]["l1"]["adapt_thres_input_spikes"] = adapt_input
+                                                config["LAYER_SETTING"]["l1"]["adapt_share_add_t"] = adapt_shared
+                                                
+                                                config["LAYER_SETTING"]["l0"]["shared_weight_and_bias"] = shared_w
+                                                config["LAYER_SETTING"]["l1"]["shared_weight_and_bias"] = shared_w
+                                                config["LAYER_SETTING"]["l2"]["shared_weight_and_bias"] = shared_w
+
+                                                config["LAYER_SETTING"]["l0"]["shared_leak_i"] = shared_i
+                                                config["LAYER_SETTING"]["l1"]["shared_leak_i"] = shared_i
+
+                                                config["LAYER_SETTING"]["l1"]["w_diagonal"] = w_diag
+                                                config["LAYER_SETTING"]["l1"]["w_diagonal_2x2"] = w_diag_2x2
+                                                if w_diag == False:
+                                                    config["LAYER_SETTING"]["l0"]["neurons"] = l1_neur
+
+                                                file=open("configs\config_LIF_"+ str(ind) +".yaml","w")
+                                                yaml.dump(config,file)
+                                                file.close()
+                                                ind = ind +1
+                                        else:
+                                            config["NEURONS"] = l1_neur
+                                            config["LAYER_SETTING"]["l1"]["recurrent"] = rec
+                                            config["LAYER_SETTING"]["l1"]["adaptive"] = adapt
+                                            
+
+                                            config["LAYER_SETTING"]["l1"]["adapt_2x2_connection"] = adapt_2x2
+                                            config["LAYER_SETTING"]["l1"]["adapt_thres_input_spikes"] = adapt_input
+                                            config["LAYER_SETTING"]["l1"]["adapt_share_add_t"] = adapt_shared
+                                            
+                                            config["LAYER_SETTING"]["l0"]["shared_weight_and_bias"] = shared_w
+                                            config["LAYER_SETTING"]["l1"]["shared_weight_and_bias"] = shared_w
+                                            config["LAYER_SETTING"]["l2"]["shared_weight_and_bias"] = shared_w
+
+                                            config["LAYER_SETTING"]["l0"]["shared_leak_i"] = shared_i
+                                            config["LAYER_SETTING"]["l1"]["shared_leak_i"] = shared_i
+
+                                            config["LAYER_SETTING"]["l1"]["w_diagonal"] = w_diag
+                                            config["LAYER_SETTING"]["l1"]["w_diagonal_2x2"] = w_diag_2x2
+                                            if w_diag == False:
+                                                config["LAYER_SETTING"]["l0"]["neurons"] = l1_neur
+
+                                            file=open("configs\config_LIF_"+ str(ind) +".yaml","w")
+                                            yaml.dump(config,file)
+                                            file.close()
+                                            ind = ind +1
+                            else:
+                                config["NEURONS"] = l1_neur
+                                config["LAYER_SETTING"]["l1"]["recurrent"] = rec
+                                config["LAYER_SETTING"]["l1"]["adaptive"] = adapt
+                                
+
+                                config["LAYER_SETTING"]["l1"]["adapt_2x2_connection"] = adapt_2x2
+                                config["LAYER_SETTING"]["l1"]["adapt_thres_input_spikes"] = adapt_input
+                                config["LAYER_SETTING"]["l1"]["adapt_share_add_t"] = adapt_shared
+                                
+                                config["LAYER_SETTING"]["l0"]["shared_weight_and_bias"] = shared_w
+                                config["LAYER_SETTING"]["l1"]["shared_weight_and_bias"] = shared_w
+                                config["LAYER_SETTING"]["l2"]["shared_weight_and_bias"] = shared_w
+
+                                config["LAYER_SETTING"]["l0"]["shared_leak_i"] = shared_i
+                                config["LAYER_SETTING"]["l1"]["shared_leak_i"] = shared_i
+
+                                config["LAYER_SETTING"]["l1"]["w_diagonal"] = w_diag
+                                config["LAYER_SETTING"]["l1"]["w_diagonal_2x2"] = w_diag_2x2
+                                if w_diag == False:
+                                    config["LAYER_SETTING"]["l0"]["neurons"] = l1_neur
+
+                                file=open("configs\config_LIF_"+ str(ind) +".yaml","w")
+                                yaml.dump(config,file)
+                                file.close()
+                                ind = ind +1
+
 
 
 # print(config)

@@ -1,0 +1,172 @@
+ALGORITHM: pycma
+ALTERNATIVE_INPUT_COLUMN: null
+ALTERNATIVE_TARGET_COLUMN: null
+ANTI_OVERFITTING: true
+BOUNDS_W1_H2_NEG: false
+BOUND_LEAKI_HALF_ZERO: false
+BOUND_W2_Q2_Q4_NEG: false
+CUSTOM:
+  l1.ff.bias: range
+  l1.ff.weight: range
+  l1.neuron.leak_i: manual
+  l1.neuron.leak_v: gaussian
+  l1.neuron.thresh: range
+  l1.rec.weight: range
+  l2.ff.weight: range
+  l2.neuron.leak: range
+DATASET_DIR: Sim_data/height_control_PID/medium_steps
+DATASET_NUMBER: null
+DIFFERENT_DATASET_EVERY_GENERATION: 1
+DZ_INITIAL: 0
+FITNESS_FUNCTION: mae
+GENERATIONS: 30000
+INDIVIDUALS: 40
+INIT_LEAKI_HALF_ZERO: false
+INIT_W1_H2_NEG: false
+INIT_W2_Q2_Q4_NEG: false
+LAYER_SETTING:
+  l0:
+    bias: true
+    clamp_v: false
+    enabled: true
+    neurons: 40
+    shared_leak_i: false
+    shared_weight_and_bias: true
+  l1:
+    adapt_2x2_connection: true
+    adapt_share_add_t: true
+    adapt_thres_input_spikes: true
+    adaptive: true
+    bias: false
+    clamp_v: false
+    recurrent: false
+    shared_leak_i: false
+    shared_weight_and_bias: true
+    w_diagonal: true
+    w_diagonal_2x2: false
+  l2:
+    complementary_leak: true
+    shared_weight_and_bias: true
+MEAN_SETTING: same for all
+NEURONS: 40
+NUMBER_PROCESSES: 20
+PARAMETER_BOUNDS:
+  l0.ff.bias:
+    high: 1
+    low: -1
+  l0.ff.weight:
+    high: 1.5
+    low: -1.5
+  l0.neuron.leak_i:
+    high: 0.99
+    low: 0
+  l0.neuron.leak_v:
+    high: 1
+    low: 0
+  l0.neuron.thresh:
+    high: 10
+    low: 0.8
+  l1.ff.bias:
+    high: 1
+    low: -1
+  l1.ff.weight:
+    high: 1.5
+    low: -1.5
+  l1.neuron.add_t:
+    high: 1
+    low: -1
+  l1.neuron.base_t:
+    high: 2
+    low: 0
+  l1.neuron.leak_i:
+    high: 0.99
+    low: 0
+  l1.neuron.leak_t:
+    high: 0.99
+    low: 0
+  l1.neuron.leak_v:
+    high: 1
+    low: 0
+  l1.neuron.thresh:
+    high: 10
+    low: 0.8
+  l1.rec.weight:
+    high: 0.2
+    low: -0.2
+  l2.ff.weight:
+    high: 0.3
+    low: -0.3
+  l2.neuron.leak:
+    high: 0.92
+    low: 0.88
+PERCENT_INTIIAL_STEPSIZE: 0.005
+PREVIOUS_SOLUTION: 38-smart-blaze
+SAME_FOR_ALL: range
+SAVE_LAST_SOLUTION: true
+SAVE_TEST_SOLUTION_STEPSIZE: 100
+SHOW_PLOTS: false
+SIM_TIME: 40
+START_DATASETS_IN_MIDDLE: false
+TARGET_FITNESS: 3
+TEST_DATA_FILE: test_dataset
+TIME_STEP: 0.01
+WANDB_LOG: true
+Z_INITIAL: 0
+gaussian:
+  l1.ff.bias: 0.5
+  l1.ff.weight: 1
+  l1.neuron.leak_i: 0.9
+  l1.neuron.leak_v: 0.9
+  l1.neuron.thresh: 1
+  l1.rec.weight: 0.001
+  l2.ff.weight: 0.2
+  l2.neuron.leak: 0.9
+range:
+  l0.ff.bias:
+  - 0.2
+  - 0.5
+  l0.ff.weight:
+  - 1
+  - 1.5
+  l0.neuron.leak_i:
+  - 0.1
+  - 0.9
+  l0.neuron.leak_v:
+  - 0.1
+  - 0.9
+  l0.neuron.thresh:
+  - 0.8
+  - 1.2
+  l1.ff.bias:
+  - 0.2
+  - 0.5
+  l1.ff.weight:
+  - 1
+  - 1.5
+  l1.neuron.add_t:
+  - 0.01
+  - 0.3
+  l1.neuron.base_t:
+  - 1
+  - 2
+  l1.neuron.leak_i:
+  - 0.1
+  - 0.9
+  l1.neuron.leak_t:
+  - 0.1
+  - 0.9
+  l1.neuron.leak_v:
+  - 0.1
+  - 0.9
+  l1.neuron.thresh:
+  - 0.8
+  - 1.2
+  l1.rec.weight:
+  - 0.001
+  - 0.002
+  l2.ff.weight:
+  - 0.1
+  - 0.15
+  l2.neuron.leak:
+  - 0.899
+  - 0.901
