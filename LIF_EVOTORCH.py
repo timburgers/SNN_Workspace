@@ -1,4 +1,5 @@
 
+#!/usr/bin/python3
 import torch
 import pygad.torchga as torchga
 from SNN_LIF_LI_init import L1_Decoding_SNN, Encoding_L1_Decoding_SNN
@@ -36,6 +37,7 @@ class LIF_EA_evotorch(Problem):
     def __init__(self, config_path):
         if platform.system() == "Linux":
             self.prefix = "/scratch/timburgers/SNN_Workspace/"
+
 
         if platform.system() == "Windows":
             self.prefix = ""
@@ -689,6 +691,7 @@ def plot_stepsize(problem):
 def get_dataset(config, dataset_num, sim_time):
     if platform.system() == "Linux":
         prefix = "/scratch/timburgers/SNN_Workspace/"
+        # prefix = "/home/tim/SNN_Workspace/"
 
     if platform.system() == "Windows":
         prefix = ""

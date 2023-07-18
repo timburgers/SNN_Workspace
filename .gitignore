@@ -7,3 +7,5 @@ spiking/
 models/spiking/
 *.out
 run_ea.sh
+models/
+Results_EA/

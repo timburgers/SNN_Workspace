@@ -39,11 +39,11 @@ LAYER_SETTING:
     adaptive: false
     bias: false
     clamp_v: false
-    recurrent: true
+    recurrent: false
     shared_leak_i: true
     shared_weight_and_bias: false
     w_diagonal: true
-    w_diagonal_2x2: true
+    w_diagonal_2x2: false
   l2:
     complementary_leak: true
     shared_weight_and_bias: false

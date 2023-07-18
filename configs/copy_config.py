@@ -1,6 +1,6 @@
 import yaml
 
-with open("configs\config_LIF_DEFAULT.yaml","r") as f:
+with open("configs/config_LIF_DEFAULT.yaml","r") as f:
     config = yaml.safe_load(f)
 
 ind = 0
@@ -33,9 +33,9 @@ ind = 0
 
 for l1_neur in [40]:
     for w_diag in [True]:
-        for w_diag_2x2 in [True,False]:
+        for w_diag_2x2 in [False]:
             for rec in [True,False]:
-                for shared_w in [True,False]:
+                for shared_w in [False]:
                     for shared_i in [True,False]:
                         for adapt in [True,False]:
                             if adapt == True:
@@ -64,7 +64,7 @@ for l1_neur in [40]:
                                                 if w_diag == False:
                                                     config["LAYER_SETTING"]["l0"]["neurons"] = l1_neur
 
-                                                file=open("configs\config_LIF_"+ str(ind) +".yaml","w")
+                                                file=open("configs/config_LIF_"+ str(ind) +".yaml","w")
                                                 yaml.dump(config,file)
                                                 file.close()
                                                 ind = ind +1
@@ -90,7 +90,7 @@ for l1_neur in [40]:
                                             if w_diag == False:
                                                 config["LAYER_SETTING"]["l0"]["neurons"] = l1_neur
 
-                                            file=open("configs\config_LIF_"+ str(ind) +".yaml","w")
+                                            file=open("configs/config_LIF_"+ str(ind) +".yaml","w")
                                             yaml.dump(config,file)
                                             file.close()
                                             ind = ind +1
@@ -116,7 +116,7 @@ for l1_neur in [40]:
                                 if w_diag == False:
                                     config["LAYER_SETTING"]["l0"]["neurons"] = l1_neur
 
-                                file=open("configs\config_LIF_"+ str(ind) +".yaml","w")
+                                file=open("configs/config_LIF_"+ str(ind) +".yaml","w")
                                 yaml.dump(config,file)
                                 file.close()
                                 ind = ind +1

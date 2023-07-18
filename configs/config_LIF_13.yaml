@@ -31,7 +31,7 @@ LAYER_SETTING:
     enabled: true
     neurons: 40
     shared_leak_i: false
-    shared_weight_and_bias: true
+    shared_weight_and_bias: false
   l1:
     adapt_2x2_connection: false
     adapt_share_add_t: false
@@ -41,12 +41,12 @@ LAYER_SETTING:
     clamp_v: false
     recurrent: true
     shared_leak_i: false
-    shared_weight_and_bias: true
+    shared_weight_and_bias: false
     w_diagonal: true
-    w_diagonal_2x2: true
+    w_diagonal_2x2: false
   l2:
     complementary_leak: true
-    shared_weight_and_bias: true
+    shared_weight_and_bias: false
 MEAN_SETTING: same for all
 NEURONS: 40
 NUMBER_PROCESSES: 25
