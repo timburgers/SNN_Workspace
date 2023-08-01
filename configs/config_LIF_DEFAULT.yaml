@@ -2,63 +2,64 @@
 ### Hyperparameters
 NEURONS: 40
 INDIVIDUALS: 50
-GENERATIONS: 30000
-NUMBER_PROCESSES: 25
+GENERATIONS: 20000
+NUMBER_PROCESSES: 10
 SIM_TIME: 40            # max 40 secs
 
 # Dataset loading and saving options
 ANTI_OVERFITTING:         True
 DIFFERENT_DATASET_EVERY_GENERATION: 1
-SAVE_TEST_SOLUTION_STEPSIZE: 100  #every .. steps the solution to the test case is calculated and saved
-DATASET_DIR: "Sim_data/height_control_PID/medium_steps"
+SAVE_TEST_SOLUTION_STEPSIZE: 10  #every .. steps the solution to the test case is calculated and saved
+DATASET_DIR: "Sim_data/blimp/down/datasets"
+TEST_SIM_TIME: 200  #s
 START_DATASETS_IN_MIDDLE: False
 
 
 LAYER_SETTING:
   l0:
-    enabled:                   True   # REQ: -                                            #NOTE: 
-    neurons:                   40     # REQ: w_diagonal false, when shared N must be even #NOTE: 
-    bias:                      True   # REQ: -                                            #NOTE: -
-    shared_weight_and_bias:    True   # REQ: -                                            #NOTE: -
-    shared_leak_i:             True   # REQ: -                                            #NOTE: -
-    clamp_v:                   False  # REQ: -                                            #NOTE: -
+    enabled:                   True #T    # REQ: -                                            #NOTE: 
+    neurons:                   40         # REQ: w_diagonal false, when shared N must be even #NOTE: 
+    bias:                      True #T    # REQ: -                                            #NOTE: -
+    shared_weight_and_bias:    True #T    # REQ: -                                            #NOTE: -
+    shared_leak_i:             True       # REQ: -                                            #NOTE: -
+    clamp_v:                   False      # REQ: -                                            #NOTE: -
 
   l1:   
-     recurrent:                True   # REQ: -                                            #NOTE: -
+     recurrent:                True #T    # REQ: -                                            #NOTE: -
 
-     adaptive:                 True   # REQ: -                                            #NOTE: -
-     adapt_thres_input_spikes: False   # REQ: adaptive & (diagonal or size l0 = l1)        #NOTE: t is not calc based on own spikes but incomming spikes.
-     adapt_2x2_connection:     False   # REQ: adaptive & (diagonal or size l0 = l1)        #NOTE: add_t = diagonal_block_diagram(2x2)
-     adapt_share_add_t:        False   # REQ: adapt_2x2_connection                         #NOTE: 2x2 blocks are linked ([[-a1,a1],[a1,-a1]])
+     adaptive:                 True       # REQ: -                                            #NOTE: -
+     adapt_thres_input_spikes: True      # REQ: adaptive & (diagonal or size l0 = l1)        #NOTE: t is not calc based on own spikes but incomming spikes.
+     adapt_2x2_connection:     False      # REQ: adaptive & (diagonal or size l0 = l1)        #NOTE: add_t = diagonal_block_diagram(2x2)
+     adapt_share_add_t:        False      # REQ: adapt_2x2_connection                         #NOTE: 2x2 blocks are linked ([[-a1,a1],[a1,-a1]])
 
-     bias:                     False  # REQ: -                                            #NOTE: -
-     w_diagonal:               True  # REQ: -                                             #NOTE: If true --> 1x1 diag, unless w_diag_2x2 is true
-     w_diagonal_2x2:           False  # REQ: w_diagonal                                    #NOTE: -     
-     shared_weight_and_bias:   False   # REQ: -                                            #NOTE: [[w1,w1,w2,w2,w3,w3],[w1,w1,w2,w2,w3,w3],[w4,w4,w5,w5,w6,w6], ....] shape(out,in)
+     bias:                     False #F   # REQ: -                                            #NOTE: -
+     w_diagonal:               True  #T   # REQ: -                                             #NOTE: If true --> 1x1 diag, unless w_diag_2x2 is true
+     w_diagonal_2x2:           True  #T   # REQ: w_diagonal                                    #NOTE: -     
+     shared_weight_and_bias:   True  #T   # REQ: -                                            #NOTE: [[w1,w1,w2,w2,w3,w3],[w1,w1,w2,w2,w3,w3],[w4,w4,w5,w5,w6,w6], ....] shape(out,in)
 
-     shared_leak_i:            True   # REQ: -                                            #NOTE: leak_i = [l1, l1, l2, l2, l3, l3 ...]
-     clamp_v:                  False  # REQ: -                                            #NOTE: clamp the mem pot to zero  
+     shared_leak_i:            True       # REQ: -                                            #NOTE: leak_i = [l1, l1, l2, l2, l3, l3 ...]
+     clamp_v:                  False      # REQ: -                                            #NOTE: clamp the mem pot to zero  
 
   l2: 
-     complementary_leak:       True   # REQ: -                                            #NOTE: -
-     shared_weight_and_bias:   True   # REQ: -                                            #NOTE: -
+     complementary_leak:       True #T    # REQ: -                                            #NOTE: -
+     shared_weight_and_bias:   True #T      # REQ: -                                            #NOTE: -
 
-FITNESS_FUNCTION: "mae"       #"mse", "mse+p", "mae" or "mae+p"
-TARGET_FITNESS: 3   
+FITNESS_FUNCTION: "mse+p"       #"mse", "mse+p", "mae" or "mae+p"
+TARGET_FITNESS: 1   
 #1) "pid output"        : NO dynamic system simulated     Fitness: MSE + Pearson
 #2) "system reference"  : Dynamic system simulated        Fitness: MSE
 #3) "pid system output" : Dynamic system simulated        Fitness: MSE + Pearson
 
 # //TODO ONLY USE THESE WHEN DIFFERENT STRUCTURE OF DATASET IS USE
-ALTERNATIVE_INPUT_COLUMN: null
-ALTERNATIVE_TARGET_COLUMN: null
+ALTERNATIVE_INPUT_COLUMN: [4]
+ALTERNATIVE_TARGET_COLUMN: [1]
 
 ###################################
 ###################################
 ### Dynamics settings Blimp
 DZ_INITIAL: 0
 Z_INITIAL: 0
-TIME_STEP: 0.01
+TIME_STEP: 0.2
 
 
 ### Less frequenty changed parameters
@@ -143,8 +144,8 @@ range: #keep all positive (NOTE: initilaizing close to zero (in combi with the s
   l1.neuron.base_t: [1     , 2]
   l1.neuron.add_t:  [0.01 , 0.3]
 
-  l2.neuron.leak:   [0.899 , 0.901]
-  l2.ff.weight:     [0.1  , 0.15] 
+  l2.neuron.leak:   [0.799 , 0.801]
+  l2.ff.weight:     [0.1  , 0.2] 
 
 ######## STD
 PERCENT_INTIIAL_STEPSIZE: 0.005
@@ -176,7 +177,7 @@ PARAMETER_BOUNDS: #null if None in python
   l1.ff.weight:     {"low": -1.5, "high": 1.5 }  #also negative!
   l1.ff.bias:       {"low": -1,   "high": 1   }  #also negative!
 
-  l2.neuron.leak:   {"low": 0.88, "high": 0.92}
-  l2.ff.weight:     {"low": -0.30,"high": 0.30}  #also negative!
+  l2.neuron.leak:   {"low": 0.78, "high": 0.82}
+  l2.ff.weight:     {"low": -0.50,"high": 0.50}  #also negative!
 
 

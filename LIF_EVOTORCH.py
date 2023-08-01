@@ -36,7 +36,11 @@ ray.init(log_to_driver=False, include_dashboard=False)
 class LIF_EA_evotorch(Problem):
     def __init__(self, config_path):
         if platform.system() == "Linux":
-            self.prefix = "/scratch/timburgers/SNN_Workspace/"
+            
+            # Check if running on pc or delftblue
+            if os.path.isdir("/home/tim"):
+                self.prefix = "/home/tim/SNN_Workspace/"
+            else: self.prefix = "/scratch/timburgers/SNN_Workspace/"
 
 
         if platform.system() == "Windows":
@@ -376,7 +380,7 @@ def init_conditions(problem):
 
 def test_solution(problem, solution):
     # Initialize varibales from problem Class
-    input_data, fitness_target = get_dataset(problem.config, None, 100)
+    input_data, fitness_target = get_dataset(problem.config, None, problem.config["TEST_SIM_TIME"])
     
     #################    Test sequence       ############################
     solution_np = solution.values.detach().numpy() #numpy array of all parameters
@@ -406,7 +410,7 @@ def test_solution(problem, solution):
     if problem.fitness_mode == 3:   label_fitness_measured = "Blimp Height SNN"; label_fitness_target = "Blimp height PID"
 
     title = "Controller Response"
-    time_test = np.arange(0,100,problem.config["TIME_STEP"])
+    time_test = np.arange(0,problem.config["TEST_SIM_TIME"],problem.config["TIME_STEP"])
     if problem.fitness_mode == 2 or problem.fitness_mode == 3:
         title = "Height control of the Blimp"
         plt.plot(time_test, state_l2_arr, linestyle = "--", color = "k", label = "Control output")
@@ -516,7 +520,7 @@ def create_new_training_set():
     # Insert the test dataset every ... times, otherwise choose a random sequence
     if searcher.step_count%problem.config["SAVE_TEST_SOLUTION_STEPSIZE"] == problem.config["SAVE_TEST_SOLUTION_STEPSIZE"]-1 or searcher.step_count==0 or searcher.steps_count ==problem.config["GENERATIONS"]-1:
         problem.dataset=None
-        problem.input_data_new,problem.target_data_new = get_dataset(problem.config,problem.dataset,100)
+        problem.input_data_new,problem.target_data_new = get_dataset(problem.config,problem.dataset,problem.config["TEST_SIM_TIME"])
         problem.manual_dataset_prev = True
         
     elif searcher.step_count%problem.config["DIFFERENT_DATASET_EVERY_GENERATION"]==0 or problem.manual_dataset_prev==True:
@@ -598,7 +602,7 @@ def evaluate_manual_dataset():
         if problem.config["WANDB_LOG"]:
             wandb.config.update({"test_error": np.min(problem.error_test_solutions)},allow_val_change = True)
 
-    if problem.config["GENERATIONS"] >= 1000 and searcher.step_count% int(problem.config["GENERATIONS"]/10) == 0:
+    if problem.config["GENERATIONS"] >= 100 and searcher.step_count% int(problem.config["GENERATIONS"]/10) == 0:
         best_solution = searcher.status["best"] 
         test_solution(problem,best_solution)
 
@@ -690,8 +694,11 @@ def plot_stepsize(problem):
 
 def get_dataset(config, dataset_num, sim_time):
     if platform.system() == "Linux":
-        prefix = "/scratch/timburgers/SNN_Workspace/"
-        # prefix = "/home/tim/SNN_Workspace/"
+        # Check if running on pc or delftblue
+        if os.path.isdir("/home/tim"):
+            prefix = "/home/tim/SNN_Workspace/"
+        else: prefix = "/scratch/timburgers/SNN_Workspace/"
+
 
     if platform.system() == "Windows":
         prefix = ""
@@ -789,7 +796,7 @@ if __name__ == "__main__":
         searcher.after_step_hook.append(evaluate_manual_dataset)
 
     if problem.config["WANDB_LOG"] == True:
-        _ = WandbLogger(searcher, project = "SNN_BLIMP", config=problem.config)
+        _ = WandbLogger(searcher, project = "blimp_real_hz", config=problem.config)
         changes_names_in_table_wandb(problem.config)
         wandb.config.update({"OS": platform.system(),
                              "Fit_Fn": problem.config["FITNESS_FUNCTION"]})

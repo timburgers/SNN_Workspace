@@ -1,6 +1,8 @@
 ALGORITHM: pycma
-ALTERNATIVE_INPUT_COLUMN: null
-ALTERNATIVE_TARGET_COLUMN: null
+ALTERNATIVE_INPUT_COLUMN:
+- 4
+ALTERNATIVE_TARGET_COLUMN:
+- 1
 ANTI_OVERFITTING: true
 BOUNDS_W1_H2_NEG: false
 BOUND_LEAKI_HALF_ZERO: false
@@ -14,12 +16,12 @@ CUSTOM:
   l1.rec.weight: range
   l2.ff.weight: range
   l2.neuron.leak: range
-DATASET_DIR: Sim_data/height_control_PID/medium_steps
+DATASET_DIR: Sim_data/blimp/down/datasets
 DATASET_NUMBER: null
 DIFFERENT_DATASET_EVERY_GENERATION: 1
 DZ_INITIAL: 0
-FITNESS_FUNCTION: mae
-GENERATIONS: 30000
+FITNESS_FUNCTION: mse+p
+GENERATIONS: 20000
 INDIVIDUALS: 50
 INIT_LEAKI_HALF_ZERO: false
 INIT_W1_H2_NEG: false
@@ -31,25 +33,25 @@ LAYER_SETTING:
     enabled: true
     neurons: 40
     shared_leak_i: true
-    shared_weight_and_bias: false
+    shared_weight_and_bias: true
   l1:
-    adapt_2x2_connection: true
+    adapt_2x2_connection: false
     adapt_share_add_t: false
-    adapt_thres_input_spikes: false
+    adapt_thres_input_spikes: true
     adaptive: true
     bias: false
     clamp_v: false
     recurrent: true
     shared_leak_i: true
-    shared_weight_and_bias: false
+    shared_weight_and_bias: true
     w_diagonal: true
-    w_diagonal_2x2: false
+    w_diagonal_2x2: true
   l2:
     complementary_leak: true
-    shared_weight_and_bias: false
+    shared_weight_and_bias: true
 MEAN_SETTING: same for all
 NEURONS: 40
-NUMBER_PROCESSES: 25
+NUMBER_PROCESSES: 10
 PARAMETER_BOUNDS:
   l0.ff.bias:
     high: 1
@@ -94,22 +96,23 @@ PARAMETER_BOUNDS:
     high: 0.2
     low: -0.2
   l2.ff.weight:
-    high: 0.3
-    low: -0.3
+    high: 0.5
+    low: -0.5
   l2.neuron.leak:
-    high: 0.92
-    low: 0.88
+    high: 0.82
+    low: 0.78
 PERCENT_INTIIAL_STEPSIZE: 0.005
 PREVIOUS_SOLUTION: 38-smart-blaze
 SAME_FOR_ALL: range
 SAVE_LAST_SOLUTION: true
-SAVE_TEST_SOLUTION_STEPSIZE: 100
+SAVE_TEST_SOLUTION_STEPSIZE: 10
 SHOW_PLOTS: false
 SIM_TIME: 40
 START_DATASETS_IN_MIDDLE: false
-TARGET_FITNESS: 3
+TARGET_FITNESS: 1
 TEST_DATA_FILE: test_dataset
-TIME_STEP: 0.01
+TEST_SIM_TIME: 200
+TIME_STEP: 0.2
 WANDB_LOG: true
 Z_INITIAL: 0
 gaussian:
@@ -166,7 +169,7 @@ range:
   - 0.002
   l2.ff.weight:
   - 0.1
-  - 0.15
+  - 0.2
   l2.neuron.leak:
-  - 0.899
-  - 0.901
+  - 0.799
+  - 0.801
