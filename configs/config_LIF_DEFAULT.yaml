@@ -1,9 +1,9 @@
 
 ### Hyperparameters
 NEURONS: 40
-INDIVIDUALS: 50
-GENERATIONS: 20000
-NUMBER_PROCESSES: 10
+INDIVIDUALS: 75
+GENERATIONS: 40000
+NUMBER_PROCESSES: 25
 SIM_TIME: 40            # max 40 secs
 
 # Dataset loading and saving options
@@ -44,7 +44,7 @@ LAYER_SETTING:
      complementary_leak:       True #T    # REQ: -                                            #NOTE: -
      shared_weight_and_bias:   True #T      # REQ: -                                            #NOTE: -
 
-FITNESS_FUNCTION: "mse+p"       #"mse", "mse+p", "mae" or "mae+p"
+FITNESS_FUNCTION: "mse"       #"mse", "mse+p", "mae" or "mae+p"
 TARGET_FITNESS: 1   
 #1) "pid output"        : NO dynamic system simulated     Fitness: MSE + Pearson
 #2) "system reference"  : Dynamic system simulated        Fitness: MSE

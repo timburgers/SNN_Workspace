@@ -20,9 +20,9 @@ from LIF_EVOTORCH import get_dataset, run_controller, run_controller_dynamics, e
 import copy
 
 # for dataset_number in range(10):
-sim_time = 100
+sim_time = 200
 dataset_number = None                                                  # None is the test_dataset
-filename = 581                                                          #None --> highest number, or int or str (withou .pkl)
+filename = 31                                                          #None --> highest number, or int or str (withou .pkl)
 folder_of_model = "Blimp"                                               # all folder under the folder Results_EA
 lib_algorithm = "evotorch"                                              # evotorch or pygad
 SNN_TYPE = "LIF"                                                        # either LIF or IZH
@@ -285,6 +285,7 @@ if fitness_mode == 3:
 
 plt.plot(time_test, fitness_measured, color = "b", label=label_fitness_measured)
 plt.plot(time_test, fitness_target, color = 'r',label=label_fitness_target)
+plt.plot(time_test, error_arr, label = "Error" )
 plt.title(title)
 plt.grid()
 plt.legend()
