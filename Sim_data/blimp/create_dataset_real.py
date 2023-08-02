@@ -4,13 +4,13 @@ import pandas as pd
 
 
 
-file_name = "test_dataset_"
+file_name = "dataset_"
 freq = 5
-time_sim = 200
+time_sim = 40
 start_before_step=3 #s
 
 
-original_folder = "/home/tim/SNN_Workspace/Sim_data/blimp/neutral/"
+original_folder = "/home/tim/SNN_Workspace/Sim_data/blimp/d_and_n/"
 original_files = [f for f in os.listdir(original_folder) if os.path.isfile(os.path.join(original_folder, f))]
 original_files = sorted(original_files)
 print(original_files)

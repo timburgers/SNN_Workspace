@@ -3,7 +3,7 @@ import yaml
 with open("configs/config_LIF_DEFAULT.yaml","r") as f:
     config = yaml.safe_load(f)
 
-ind = 6
+ind = 12
 for l1_neur in [20,30,40]:
     for adapt in [True,False]:
                 config["NEURONS"] = l1_neur

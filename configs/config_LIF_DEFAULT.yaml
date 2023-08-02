@@ -10,7 +10,7 @@ SIM_TIME: 40            # max 40 secs
 ANTI_OVERFITTING:         True
 DIFFERENT_DATASET_EVERY_GENERATION: 1
 SAVE_TEST_SOLUTION_STEPSIZE: 100  #every .. steps the solution to the test case is calculated and saved
-DATASET_DIR: "Sim_data/blimp/neutral/datasets"
+DATASET_DIR: "Sim_data/blimp/d_and_n/datasets"
 TEST_SIM_TIME: 200  #s
 START_DATASETS_IN_MIDDLE: False
 
