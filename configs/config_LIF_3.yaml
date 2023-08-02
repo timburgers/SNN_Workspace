@@ -16,7 +16,7 @@ CUSTOM:
   l1.rec.weight: range
   l2.ff.weight: range
   l2.neuron.leak: range
-DATASET_DIR: Sim_data/blimp/neutral/datasets
+DATASET_DIR: Sim_data/blimp/down/datasets
 DATASET_NUMBER: null
 DIFFERENT_DATASET_EVERY_GENERATION: 1
 DZ_INITIAL: 0
