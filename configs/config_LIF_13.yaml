@@ -32,7 +32,7 @@ LAYER_SETTING:
     clamp_v: false
     enabled: true
     neurons: 20
-    shared_leak_i: true
+    shared_leak_i: false
     shared_weight_and_bias: true
   l1:
     adapt_2x2_connection: false
@@ -42,7 +42,7 @@ LAYER_SETTING:
     bias: false
     clamp_v: false
     recurrent: true
-    shared_leak_i: true
+    shared_leak_i: false
     shared_weight_and_bias: true
     w_diagonal: true
     w_diagonal_2x2: true
