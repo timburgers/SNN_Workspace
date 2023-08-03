@@ -22,7 +22,7 @@ import copy
 # for dataset_number in range(10):
 sim_time = 200
 dataset_number = None                                                  # None is the test_dataset
-filename = 31                                                          #None --> highest number, or int or str (withou .pkl)
+filename = 110                                                          #None --> highest number, or int or str (withou .pkl)
 folder_of_model = "Blimp"                                               # all folder under the folder Results_EA
 lib_algorithm = "evotorch"                                              # evotorch or pygad
 SNN_TYPE = "LIF"                                                        # either LIF or IZH
@@ -509,12 +509,14 @@ if create_plots == True:
                     if column ==0 or column ==2:
                         # Show the threshold 
                         if column == 2 and config["LAYER_SETTING"]["l1"]["adaptive"]:
-                            t = l1_thres[:,neuron]
+                            t = l1_thres[:,:]
                             base_t = all_parameters["l1.neuron.base_t"].detach().numpy()[neuron]
-                            add_t = all_parameters["l1.neuron.add_t"].detach().numpy()[neuron]
-
+                            add_t = all_parameters["l1.neuron.add_t"].detach().numpy()[:]
+                            
                             if config["LAYER_SETTING"]["l1"]["adapt_2x2_connection"]: #t = (1,N) self.add_t = (N,N)
-                                threshold = base_t +torch.matmul(t, add_t)
+                                t = torch.Tensor(t)
+                                add_t = torch.Tensor(add_t)
+                                threshold = base_t +torch.matmul(t, add_t).detach().numpy()[:,neuron]
                             else:                      #t = (1,N) self.add_t = (N)
                                 threshold = base_t +add_t * t
 
