@@ -3,7 +3,7 @@
 NEURONS: 40
 INDIVIDUALS: 10
 GENERATIONS: 200
-NUMBER_PROCESSES: 5
+NUMBER_PROCESSES: 2
 SIM_TIME: 40            # max 40 secs
 
 # Dataset loading and saving options
