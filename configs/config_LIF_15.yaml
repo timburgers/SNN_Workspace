@@ -31,7 +31,7 @@ LAYER_SETTING:
     bias: true
     clamp_v: false
     enabled: true
-    neurons: 20
+    neurons: 30
     shared_leak_i: false
     shared_weight_and_bias: true
   l1:
@@ -39,7 +39,7 @@ LAYER_SETTING:
     adapt_share_add_t: true
     adapt_share_baseleak_t: true
     adapt_thres_input_spikes: true
-    adaptive: true
+    adaptive: false
     bias: false
     clamp_v: false
     recurrent: true
@@ -52,7 +52,7 @@ LAYER_SETTING:
     complementary_leak: true
     shared_weight_and_bias: true
 MEAN_SETTING: same for all
-NEURONS: 20
+NEURONS: 30
 NUMBER_PROCESSES: 10
 PARAMETER_BOUNDS:
   l0.ff.bias:

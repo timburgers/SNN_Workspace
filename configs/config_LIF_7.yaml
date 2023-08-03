@@ -39,7 +39,7 @@ LAYER_SETTING:
     adapt_share_add_t: true
     adapt_share_baseleak_t: true
     adapt_thres_input_spikes: true
-    adaptive: true
+    adaptive: false
     bias: false
     clamp_v: false
     recurrent: true

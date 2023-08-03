@@ -6,9 +6,14 @@ with open("configs/config_LIF_DEFAULT.yaml","r") as f:
 ind = 0
 for l1_neur in [20,30,40]:
     for adapt in [True,False]:
+        for leak_i in [True,False]:
+            for w1_cross in [True,False]:
                 config["NEURONS"] = l1_neur
                 config["LAYER_SETTING"]["l1"]["adaptive"] = adapt
-                
+
+                config["LAYER_SETTING"]["l0"]["shared_leak_i"] = leak_i
+                config["LAYER_SETTING"]["l1"]["shared_leak_i"] = leak_i
+                config["LAYER_SETTING"]["l1"]["shared_2x2_weight_cross"] = w1_cross
 
                 config["LAYER_SETTING"]["l0"]["neurons"] = l1_neur
 
