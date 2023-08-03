@@ -1,9 +1,9 @@
 
 ### Hyperparameters
 NEURONS: 40
-INDIVIDUALS: 75
-GENERATIONS: 40000
-NUMBER_PROCESSES: 25
+INDIVIDUALS: 10
+GENERATIONS: 500
+NUMBER_PROCESSES: 2
 SIM_TIME: 40            # max 40 secs
 
 # Dataset loading and saving options
@@ -144,8 +144,8 @@ range: #keep all positive (NOTE: initilaizing close to zero (in combi with the s
   l1.neuron.base_t: [1     , 2]
   l1.neuron.add_t:  [0.01 , 0.3]
 
-  l2.neuron.leak:   [0.799 , 0.801]
-  l2.ff.weight:     [0.1  , 0.2] 
+  l2.neuron.leak:   [0.249 , 0.251]
+  l2.ff.weight:     [0.4  , 0.5] 
 
 ######## STD
 PERCENT_INTIIAL_STEPSIZE: 0.005
@@ -177,7 +177,7 @@ PARAMETER_BOUNDS: #null if None in python
   l1.ff.weight:     {"low": -1.5, "high": 1.5 }  #also negative!
   l1.ff.bias:       {"low": -1,   "high": 1   }  #also negative!
 
-  l2.neuron.leak:   {"low": 0.78, "high": 0.82}
-  l2.ff.weight:     {"low": -0.50,"high": 0.50}  #also negative!
+  l2.neuron.leak:   {"low": 0.2, "high": 0.3}
+  l2.ff.weight:     {"low": -1.0,"high": 1.0}  #also negative!
 
 

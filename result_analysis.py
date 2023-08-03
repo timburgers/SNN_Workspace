@@ -39,8 +39,8 @@ new_dataset_number = 0
 new_input_column = []
 new_target_column = []
 
-create_plots                    = False
-create_table                    = False
+create_plots                    = True
+create_table                    = True
 plot_with_best_testrun          = True  #True: solution = best performance on manual dataset      False: solution = best performance overall (can be easy dataset)
 muliple_test_runs_error_plot    = False  
 plot_last_generation            = False

@@ -16,13 +16,13 @@ CUSTOM:
   l1.rec.weight: range
   l2.ff.weight: range
   l2.neuron.leak: range
-DATASET_DIR: Sim_data/blimp/down/datasets
+DATASET_DIR: Sim_data/blimp/d_and_n/datasets
 DATASET_NUMBER: null
 DIFFERENT_DATASET_EVERY_GENERATION: 1
 DZ_INITIAL: 0
 FITNESS_FUNCTION: mse
-GENERATIONS: 40000
-INDIVIDUALS: 75
+GENERATIONS: 500
+INDIVIDUALS: 10
 INIT_LEAKI_HALF_ZERO: false
 INIT_W1_H2_NEG: false
 INIT_W2_Q2_Q4_NEG: false
@@ -32,7 +32,7 @@ LAYER_SETTING:
     clamp_v: false
     enabled: true
     neurons: 30
-    shared_leak_i: true
+    shared_leak_i: false
     shared_weight_and_bias: true
   l1:
     adapt_2x2_connection: false
@@ -42,7 +42,7 @@ LAYER_SETTING:
     bias: false
     clamp_v: false
     recurrent: true
-    shared_leak_i: true
+    shared_leak_i: false
     shared_weight_and_bias: true
     w_diagonal: true
     w_diagonal_2x2: true
@@ -51,7 +51,7 @@ LAYER_SETTING:
     shared_weight_and_bias: true
 MEAN_SETTING: same for all
 NEURONS: 30
-NUMBER_PROCESSES: 25
+NUMBER_PROCESSES: 2
 PARAMETER_BOUNDS:
   l0.ff.bias:
     high: 1
@@ -96,11 +96,11 @@ PARAMETER_BOUNDS:
     high: 0.2
     low: -0.2
   l2.ff.weight:
-    high: 0.5
-    low: -0.5
+    high: 1.0
+    low: -1.0
   l2.neuron.leak:
-    high: 0.82
-    low: 0.78
+    high: 0.3
+    low: 0.2
 PERCENT_INTIIAL_STEPSIZE: 0.005
 PREVIOUS_SOLUTION: 38-smart-blaze
 SAME_FOR_ALL: range
@@ -168,8 +168,8 @@ range:
   - 0.001
   - 0.002
   l2.ff.weight:
-  - 0.1
-  - 0.2
+  - 0.4
+  - 0.5
   l2.neuron.leak:
-  - 0.799
-  - 0.801
+  - 0.249
+  - 0.251
