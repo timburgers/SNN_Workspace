@@ -1,4 +1,4 @@
-from SNN_LIF_LI_init import LIF_SNN
+from SNN_LIF_LI_init import L1_Decoding_SNN
 import torch
 import pandas as pd
 import matplotlib.pyplot as plt 
@@ -69,7 +69,7 @@ range_step = [-1,1]
 number_of_steps = 10
 param_init = init_single(neurons,layer_setting)
 
-controller = LIF_SNN(param_init,neurons,layer_setting)
+controller = L1_Decoding_SNN(param_init,neurons,layer_setting)
 
 def get_dataset(dataset_num, sim_time):
     # Either use one of the standard datasets
