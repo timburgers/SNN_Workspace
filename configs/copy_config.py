@@ -3,24 +3,24 @@ import yaml
 with open("configs/config_LIF_DEFAULT.yaml","r") as f:
     config = yaml.safe_load(f)
 
-ind = 24
+ind = 12
 for l1_neur in [20,30,40]:
     for adapt in [True,False]:
-        for leak_i in [True,False]:
-            for w1_cross in [True,False]:
-                config["NEURONS"] = l1_neur
-                config["LAYER_SETTING"]["l1"]["adaptive"] = adapt
+        # for leak_i in [True,False]:
+        for w1_cross in [True,False]:
+            config["NEURONS"] = l1_neur
+            config["LAYER_SETTING"]["l1"]["adaptive"] = adapt
 
-                config["LAYER_SETTING"]["l0"]["shared_leak_i"] = leak_i
-                config["LAYER_SETTING"]["l1"]["shared_leak_i"] = leak_i
-                config["LAYER_SETTING"]["l1"]["shared_2x2_weight_cross"] = w1_cross
+            # config["LAYER_SETTING"]["l0"]["shared_leak_i"] = leak_i
+            # config["LAYER_SETTING"]["l1"]["shared_leak_i"] = leak_i
+            config["LAYER_SETTING"]["l1"]["shared_2x2_weight_cross"] = w1_cross
 
-                config["LAYER_SETTING"]["l0"]["neurons"] = l1_neur
+            config["LAYER_SETTING"]["l0"]["neurons"] = l1_neur
 
-                file=open("configs/config_LIF_"+ str(ind) +".yaml","w")
-                yaml.dump(config,file)
-                file.close()
-                ind = ind +1
+            file=open("configs/config_LIF_"+ str(ind) +".yaml","w")
+            yaml.dump(config,file)
+            file.close()
+            ind = ind +1
 
 # for l1_neur in [40]:
 #     for w_diag in [True]:
