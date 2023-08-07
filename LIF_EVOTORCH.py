@@ -225,6 +225,30 @@ def run_controller(controller,input,save_mode):
         return state_l2_arr, state_l1_arr, state_l0_arr
 
 
+def run_controller_double(controller_pd, controller_i,input):
+    # Initialize neurons states
+    state_l0_pd = torch.zeros(controller_pd.l0.neuron.state_size, 1, controller_pd.l1_input)
+    state_l1_pd = torch.zeros(controller_pd.l1.neuron.state_size, 1, controller_pd.neurons) 
+    state_l2_pd = torch.zeros(controller_pd.l2.neuron.state_size,1)
+
+    state_l0_i = torch.zeros(controller_i.l0.neuron.state_size, 1, controller_i.l1_input)
+    state_l1_i = torch.zeros(controller_i.l1.neuron.state_size, 1, controller_i.neurons) 
+    state_l2_i = torch.zeros(controller_i.l2.neuron.state_size,1)
+
+    state_l2_arr = np.array([])
+
+    for t in range(input.shape[1]):
+        error = input[:,t,:]
+
+        # Run controller
+        state_l0_pd, state_l1_pd, state_l2_pd = controller_pd(error,state_l0_pd, state_l1_pd, state_l2_pd)
+        state_l0_i, state_l1_i, state_l2_i = controller_i(error,state_l0_i, state_l1_i, state_l2_i)
+
+        # Append states to array
+        state_l2_arr = np.append(state_l2_arr,(state_l2_pd.detach().numpy()+state_l2_i.detach().numpy()))
+    return state_l2_arr
+
+
 def run_controller_dynamics(config,controller,input, save_mode):
     # Initialize neurons states
     if controller.encoding_layer: state_l0 = torch.zeros(controller.l0.neuron.state_size, 1, controller.l1_input)

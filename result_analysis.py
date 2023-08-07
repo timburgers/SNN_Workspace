@@ -22,7 +22,7 @@ import copy
 # for dataset_number in range(10):
 sim_time = 200
 dataset_number = None                                                  # None is the test_dataset
-filename = 110                                                          #None --> highest number, or int or str (withou .pkl)
+filename = 251                                                       #None --> highest number, or int or str (withou .pkl)
 folder_of_model = "Blimp"                                               # all folder under the folder Results_EA
 lib_algorithm = "evotorch"                                              # evotorch or pygad
 SNN_TYPE = "LIF"                                                        # either LIF or IZH
@@ -39,8 +39,8 @@ new_dataset_number = 0
 new_input_column = []
 new_target_column = []
 
-create_plots                    = True
-create_table                    = True
+create_plots                    = False
+create_table                    = False
 plot_with_best_testrun          = True  #True: solution = best performance on manual dataset      False: solution = best performance overall (can be easy dataset)
 muliple_test_runs_error_plot    = False  
 plot_last_generation            = False
@@ -759,7 +759,7 @@ if create_table == True:
                         table[row,column].set_facecolor(color_mix["red"])
 
 
-            # plt.show()
+            plt.show()
 
         if param == "l1.rec.weight":
             data_l1_rec_weight = np.round(all_parameters[param].detach().numpy(),round_digits)
