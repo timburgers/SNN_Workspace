@@ -777,6 +777,7 @@ def changes_names_in_table_wandb(config):
                             "0) b":    config_cop["LAYER_SETTING"]["l0"]["bias"],
                             "0) wbS":  config_cop["LAYER_SETTING"]["l0"]["shared_weight_and_bias"],
                             "0) ivS":   config_cop["LAYER_SETTING"]["l0"]["shared_leak_iv"],
+                            "0) thS":   config_cop["LAYER_SETTING"]["l0"]["shared_thres"],
 
                             "1) N":    config_cop["NEURONS"],
                             "1) R":    config_cop["LAYER_SETTING"]["l1"]["recurrent"],
