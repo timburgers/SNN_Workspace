@@ -22,7 +22,7 @@ import copy
 # for dataset_number in range(10):
 sim_time = 200
 dataset_number = None                                                  # None is the test_dataset
-filename = 251                                                       #None --> highest number, or int or str (withou .pkl)
+filename = 276                                                       #None --> highest number, or int or str (withou .pkl)
 folder_of_model = "Blimp"                                               # all folder under the folder Results_EA
 lib_algorithm = "evotorch"                                              # evotorch or pygad
 SNN_TYPE = "LIF"                                                        # either LIF or IZH
@@ -39,8 +39,8 @@ new_dataset_number = 0
 new_input_column = []
 new_target_column = []
 
-create_plots                    = False
-create_table                    = False
+create_plots                    = True
+create_table                    = True
 plot_with_best_testrun          = True  #True: solution = best performance on manual dataset      False: solution = best performance overall (can be easy dataset)
 muliple_test_runs_error_plot    = False  
 plot_last_generation            = False
@@ -151,8 +151,9 @@ if SNN_TYPE == "LIF":
     config = dict_solutions["config"]
     number_of_neurons = config["NEURONS"]
     #//TODO GET rid of beun fixes here
-
-
+    # config["LAYER_SETTING"]["l0"]["shared_leak_iv"] = False
+    # config["LAYER_SETTING"]["l1"]["shared_leak_iv"] = False
+    # config["LAYER_SETTING"]["l0"]["shared_thres"] = False
     encoding_layer = config["LAYER_SETTING"]["l0"]["enabled"]
     if encoding_layer: controller = Encoding_L1_Decoding_SNN(None, config["NEURONS"], config["LAYER_SETTING"])
     else:              controller = L1_Decoding_SNN(None, config["NEURONS"], config["LAYER_SETTING"])
@@ -217,7 +218,7 @@ if excluded_neurons or exclude_non_spiking_neurons:
 
     sparse_config = copy.deepcopy(config)
     sparse_config["NEURONS"] = new_number_of_neurons
-    sparse_config["LAYER_SETTING"]["l1"]["shared_leak_i"]          = False          #Set all shared weight to false, since then no parameters are shared in the second simulation
+    sparse_config["LAYER_SETTING"]["l1"]["shared_leak_iv"]          = False          #Set all shared weight to false, since then no parameters are shared in the second simulation
     sparse_config["LAYER_SETTING"]["l1"]["shared_weight_and_bias"] = False
     sparse_config["LAYER_SETTING"]["l2"]["shared_weight_and_bias"] = False
     if new_dataset is not None:

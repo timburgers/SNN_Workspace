@@ -21,8 +21,8 @@ LAYER_SETTING:
     neurons:                   40         # REQ: w_diagonal false, when shared N must be even #NOTE: 
     bias:                      True #T    # REQ: -                                            #NOTE: -
     shared_weight_and_bias:    True #T    # REQ: -                                            #NOTE: -
-    shared_leak_i:             False       # REQ: -                                            #NOTE: -
-    clamp_v:                   False #F     # REQ: -                                            #NOTE: -
+    shared_leak_iv:            True       # REQ: -                                            #NOTE: -
+    shared_thres:              True
 
   l1:   
      recurrent:                True #T    # REQ: -                                            #NOTE: -
@@ -39,8 +39,8 @@ LAYER_SETTING:
      shared_weight_and_bias:   True  #T   # REQ: -                                            #NOTE: [[w1,w1,w2,w2,w3,w3],[w1,w1,w2,w2,w3,w3],[w4,w4,w5,w5,w6,w6], ....] shape(out,in)
      shared_2x2_weight_cross:  True  #T   # REQ: w_diagonal, w_diagonal_2x2                   # NOTE: is overrulled is other ahred weight is turned on
 
-     shared_leak_i:            False       # REQ: -                                            #NOTE: leak_i = [l1, l1, l2, l2, l3, l3 ...]
-     clamp_v:                  False  #F    # REQ: -                                            #NOTE: clamp the mem pot to zero  
+     shared_leak_iv:            True       # REQ: -                                            #NOTE: leak_i = [l1, l1, l2, l2, l3, l3 ...]
+
 
   l2: 
      complementary_leak:       True #T    # REQ: -                                            #NOTE: -

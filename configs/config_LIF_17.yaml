@@ -30,9 +30,9 @@ LAYER_SETTING:
   l0:
     bias: true
     enabled: true
-    neurons: 20
+    neurons: 40
     shared_leak_iv: true
-    shared_thres: true
+    shared_thres: false
     shared_weight_and_bias: true
   l1:
     adapt_2x2_connection: true
@@ -51,7 +51,7 @@ LAYER_SETTING:
     complementary_leak: true
     shared_weight_and_bias: true
 MEAN_SETTING: same for all
-NEURONS: 20
+NEURONS: 40
 NUMBER_PROCESSES: 20
 PARAMETER_BOUNDS:
   l0.ff.bias:

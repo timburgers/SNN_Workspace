@@ -135,8 +135,7 @@ def fix_requirements_in_config(config):
         config["LAYER_SETTING"]["l0"]["neurons"] = None
         config["LAYER_SETTING"]["l0"]["bias"] = False
         config["LAYER_SETTING"]["l0"]["shared_weight_and_bias"] = False
-        config["LAYER_SETTING"]["l0"]["shared_leak_i"] = False
-        config["LAYER_SETTING"]["l0"]["clamp_v"] = False
+        config["LAYER_SETTING"]["l0"]["shared_leak_iv"] = False
 
     if l0_l1_square and l1["w_diagonal"]:
         config["LAYER_SETTING"]["l0"]["neurons"] = config["NEURONS"]
@@ -396,7 +395,7 @@ def init_conditions(problem):
                         if math.floor(number_of_params/4) < iteration< math.floor(number_of_params/2) or iteration> math.floor(number_of_params*3/4):
                             center_init[-1]=-center_init[-1]
                     
-                    if problem.config["INIT_LEAKI_HALF_ZERO"]==True and name == "l1.neuron.leak_i" and problem.config["LAYER_SETTING"]["l1"]["shared_leak_i"] == False:
+                    if problem.config["INIT_LEAKI_HALF_ZERO"]==True and name == "l1.neuron.leak_i" and problem.config["LAYER_SETTING"]["l1"]["shared_leak_iv"] == False:
                         if iteration<number_of_params/2:
                             center_init[-1]=0
 
@@ -490,7 +489,7 @@ def create_bounds(problem, model,config):
                 
 
                 # Check if parameters is the leak_i
-                elif name == "l1.neuron.leak_i" and config["BOUND_LEAKI_HALF_ZERO"]==True and config["LAYER_SETTING"]["l1"]["shared_leak_i"] == False:
+                elif name == "l1.neuron.leak_i" and config["BOUND_LEAKI_HALF_ZERO"]==True and config["LAYER_SETTING"]["l1"]["shared_leak_iv"] == False:
                     # Set the leak_i first half of neurons to a near zero 
                     if iteration<number_of_params/2:
                         lower_bounds.append(0)
@@ -777,7 +776,7 @@ def changes_names_in_table_wandb(config):
                             "0) N":    config_cop["LAYER_SETTING"]["l0"]["neurons"],
                             "0) b":    config_cop["LAYER_SETTING"]["l0"]["bias"],
                             "0) wbS":  config_cop["LAYER_SETTING"]["l0"]["shared_weight_and_bias"],
-                            "0) iS":   config_cop["LAYER_SETTING"]["l0"]["shared_leak_i"],
+                            "0) ivS":   config_cop["LAYER_SETTING"]["l0"]["shared_leak_iv"],
 
                             "1) N":    config_cop["NEURONS"],
                             "1) R":    config_cop["LAYER_SETTING"]["l1"]["recurrent"],
@@ -792,7 +791,7 @@ def changes_names_in_table_wandb(config):
                             "1) wD2x2":config_cop["LAYER_SETTING"]["l1"]["w_diagonal_2x2"],
                             "1) wbS":  config_cop["LAYER_SETTING"]["l1"]["shared_weight_and_bias"],
                             "1) w2x2S-crs":  config_cop["LAYER_SETTING"]["l1"]["shared_2x2_weight_cross"],
-                            "1) iS":   config_cop["LAYER_SETTING"]["l1"]["shared_leak_i"],
+                            "1) ivS":   config_cop["LAYER_SETTING"]["l1"]["shared_leak_iv"],
 
                             "2) ComL": config_cop["LAYER_SETTING"]["l2"]["complementary_leak"],
                             "2) wbS":  config_cop["LAYER_SETTING"]["l2"]["shared_weight_and_bias"]})

@@ -15,8 +15,7 @@ layer_setting = dict()
 layer_setting["l1"] = {
     "recurrent":              False,
     "adaptive":               False,
-    "clamp_v":                True ,
-    "shared_leak_i":          False,
+    "shared_leak_iv":          False,
     "bias":                   True ,
     "shared_weight_and_bias": False
 }
@@ -50,7 +49,7 @@ def init_single(neurons,layer_set):
 		init_param["l1_weights"]= torch.ones((neurons,1)).float()*w1			#NOTE: shape must be (neurons,1)
 		init_param["l1_bias"]	= torch.ones(neurons).float()*b1
 	
-	if layer_set["l1"]["shared_leak_i"] == True:
+	if layer_set["l1"]["shared_leak_iv"] == True:
 		init_param["l1_leak_i"] = torch.ones((int(neurons/2)))*leak_i
 	else: 
 		init_param["l1_leak_i"]	= torch.ones(neurons).float()*leak_i 

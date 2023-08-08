@@ -31,7 +31,7 @@ LAYER_SETTING:
     bias: true
     enabled: true
     neurons: 20
-    shared_leak_iv: true
+    shared_leak_iv: false
     shared_thres: true
     shared_weight_and_bias: true
   l1:
@@ -41,7 +41,7 @@ LAYER_SETTING:
     adapt_thres_input_spikes: true
     adaptive: true
     bias: false
-    recurrent: true
+    recurrent: false
     shared_2x2_weight_cross: true
     shared_leak_iv: true
     shared_weight_and_bias: true
