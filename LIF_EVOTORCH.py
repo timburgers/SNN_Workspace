@@ -449,7 +449,7 @@ def test_solution(problem, solution):
     
 
     if problem.config["WANDB_LOG"] == True:
-        wandb.log({title: plt})
+        wandb.log({title: plt}, commit=False)
 
     # plt.show()
 
@@ -567,6 +567,8 @@ def create_new_training_set():
         problem.target_data = problem.target_data_new
     
 def evaluate_manual_dataset():
+    
+    # Save the mean and stds data for 2000 steps in total
     save_per_generation = math.ceil(problem.config["GENERATIONS"]/2000)
     if problem.config["ALGORITHM"] == "pycma" and searcher.step_count%save_per_generation ==0: 
         # if problem.C_matrix is None:
@@ -601,7 +603,7 @@ def evaluate_manual_dataset():
         # problem.mean = np.append(problem.mean,)
 
 
-    #Evaluate every 50 generations
+    #Evaluate every x generations
     if searcher.step_count%problem.config["SAVE_TEST_SOLUTION_STEPSIZE"] ==0 or searcher.step_count==1 or searcher.steps_count ==problem.config["GENERATIONS"]:
         best_in_pop = torch.argmin(searcher.population._evdata)
         best_sol_np = searcher.population.values[best_in_pop].detach().numpy()
@@ -625,6 +627,7 @@ def evaluate_manual_dataset():
         save_solution(best_solution,problem)
         if problem.config["WANDB_LOG"]:
             wandb.config.update({"test_error": np.min(problem.error_test_solutions)},allow_val_change = True)
+            wandb.log({"Test error":searcher.population._evdata[best_in_pop]},commit=False)
 
     if problem.config["GENERATIONS"] >= 100 and searcher.step_count% int(problem.config["GENERATIONS"]/10) == 0:
         best_solution = searcher.status["best"] 
