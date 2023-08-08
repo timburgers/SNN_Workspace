@@ -11,8 +11,9 @@ ANTI_OVERFITTING:         True
 DIFFERENT_DATASET_EVERY_GENERATION: 1
 SAVE_TEST_SOLUTION_STEPSIZE: 100  #every .. steps the solution to the test case is calculated and saved
 DATASET_DIR: "Sim_data/blimp/down_pd_i/datasets"
-TEST_SIM_TIME: 300  #s
+TEST_SIM_TIME: 290  #s
 START_DATASETS_IN_MIDDLE: False
+TEST_DATA_FILE: "test_dataset_os"
 
 
 LAYER_SETTING:
@@ -47,7 +48,7 @@ LAYER_SETTING:
      shared_weight_and_bias:   True #T      # REQ: -                                            #NOTE: -
 
 
-FITNESS_FUNCTION: "mse"       #"mse", "mse+p", "mae" or "mae+p"
+FITNESS_FUNCTION: "mae+p"       #"mse", "mse+p", "mae" or "mae+p"
 TARGET_FITNESS: 1   
 #1) "pid output"        : NO dynamic system simulated     Fitness: MSE + Pearson
 #2) "system reference"  : Dynamic system simulated        Fitness: MSE
@@ -69,7 +70,6 @@ TIME_STEP: 0.2
 DATASET_NUMBER: null
 # START_DATASETS_IN_MIDDLE: False
 
-TEST_DATA_FILE: "test_dataset"
 ALGORITHM: "pycma" #cmaes or pycma
 WANDB_LOG:          True
 SAVE_LAST_SOLUTION: True
@@ -180,7 +180,7 @@ PARAMETER_BOUNDS: #null if None in python
   l1.ff.weight:     {"low": -1.5, "high": 1.5 }  #also negative!
   l1.ff.bias:       {"low": -1,   "high": 1   }  #also negative!
 
-  l2.neuron.leak:   {"low": 0.2, "high": 0.3}
+  l2.neuron.leak:   {"low": 0.15, "high": 0.35}
   l2.ff.weight:     {"low": -1.0,"high": 1.0}  #also negative!
 
 

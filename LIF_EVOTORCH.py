@@ -144,6 +144,7 @@ def fix_requirements_in_config(config):
         config["LAYER_SETTING"]["l1"]["adapt_thres_input_spikes"] = False
         config["LAYER_SETTING"]["l1"]["adapt_2x2_connection"] = False
         config["LAYER_SETTING"]["l1"]["adapt_share_add_t"] = False
+        config["LAYER_SETTING"]["l1"]["adapt_share_baseleak_t"] = False
         print("\nSet all adapt parameters to False since l0-l1 is not squared")
     
     if l0["enabled"] and l1["w_diagonal"] == False:
