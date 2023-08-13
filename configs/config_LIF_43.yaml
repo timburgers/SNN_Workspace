@@ -1,8 +1,8 @@
 ALGORITHM: pycma
 ALTERNATIVE_INPUT_COLUMN:
-- 8
+- 3
 ALTERNATIVE_TARGET_COLUMN:
-- 5
+- 4
 ANTI_OVERFITTING: true
 BOUNDS_W1_H2_NEG: false
 BOUND_LEAKI_HALF_ZERO: false
@@ -16,13 +16,13 @@ CUSTOM:
   l1.rec.weight: range
   l2.ff.weight: range
   l2.neuron.leak: range
-DATASET_DIR: Sim_data/blimp/down_pd_i/datasets
+DATASET_DIR: Sim_data/blimp/neutral_seperate/datasets
 DATASET_NUMBER: null
 DIFFERENT_DATASET_EVERY_GENERATION: 1
 DZ_INITIAL: 0
 FITNESS_FUNCTION: mae+p
-GENERATIONS: 100000
-INDIVIDUALS: 80
+GENERATIONS: 80000
+INDIVIDUALS: 60
 INIT_LEAKI_HALF_ZERO: false
 INIT_W1_H2_NEG: false
 INIT_W2_Q2_Q4_NEG: false
@@ -30,7 +30,7 @@ LAYER_SETTING:
   l0:
     bias: true
     enabled: true
-    neurons: 40
+    neurons: 20
     shared_leak_iv: false
     shared_thres: false
     shared_weight_and_bias: true
@@ -39,9 +39,9 @@ LAYER_SETTING:
     adapt_share_add_t: true
     adapt_share_baseleak_t: true
     adapt_thres_input_spikes: true
-    adaptive: true
+    adaptive: false
     bias: false
-    recurrent: true
+    recurrent: false
     shared_2x2_weight_cross: true
     shared_leak_iv: false
     shared_weight_and_bias: true
@@ -51,7 +51,7 @@ LAYER_SETTING:
     complementary_leak: true
     shared_weight_and_bias: true
 MEAN_SETTING: same for all
-NEURONS: 40
+NEURONS: 20
 NUMBER_PROCESSES: 20
 PARAMETER_BOUNDS:
   l0.ff.bias:
@@ -111,7 +111,7 @@ SHOW_PLOTS: false
 SIM_TIME: 40
 START_DATASETS_IN_MIDDLE: false
 TARGET_FITNESS: 1
-TEST_DATA_FILE: test_dataset_os
+TEST_DATA_FILE: test_dataset
 TEST_SIM_TIME: 290
 TIME_STEP: 0.2
 WANDB_LOG: true

@@ -5,21 +5,32 @@ with open("configs/config_LIF_DEFAULT.yaml","r") as f:
 
 ind = 32
 for l1_neur in [20,40]:
-    for rec in [True,False]:
-        for l0_iv_thres_shared in [True,False]:
+    # for rec in [True,False]:
+    for l0_iv_thres_shared in [True,False]:
+        for diag_2x2 in [True, False]:
             for l1_iv_shared in [True,False]:
-                config["NEURONS"] = l1_neur
-                config["LAYER_SETTING"]["l0"]["neurons"] = l1_neur
-                config["LAYER_SETTING"]["l1"]["recurrent"] = rec
-                config["LAYER_SETTING"]["l0"]["shared_leak_iv"] = l0_iv_thres_shared
-                config["LAYER_SETTING"]["l0"]["shared_thres"] = l0_iv_thres_shared
+                for adapt in [True, False]:
+                    config["NEURONS"] = l1_neur
+                    config["LAYER_SETTING"]["l0"]["neurons"] = l1_neur
+                    # config["LAYER_SETTING"]["l1"]["recurrent"] = rec
+                    config["LAYER_SETTING"]["l0"]["shared_leak_iv"] = l0_iv_thres_shared
+                    config["LAYER_SETTING"]["l0"]["shared_thres"] = l0_iv_thres_shared
 
-                config["LAYER_SETTING"]["l1"]["shared_leak_iv"] = l1_iv_shared
+                    config["LAYER_SETTING"]["l1"]["shared_leak_iv"] = l1_iv_shared
 
-                file=open("configs/config_LIF_"+ str(ind) +".yaml","w")
-                yaml.dump(config,file)
-                file.close()
-                ind = ind +1
+                    config["LAYER_SETTING"]["l1"]["w_diagonal_2x2"] = diag_2x2
+                    config["LAYER_SETTING"]["l1"]["shared_2x2_weight_cross"] = diag_2x2
+
+                    config["LAYER_SETTING"]["l1"]["adaptive"] = adapt
+
+
+                    
+
+
+                    file=open("configs/config_LIF_"+ str(ind) +".yaml","w")
+                    yaml.dump(config,file)
+                    file.close()
+                    ind = ind +1
 
 # for l1_neur in [40]:
 #     for w_diag in [True]:
