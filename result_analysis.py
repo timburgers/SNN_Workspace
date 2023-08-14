@@ -22,7 +22,7 @@ import copy
 # for dataset_number in range(10):
 sim_time = 300
 dataset_number = None                                                  # None is the test_dataset
-filename = 228                                                       #None --> highest number, or int or str (withou .pkl)
+filename = 271                                                       #None --> highest number, or int or str (withou .pkl)
 folder_of_model = "Blimp"                                               # all folder under the folder Results_EA
 lib_algorithm = "evotorch"                                              # evotorch or pygad
 SNN_TYPE = "LIF"                                                        # either LIF or IZH
