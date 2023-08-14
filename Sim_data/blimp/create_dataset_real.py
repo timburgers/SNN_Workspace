@@ -4,21 +4,22 @@ import pandas as pd
 
 
 
-file_name = "test_dataset_"
+file_name = "dataset_"
 freq = 10
-time_sim = 300
+time_sim = 40
 start_before_step=3 #s
 Kp = 9
+filter_d_peaks = True
 
 
-original_folder = "/home/tim/SNN_Workspace/Sim_data/blimp/down_seperate/"
+original_folder = "/home/tim/SNN_Workspace/Sim_data/blimp/neutral_seperate/"
 original_files = [f for f in os.listdir(original_folder) if os.path.isfile(os.path.join(original_folder, f))]
 original_files = sorted(original_files)
 print(original_files)
 
 # create dataset folder
-if os.path.isdir(original_folder + "datasets/"): pass
-else: os.mkdir(original_folder + "datasets/")
+if os.path.isdir(original_folder + "datasets_filtered_d/"): pass
+else: os.mkdir(original_folder + "datasets_filtered_d/")
 
 
 ind = 0
@@ -42,6 +43,14 @@ for file in original_files:
             # Set the first timestep of the d to zero
             df_individual_step['pid_d'].iloc[0] = 0
             df_individual_step['pid_pd'].iloc[0] = df_individual_step['error'].iloc[0]*Kp
+
+            if filter_d_peaks:
+                # divide the value of pid_d by 10 if its larger than 10
+                df_individual_step.loc[abs(df["pid_d"]) > 10, "pid_d"] /= 10
+
+                df_individual_step["pid_pd"] = df_individual_step["pid_p"] + df_individual_step["pid_d"]
+
+                
 
             df_individual_step.to_csv(path_or_buf= original_folder + "datasets/" +file_name +str(ind) + ".csv", index=False)
             ind +=1
