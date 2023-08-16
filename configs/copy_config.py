@@ -3,7 +3,7 @@ import yaml
 with open("configs/config_LIF_DEFAULT.yaml","r") as f:
     config = yaml.safe_load(f)
 
-ind = 64
+ind = 32
 for l1_neur in [20,40]:
     # for rec in [True,False]:
     for l0_iv_thres_shared in [True,False]:
