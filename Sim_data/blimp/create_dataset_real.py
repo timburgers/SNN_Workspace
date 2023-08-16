@@ -22,7 +22,7 @@ if os.path.isdir(original_folder + "datasets/"): pass
 else: os.mkdir(original_folder + "datasets/")
 
 
-ind = 75
+ind = 0
 for file in original_files:
     # Read the CSV file into a pandas DataFrame
     df = pd.read_csv(original_folder + file)
@@ -49,6 +49,9 @@ for file in original_files:
                 df_individual_step.loc[abs(df["pid_d"]) > 10, "pid_d"] /= 10
 
                 df_individual_step["pid_pd"] = df_individual_step["pid_p"] + df_individual_step["pid_d"]
+                
+            df_individual_step["u"] = df_individual_step["pid_p"] + df_individual_step["pid_i"] +df_individual_step["pid_d"] 
+            df_individual_step["pid_pd"] = df_individual_step["pid_p"] +df_individual_step["pid_d"] 
 
                 
 

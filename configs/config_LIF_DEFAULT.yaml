@@ -4,13 +4,13 @@ NEURONS: 40
 INDIVIDUALS: 40
 GENERATIONS: 80000
 NUMBER_PROCESSES: 10
-SIM_TIME: 40            # max 40 secs
+SIM_TIME: 80            # max 40 secs
 
 # Dataset loading and saving options
 
 SAVE_TEST_SOLUTION_STEPSIZE: 100  #every .. steps the solution to the test case is calculated and saved
-DATASET_DIR: "Sim_data/blimp/neutral_seperate/datasets"
-TEST_SIM_TIME: 290  #s
+DATASET_DIR: "Sim_data/blimp/neutral_seperate_os/datasets"
+TEST_SIM_TIME: 600  #s
 
 TEST_DATA_FILE: "test_dataset"
 ALTERNATIVE_INPUT_COLUMN: [3]

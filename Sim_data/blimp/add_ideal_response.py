@@ -5,7 +5,6 @@ import pandas as pd
 
 
 
-file_name = "dataset_"
 freq = 10
 Kp = 9
 Ki = 0.1
