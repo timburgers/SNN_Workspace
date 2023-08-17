@@ -1,15 +1,15 @@
 
 ### Hyperparameters
 NEURONS: 40
-INDIVIDUALS: 40
+INDIVIDUALS: 80
 GENERATIONS: 80000
-NUMBER_PROCESSES: 10
+NUMBER_PROCESSES: 20
 SIM_TIME: 115            # max 40 secs
 
 # Dataset loading and saving options
 
 SAVE_TEST_SOLUTION_STEPSIZE: 50  #every .. steps the solution to the test case is calculated and saved
-DATASET_DIR: "Sim_data/blimp/neutral_seperate_os/datasets"
+DATASET_DIR: "Sim_data/blimp/neutral_seperate_os2/datasets"
 TEST_SIM_TIME: 700  #s
 
 TEST_DATA_FILE: "test_dataset"

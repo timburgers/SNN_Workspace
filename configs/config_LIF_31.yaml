@@ -22,7 +22,7 @@ DIFFERENT_DATASET_EVERY_GENERATION: 1
 DZ_INITIAL: 0
 FITNESS_FUNCTION: mae+p
 GENERATIONS: 80000
-INDIVIDUALS: 40
+INDIVIDUALS: 80
 INIT_LEAKI_HALF_ZERO: false
 INIT_W1_H2_NEG: false
 INIT_W2_Q2_Q4_NEG: false
@@ -30,9 +30,9 @@ LAYER_SETTING:
   l0:
     bias: true
     enabled: true
-    neurons: 20
-    shared_leak_iv: true
-    shared_thres: true
+    neurons: 40
+    shared_leak_iv: false
+    shared_thres: false
     shared_weight_and_bias: true
   l1:
     adapt_2x2_connection: false
@@ -42,17 +42,17 @@ LAYER_SETTING:
     adaptive: false
     bias: false
     recurrent: false
-    shared_2x2_weight_cross: true
+    shared_2x2_weight_cross: false
     shared_leak_iv: false
     shared_weight_and_bias: true
     w_diagonal: true
-    w_diagonal_2x2: true
+    w_diagonal_2x2: false
   l2:
     complementary_leak: true
     shared_weight_and_bias: true
 MEAN_SETTING: same for all
-NEURONS: 20
-NUMBER_PROCESSES: 10
+NEURONS: 40
+NUMBER_PROCESSES: 20
 PARAMETER_BOUNDS:
   l0.ff.bias:
     high: 1
