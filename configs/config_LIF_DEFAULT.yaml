@@ -14,7 +14,7 @@ TEST_SIM_TIME: 700  #s
 
 TEST_DATA_FILE: "test_dataset"
 ALTERNATIVE_INPUT_COLUMN: [3]
-ALTERNATIVE_TARGET_COLUMN: [6]
+ALTERNATIVE_TARGET_COLUMN: [5]
 
 
 LAYER_SETTING:
@@ -29,17 +29,17 @@ LAYER_SETTING:
   l1:   
      recurrent:                False #T    # REQ: -                                            #NOTE: -
 
-     adaptive:                 False       # REQ: -                                            #NOTE: -
-     adapt_thres_input_spikes: False      # REQ: adaptive & (diagonal or size l0 = l1)        #NOTE: t is not calc based on own spikes but incomming spikes.
-     adapt_2x2_connection:     False      # REQ: adaptive & (diagonal or size l0 = l1)        #NOTE: add_t = diagonal_block_diagram(2x2)
-     adapt_share_add_t:        False      # REQ: adapt_2x2_connection                         #NOTE: 2x2 blocks are linked ([[-a1,a1],[a1,-a1]])
-     adapt_share_baseleak_t:   False
+     adaptive:                 True       # REQ: -                                            #NOTE: -
+     adapt_thres_input_spikes: True      # REQ: adaptive & (diagonal or size l0 = l1)        #NOTE: t is not calc based on own spikes but incomming spikes.
+     adapt_2x2_connection:     True      # REQ: adaptive & (diagonal or size l0 = l1)        #NOTE: add_t = diagonal_block_diagram(2x2)
+     adapt_share_add_t:        True      # REQ: adapt_2x2_connection                         #NOTE: 2x2 blocks are linked ([[-a1,a1],[a1,-a1]])
+     adapt_share_baseleak_t:   True
 
      bias:                     False #F   # REQ: -                                            #NOTE: -
      w_diagonal:               True  #T   # REQ: -                                             #NOTE: If true --> 1x1 diag, unless w_diag_2x2 is true
      w_diagonal_2x2:           True  #T   # REQ: w_diagonal                                    #NOTE: -     
-     shared_weight_and_bias:   True  #T   # REQ: -                                            #NOTE: [[w1,w1,w2,w2,w3,w3],[w1,w1,w2,w2,w3,w3],[w4,w4,w5,w5,w6,w6], ....] shape(out,in)
-     shared_2x2_weight_cross:  True  #T   # REQ: w_diagonal, w_diagonal_2x2                   # NOTE: is overrulled is other ahred weight is turned on
+     shared_weight_and_bias:   False  #T   # REQ: -                                            #NOTE: [[w1,w1,w2,w2,w3,w3],[w1,w1,w2,w2,w3,w3],[w4,w4,w5,w5,w6,w6], ....] shape(out,in)
+     shared_2x2_weight_cross:  False  #T   # REQ: w_diagonal, w_diagonal_2x2                   # NOTE: is overrulled is other ahred weight is turned on
 
      shared_leak_iv:            False       # REQ: -                                            #NOTE: leak_i = [l1, l1, l2, l2, l3, l3 ...]
 
