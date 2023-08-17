@@ -4,13 +4,13 @@ NEURONS: 40
 INDIVIDUALS: 40
 GENERATIONS: 80000
 NUMBER_PROCESSES: 10
-SIM_TIME: 80            # max 40 secs
+SIM_TIME: 115            # max 40 secs
 
 # Dataset loading and saving options
 
-SAVE_TEST_SOLUTION_STEPSIZE: 100  #every .. steps the solution to the test case is calculated and saved
+SAVE_TEST_SOLUTION_STEPSIZE: 50  #every .. steps the solution to the test case is calculated and saved
 DATASET_DIR: "Sim_data/blimp/neutral_seperate_os/datasets"
-TEST_SIM_TIME: 600  #s
+TEST_SIM_TIME: 700  #s
 
 TEST_DATA_FILE: "test_dataset"
 ALTERNATIVE_INPUT_COLUMN: [3]
@@ -29,11 +29,11 @@ LAYER_SETTING:
   l1:   
      recurrent:                False #T    # REQ: -                                            #NOTE: -
 
-     adaptive:                 True       # REQ: -                                            #NOTE: -
-     adapt_thres_input_spikes: True      # REQ: adaptive & (diagonal or size l0 = l1)        #NOTE: t is not calc based on own spikes but incomming spikes.
-     adapt_2x2_connection:     True      # REQ: adaptive & (diagonal or size l0 = l1)        #NOTE: add_t = diagonal_block_diagram(2x2)
-     adapt_share_add_t:        True      # REQ: adapt_2x2_connection                         #NOTE: 2x2 blocks are linked ([[-a1,a1],[a1,-a1]])
-     adapt_share_baseleak_t:   True
+     adaptive:                 False       # REQ: -                                            #NOTE: -
+     adapt_thres_input_spikes: False      # REQ: adaptive & (diagonal or size l0 = l1)        #NOTE: t is not calc based on own spikes but incomming spikes.
+     adapt_2x2_connection:     False      # REQ: adaptive & (diagonal or size l0 = l1)        #NOTE: add_t = diagonal_block_diagram(2x2)
+     adapt_share_add_t:        False      # REQ: adapt_2x2_connection                         #NOTE: 2x2 blocks are linked ([[-a1,a1],[a1,-a1]])
+     adapt_share_baseleak_t:   False
 
      bias:                     False #F   # REQ: -                                            #NOTE: -
      w_diagonal:               True  #T   # REQ: -                                             #NOTE: If true --> 1x1 diag, unless w_diag_2x2 is true
@@ -41,7 +41,7 @@ LAYER_SETTING:
      shared_weight_and_bias:   True  #T   # REQ: -                                            #NOTE: [[w1,w1,w2,w2,w3,w3],[w1,w1,w2,w2,w3,w3],[w4,w4,w5,w5,w6,w6], ....] shape(out,in)
      shared_2x2_weight_cross:  True  #T   # REQ: w_diagonal, w_diagonal_2x2                   # NOTE: is overrulled is other ahred weight is turned on
 
-     shared_leak_iv:            True       # REQ: -                                            #NOTE: leak_i = [l1, l1, l2, l2, l3, l3 ...]
+     shared_leak_iv:            False       # REQ: -                                            #NOTE: leak_i = [l1, l1, l2, l2, l3, l3 ...]
 
 
   l2: 
@@ -147,7 +147,7 @@ range: #keep all positive (NOTE: initilaizing close to zero (in combi with the s
   l1.neuron.base_t: [1     , 2]
   l1.neuron.add_t:  [0.01 , 0.3]
 
-  l2.neuron.leak:   [0.249 , 0.251]
+  l2.neuron.leak:   [0.249 , 0.350]
   l2.ff.weight:     [0.4  , 0.5] 
 
 ######## STD
@@ -180,7 +180,7 @@ PARAMETER_BOUNDS: #null if None in python
   l1.ff.weight:     {"low": -1.5, "high": 1.5 }  #also negative!
   l1.ff.bias:       {"low": -1,   "high": 1   }  #also negative!
 
-  l2.neuron.leak:   {"low": 0.15, "high": 0.35}
+  l2.neuron.leak:   {"low": 0.15, "high": 0.6}
   l2.ff.weight:     {"low": -1.0,"high": 1.0}  #also negative!
 
 

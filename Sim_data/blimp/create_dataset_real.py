@@ -6,13 +6,13 @@ import pandas as pd
 
 file_name = "dataset_"
 freq = 10
-time_sim = 80
+time_sim = 120
 start_before_step=3 #s
 Kp = 9
 filter_d_peaks = False
 
 
-original_folder = "/home/tim/SNN_Workspace/Sim_data/blimp/neutral_seperate_os/"
+original_folder = "/home/tim/SNN_Workspace/Sim_data/blimp/neutral_seperate_os2/"
 original_files = [f for f in os.listdir(original_folder) if os.path.isfile(os.path.join(original_folder, f))]
 original_files = sorted(original_files)
 print(original_files)
@@ -22,7 +22,7 @@ if os.path.isdir(original_folder + "datasets/"): pass
 else: os.mkdir(original_folder + "datasets/")
 
 
-ind = 0
+ind = 5
 for file in original_files:
     # Read the CSV file into a pandas DataFrame
     df = pd.read_csv(original_folder + file)

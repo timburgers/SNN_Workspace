@@ -19,7 +19,7 @@ limit_pd = True
 lim_pd = 15
 
 
-original_folder = "/home/tim/SNN_Workspace/Sim_data/blimp/neutral_seperate_os/"
+original_folder = "/home/tim/SNN_Workspace/Sim_data/blimp/neutral_seperate_os2/"
 original_files = [f for f in os.listdir(original_folder) if os.path.isfile(os.path.join(original_folder, f))]
 original_files = sorted(original_files)
 print(original_files)
@@ -34,14 +34,20 @@ previous_error = 0
 integral = 0
 file_ind = 0
 index_prev = 0
-
+index_overall = -1
 for file in original_files:
     # Read the CSV file into a pandas DataFrame
     df = pd.read_csv(original_folder + file) 
 
     for index, row in df.iterrows():
+
+        #Skip the first ten entries of the second file
+        if file_ind == 1 and index in [0,1,2,3,4,5,6,7,8,9,10]:
+            continue
+        else: index_overall +=1
+
         # Fill in error
-        time = (index+index_prev)/freq
+        time = (index_overall)/freq
         error = row["error"]
         try: ref=row["h_ref"]
         except: ref=row["ref"]
@@ -63,8 +69,8 @@ for file in original_files:
         #Fill in I
         integral = integral + row['error']/freq
         pid_i = Ki*integral
-        df_final.loc[index+(index_prev)] = [time,0,ref,error,pid_p,pid_i,pid_d,pid_p+pid_d,pid_p+pid_i+pid_d,0,0,0,0,0]
-    index_prev = index_prev + index+1
+        df_final.loc[index_overall] = [time,0,ref,error,pid_p,pid_i,pid_d,pid_p+pid_d,pid_p+pid_i+pid_d,0,0,0,0,0]
+    
 
 
     file_ind +=1
