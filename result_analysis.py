@@ -20,10 +20,10 @@ from LIF_EVOTORCH import get_dataset, run_controller, run_controller_dynamics, e
 import copy
 
 # for dataset_number in range(10):
-sim_time = 300
+sim_time = 100
 dataset_number = None                                                  # None is the test_dataset
-filename = 271                                                       #None --> highest number, or int or str (withou .pkl)
-folder_of_model = "Blimp"                                               # all folder under the folder Results_EA
+filename = 464                                                       #None --> highest number, or int or str (withou .pkl)
+folder_of_model = "Simulation/Recurrent_Adaptation"                                               # all folder under the folder Results_EA
 lib_algorithm = "evotorch"                                              # evotorch or pygad
 SNN_TYPE = "LIF"                                                        # either LIF or IZH
 window_size =6      #NOTE: even numbers
@@ -154,6 +154,9 @@ if SNN_TYPE == "LIF":
     config["LAYER_SETTING"]["l0"]["shared_leak_iv"] = False
     config["LAYER_SETTING"]["l1"]["shared_leak_iv"] = False
     config["LAYER_SETTING"]["l0"]["shared_thres"] = False
+    config["LAYER_SETTING"]["l1"]["shared_2x2_weight_cross"] = False
+    config["LAYER_SETTING"]["l1"]["adapt_share_baseleak_t"] = False
+
     encoding_layer = config["LAYER_SETTING"]["l0"]["enabled"]
     if encoding_layer: controller = Encoding_L1_Decoding_SNN(None, config["NEURONS"], config["LAYER_SETTING"])
     else:              controller = L1_Decoding_SNN(None, config["NEURONS"], config["LAYER_SETTING"])

@@ -6,7 +6,7 @@ import random
 import yaml
 
 #GLOBAL PARAMS
-TIME_STEP = 0.2	# The sample time per time step [s]
+TIME_STEP = 0.01	# The sample time per time step [s]
 SIM_TIME = 100		# Total length of simulation [s]
 SETPOINT_UPDATE_STEP = 20
 MIMIMAL_HEIGHT_CHANGE = 3
@@ -24,7 +24,7 @@ antiWindup = False	# If set to true, no windup will take place when the trust li
 
 
 #---PID GAINS--- 
-KP = 10
+KP = 5
 KI = 1
 KD = 2
 #---------------
@@ -40,6 +40,7 @@ class Simulation_PID(object):
 		SETPOINT_Z = 0 	
 		with open("configs/config_LIF_DEFAULT.yaml","r") as f:
 			self.config = yaml.safe_load(f)
+			self.config["TIME_STEP"] = TIME_STEP
 		self.states = Blimp(self.config)
 		
 		
