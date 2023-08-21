@@ -30,28 +30,28 @@ LAYER_SETTING:
   l0:
     bias: true
     enabled: true
-    neurons: 20
-    shared_leak_iv: false
-    shared_thres: false
+    neurons: 40
+    shared_leak_iv: true
+    shared_thres: true
     shared_weight_and_bias: true
   l1:
-    adapt_2x2_connection: false
-    adapt_share_add_t: false
-    adapt_share_baseleak_t: false
-    adapt_thres_input_spikes: false
+    adapt_2x2_connection: true
+    adapt_share_add_t: true
+    adapt_share_baseleak_t: true
+    adapt_thres_input_spikes: true
     adaptive: false
     bias: false
-    recurrent: false
+    recurrent: true
     shared_2x2_weight_cross: false
     shared_leak_iv: false
-    shared_weight_and_bias: true
+    shared_weight_and_bias: false
     w_diagonal: true
-    w_diagonal_2x2: false
+    w_diagonal_2x2: true
   l2:
     complementary_leak: true
     shared_weight_and_bias: true
 MEAN_SETTING: same for all
-NEURONS: 20
+NEURONS: 40
 NUMBER_PROCESSES: 20
 PARAMETER_BOUNDS:
   l0.ff.bias:
@@ -113,7 +113,7 @@ START_DATASETS_IN_MIDDLE: false
 TARGET_FITNESS: 1
 TEST_DATA_FILE: test_dataset
 TEST_SIM_TIME: 700
-TIME_STEP: 0.2
+TIME_STEP: 0.1
 WANDB_LOG: true
 Z_INITIAL: 0
 gaussian:
