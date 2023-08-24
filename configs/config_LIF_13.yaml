@@ -2,7 +2,7 @@ ALGORITHM: pycma
 ALTERNATIVE_INPUT_COLUMN:
 - 3
 ALTERNATIVE_TARGET_COLUMN:
-- 5
+- 7
 ANTI_OVERFITTING: true
 BOUNDS_W1_H2_NEG: false
 BOUND_LEAKI_HALF_ZERO: false
@@ -21,8 +21,8 @@ DATASET_NUMBER: null
 DIFFERENT_DATASET_EVERY_GENERATION: 1
 DZ_INITIAL: 0
 FITNESS_FUNCTION: mae+p
-GENERATIONS: 80000
-INDIVIDUALS: 80
+GENERATIONS: 70000
+INDIVIDUALS: 40
 INIT_LEAKI_HALF_ZERO: false
 INIT_W1_H2_NEG: false
 INIT_W2_Q2_Q4_NEG: false
@@ -30,7 +30,7 @@ LAYER_SETTING:
   l0:
     bias: true
     enabled: true
-    neurons: 40
+    neurons: 20
     shared_leak_iv: true
     shared_thres: true
     shared_weight_and_bias: true
@@ -42,16 +42,16 @@ LAYER_SETTING:
     adaptive: false
     bias: false
     recurrent: false
-    shared_2x2_weight_cross: false
+    shared_2x2_weight_cross: true
     shared_leak_iv: false
-    shared_weight_and_bias: true
+    shared_weight_and_bias: false
     w_diagonal: true
     w_diagonal_2x2: true
   l2:
     complementary_leak: true
     shared_weight_and_bias: true
 MEAN_SETTING: same for all
-NEURONS: 40
+NEURONS: 20
 NUMBER_PROCESSES: 20
 PARAMETER_BOUNDS:
   l0.ff.bias:

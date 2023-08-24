@@ -3,15 +3,16 @@ import yaml
 with open("configs/config_LIF_DEFAULT.yaml","r") as f:
     config = yaml.safe_load(f)
 
-ind = 32
-for l1_neur in [40]:
+ind = 16
+for l1_neur in [20]:
     for rec in [True,False]:
         for w_2x2_cross_shared in [True,False]:
             for adapt in [True, False]:
                 config["NEURONS"] = l1_neur
                 config["LAYER_SETTING"]["l0"]["neurons"] = l1_neur
                 config["LAYER_SETTING"]["l1"]["recurrent"] = rec
-                config["LAYER_SETTING"]["l1"]["shared_2x2_weight_cross"] = w_2x2_cross_shared
+                # config["LAYER_SETTING"]["l1"]["shared_2x2_weight_cross"] = w_2x2_cross_shared             # for P,D,PD,PID
+                config["LAYER_SETTING"]["l1"]["shared_weight_and_bias"] = w_2x2_cross_shared               #For I
 
                 config["LAYER_SETTING"]["l1"]["adaptive"] = adapt
 
