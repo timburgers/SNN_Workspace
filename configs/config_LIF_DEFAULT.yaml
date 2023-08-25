@@ -131,7 +131,7 @@ gaussian:
   l2.ff.weight: 0.20 
 
 range: #keep all positive (NOTE: initilaizing close to zero (in combi with the std) could lead to sign flipped initializations)
-  l0.neuron.leak_i: [0.1   , 0.9]
+  l0.neuron.leak_i: [0.00001   , 0.0001]
   l0.neuron.leak_v: [0.1   , 0.9]
   l0.neuron.thresh: [0.8   , 1.2]
   l0.ff.weight:     [1     , 1.5]
@@ -147,7 +147,7 @@ range: #keep all positive (NOTE: initilaizing close to zero (in combi with the s
   l1.neuron.base_t: [1     , 2]
   l1.neuron.add_t:  [0.01 , 0.3]
 
-  l2.neuron.leak:   [0.249 , 0.350]
+  l2.neuron.leak:   [0.79 , 0.81]
   l2.ff.weight:     [0.4  , 0.5] 
 
 ######## STD
@@ -166,7 +166,7 @@ BOUNDS_W1_H2_NEG: False      #Second half of neurons w1 is zero
 PARAMETER_BOUNDS: #null if None in python
   l0.ff.weight:     {"low": -1.5, "high": 1.5 }  #also negative!
   l0.ff.bias:       {"low": -1,   "high": 1   }  #also negative!
-  l0.neuron.leak_i: {"low": 0,    "high": 0.99}
+  l0.neuron.leak_i: {"low": 0,    "high": 0.001}
   l0.neuron.leak_v: {"low": 0,    "high": 1   }
   l0.neuron.thresh: {"low": 0.8,  "high": 10  }
 
@@ -180,7 +180,7 @@ PARAMETER_BOUNDS: #null if None in python
   l1.ff.weight:     {"low": -1.5, "high": 1.5 }  #also negative!
   l1.ff.bias:       {"low": -1,   "high": 1   }  #also negative!
 
-  l2.neuron.leak:   {"low": 0.15, "high": 0.6}
+  l2.neuron.leak:   {"low": 0.5, "high": 0.99}
   l2.ff.weight:     {"low": -1.0,"high": 1.0}  #also negative!
 
 

@@ -2,7 +2,7 @@ ALGORITHM: pycma
 ALTERNATIVE_INPUT_COLUMN:
 - 3
 ALTERNATIVE_TARGET_COLUMN:
-- 8
+- 7
 ANTI_OVERFITTING: true
 BOUNDS_W1_H2_NEG: false
 BOUND_LEAKI_HALF_ZERO: false
@@ -30,7 +30,7 @@ LAYER_SETTING:
   l0:
     bias: true
     enabled: true
-    neurons: 20
+    neurons: 40
     shared_leak_iv: true
     shared_thres: true
     shared_weight_and_bias: true
@@ -51,17 +51,17 @@ LAYER_SETTING:
     complementary_leak: true
     shared_weight_and_bias: true
 MEAN_SETTING: same for all
-NEURONS: 20
+NEURONS: 40
 NUMBER_PROCESSES: 20
 PARAMETER_BOUNDS:
   l0.ff.bias:
     high: 1
     low: -1
   l0.ff.weight:
-    high: 1.5
-    low: -1.5
+    high: 3
+    low: -3
   l0.neuron.leak_i:
-    high: 0.99
+    high: 0.001
     low: 0
   l0.neuron.leak_v:
     high: 1
@@ -73,8 +73,8 @@ PARAMETER_BOUNDS:
     high: 1
     low: -1
   l1.ff.weight:
-    high: 1.5
-    low: -1.5
+    high: 3
+    low: -3
   l1.neuron.add_t:
     high: 1
     low: -1
@@ -97,8 +97,8 @@ PARAMETER_BOUNDS:
     high: 0.2
     low: -0.2
   l2.ff.weight:
-    high: 1.0
-    low: -1.0
+    high: 1.5
+    low: -1.5
   l2.neuron.leak:
     high: 0.6
     low: 0.15
@@ -133,8 +133,8 @@ range:
   - 1
   - 1.5
   l0.neuron.leak_i:
-  - 0.1
-  - 0.9
+  - 1.0e-05
+  - 0.0001
   l0.neuron.leak_v:
   - 0.1
   - 0.9
@@ -172,5 +172,5 @@ range:
   - 0.4
   - 0.5
   l2.neuron.leak:
-  - 0.249
-  - 0.35
+  - 0.49
+  - 0.51
