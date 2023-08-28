@@ -140,6 +140,9 @@ def fix_requirements_in_config(config):
     if l0_l1_square and l1["w_diagonal"]:
         config["LAYER_SETTING"]["l0"]["neurons"] = config["NEURONS"]
     
+    if l1["recurrent"] == False:
+        config["LAYER_SETTING"]["l1"]["recurrent_2x2"] = False
+
     if l0_l1_square == False or l1["adaptive"] == False:
         config["LAYER_SETTING"]["l1"]["adapt_thres_input_spikes"] = False
         config["LAYER_SETTING"]["l1"]["adapt_2x2_connection"] = False
@@ -785,6 +788,7 @@ def changes_names_in_table_wandb(config):
 
                             "1) N":    config_cop["NEURONS"],
                             "1) R":    config_cop["LAYER_SETTING"]["l1"]["recurrent"],
+                            "1) R2x2":    config_cop["LAYER_SETTING"]["l1"]["recurrent_2x2"],
                             "1) R":    config_cop["LAYER_SETTING"]["l1"]["recurrent"],
                             "1) A":    config_cop["LAYER_SETTING"]["l1"]["adaptive"],
                             "1) AI":   config_cop["LAYER_SETTING"]["l1"]["adapt_thres_input_spikes"],

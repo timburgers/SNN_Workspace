@@ -1,9 +1,9 @@
 
 ### Hyperparameters
 NEURONS: 40
-INDIVIDUALS: 40
+INDIVIDUALS: 10
 GENERATIONS: 70000
-NUMBER_PROCESSES: 20
+NUMBER_PROCESSES: 1
 SIM_TIME: 115            # max 40 secs
 
 # Dataset loading and saving options
@@ -27,13 +27,16 @@ LAYER_SETTING:
     shared_thres:              True
 
   l1:   
-     recurrent:                False #T    # REQ: -                                            #NOTE: -
+     recurrent:                True #T    # REQ: -                                            #NOTE: -
+     recurrent_2x2:            True
+     
+
 
      adaptive:                 True       # REQ: -                                            #NOTE: -
      adapt_thres_input_spikes: True      # REQ: adaptive & (diagonal or size l0 = l1)        #NOTE: t is not calc based on own spikes but incomming spikes.
      adapt_2x2_connection:     True      # REQ: adaptive & (diagonal or size l0 = l1)        #NOTE: add_t = diagonal_block_diagram(2x2)
-     adapt_share_add_t:        True      # REQ: adapt_2x2_connection                         #NOTE: 2x2 blocks are linked ([[-a1,a1],[a1,-a1]])
-     adapt_share_baseleak_t:   True
+     adapt_share_add_t:        False      # REQ: adapt_2x2_connection                         #NOTE: 2x2 blocks are linked ([[-a1,a1],[a1,-a1]])
+     adapt_share_baseleak_t:   False
 
      bias:                     False #F   # REQ: -                                            #NOTE: -
      w_diagonal:               True  #T   # REQ: -                                             #NOTE: If true --> 1x1 diag, unless w_diag_2x2 is true
