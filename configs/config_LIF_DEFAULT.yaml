@@ -1,9 +1,9 @@
 
 ### Hyperparameters
 NEURONS: 40
-INDIVIDUALS: 10
+INDIVIDUALS: 40
 GENERATIONS: 70000
-NUMBER_PROCESSES: 1
+NUMBER_PROCESSES: 20
 SIM_TIME: 115            # max 40 secs
 
 # Dataset loading and saving options
@@ -14,7 +14,7 @@ TEST_SIM_TIME: 700  #s
 
 TEST_DATA_FILE: "test_dataset"
 ALTERNATIVE_INPUT_COLUMN: [3]
-ALTERNATIVE_TARGET_COLUMN: [5]
+ALTERNATIVE_TARGET_COLUMN: [7]
 
 
 LAYER_SETTING:
@@ -148,9 +148,9 @@ range: #keep all positive (NOTE: initilaizing close to zero (in combi with the s
   l1.ff.bias:       [0.2   , 0.5]
   l1.neuron.leak_t: [0.1   , 0.9]
   l1.neuron.base_t: [1     , 2]
-  l1.neuron.add_t:  [0.01 , 0.3]
+  l1.neuron.add_t:  [-0.3 , 0.3]
 
-  l2.neuron.leak:   [0.79 , 0.81]
+  l2.neuron.leak:   [0.4 , 0.6]
   l2.ff.weight:     [0.4  , 0.5] 
 
 ######## STD
@@ -167,7 +167,7 @@ BOUND_W2_Q2_Q4_NEG: False    #Q1,Q3 postive and Q2,Q4 negative
 BOUNDS_W1_H2_NEG: False      #Second half of neurons w1 is zero
 
 PARAMETER_BOUNDS: #null if None in python
-  l0.ff.weight:     {"low": -1.5, "high": 1.5 }  #also negative!
+  l0.ff.weight:     {"low": -3, "high": 3 }  #also negative!
   l0.ff.bias:       {"low": -1,   "high": 1   }  #also negative!
   l0.neuron.leak_i: {"low": 0,    "high": 0.001}
   l0.neuron.leak_v: {"low": 0,    "high": 1   }
@@ -180,10 +180,10 @@ PARAMETER_BOUNDS: #null if None in python
   l1.neuron.base_t: {"low": 0,    "high": 2   }
   l1.neuron.add_t:  {"low": -1,   "high": 1   }
   l1.rec.weight:    {"low": -0.2, "high": 0.2 }
-  l1.ff.weight:     {"low": -1.5, "high": 1.5 }  #also negative!
+  l1.ff.weight:     {"low": -3, "high": 3 }  #also negative!
   l1.ff.bias:       {"low": -1,   "high": 1   }  #also negative!
 
-  l2.neuron.leak:   {"low": 0.5, "high": 0.99}
-  l2.ff.weight:     {"low": -1.0,"high": 1.0}  #also negative!
+  l2.neuron.leak:   {"low": 0.3, "high": 0.7}
+  l2.ff.weight:     {"low": -1.5,"high": 1.5}  #also negative!
 
 
