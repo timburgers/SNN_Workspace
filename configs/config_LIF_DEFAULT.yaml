@@ -1,9 +1,9 @@
 
 ### Hyperparameters
 NEURONS: 40
-INDIVIDUALS: 30
+INDIVIDUALS: 40
 GENERATIONS: 50000
-NUMBER_PROCESSES: 10
+NUMBER_PROCESSES: 20
 SIM_TIME: 100            # max 40 secs
 
 # Dataset loading and saving options
@@ -13,8 +13,8 @@ DATASET_DIR: "Sim_data/height_control_PID/moving_bias"
 TEST_SIM_TIME: 100  #s
 
 TEST_DATA_FILE: "test_dataset"
-ALTERNATIVE_INPUT_COLUMN: [1]
-ALTERNATIVE_TARGET_COLUMN: [0]
+ALTERNATIVE_INPUT_COLUMN: [2]
+ALTERNATIVE_TARGET_COLUMN: [6]
 
 
 LAYER_SETTING:
@@ -53,7 +53,7 @@ LAYER_SETTING:
 
 
 FITNESS_FUNCTION: "mae+p"       #"mse", "mse+p", "mae" or "mae+p"
-TARGET_FITNESS: 3   
+TARGET_FITNESS: 1   
 #1) "pid output"        : NO dynamic system simulated     Fitness: MSE + Pearson
 #2) "system reference"  : Dynamic system simulated        Fitness: MSE
 #3) "pid system output" : Dynamic system simulated        Fitness: MSE + Pearson
