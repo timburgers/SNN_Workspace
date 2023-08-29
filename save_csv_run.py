@@ -16,11 +16,12 @@ sim_time = 100
 dataset_number = None                                                  # None is the test_dataset
 file_list = [464,580,505,511]                                                       #None --> highest number, or int or str (withou .pkl)
 folder_of_model = "Simulation/Recurrent_Adaptation"                                               # all folder under the folder Results_EA
-use_alternative_dataset = "Sim_data/height_control_PID/slow_steps"
+use_alternative_dataset = "Sim_data/height_control_PID/pos_slope_input"
+only_controller_input = True                                #set the fitness function to 1
 
 show_plots = True
 save_csv = True
-folder_saved_csv = "10s_steps_I2.02"
+folder_saved_csv = "10hz_pos_slope_I2.5"
 plot_with_best_testrun          = True  #True: solution = best performance on manual dataset      False: solution = best performance overall (can be easy dataset)
 plot_last_generation            = False
 
@@ -127,6 +128,7 @@ for filename in file_list:
     config["LAYER_SETTING"]["l0"]["shared_thres"] = False
     config["LAYER_SETTING"]["l1"]["shared_2x2_weight_cross"] = False
     config["LAYER_SETTING"]["l1"]["adapt_share_baseleak_t"] = False
+    config["LAYER_SETTING"]["l1"]["recurrent_2x2"] = False
     if use_alternative_dataset != None:
         config["DATASET_DIR"]= use_alternative_dataset 
 
@@ -146,7 +148,10 @@ for filename in file_list:
     # Initialize varibales from problem Class
     print("\nDataset used = ", config["DATASET_DIR"], "\nDatasetnumber = ", dataset_number)
     input_data, fitness_target = get_dataset(config, dataset_number, sim_time)
-    fitness_mode = config["TARGET_FITNESS"]
+    if only_controller_input:
+        fitness_mode = 1
+    else:
+        fitness_mode = config["TARGET_FITNESS"]
 
 
     ##################           RUN SIM                ########################################################
@@ -163,14 +168,14 @@ for filename in file_list:
     # Calculate the fitness value
     fitness_value = evaluate_fitness(controller.fitness_func, fitness_measured, fitness_target)
     print("Fitness value = ", np.round(fitness_value.item(),5))
-
+    time_test = np.arange(0,sim_time,config["TIME_STEP"])
     if show_plots:
         if fitness_mode == 1:   label_fitness_measured = "SNN output"; label_fitness_target = "PID output"
         if fitness_mode == 2:   label_fitness_measured = "Blimp Height SNN"; label_fitness_target = "Blimp Height Reference"
         if fitness_mode == 3:   label_fitness_measured = "Blimp Height SNN"; label_fitness_target = "Blimp height PID"
 
         title = "Controller Response"
-        time_test = np.arange(0,sim_time,config["TIME_STEP"])
+        
         if fitness_mode == 2 or fitness_mode == 3:
             title = "Height control of the Blimp"
         if fitness_mode == 3:

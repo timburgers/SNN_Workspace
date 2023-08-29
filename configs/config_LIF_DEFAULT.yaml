@@ -1,20 +1,20 @@
 
 ### Hyperparameters
 NEURONS: 40
-INDIVIDUALS: 40
-GENERATIONS: 70000
-NUMBER_PROCESSES: 20
-SIM_TIME: 115            # max 40 secs
+INDIVIDUALS: 30
+GENERATIONS: 50000
+NUMBER_PROCESSES: 10
+SIM_TIME: 100            # max 40 secs
 
 # Dataset loading and saving options
 
-SAVE_TEST_SOLUTION_STEPSIZE: 50  #every .. steps the solution to the test case is calculated and saved
-DATASET_DIR: "Sim_data/blimp/neutral_seperate_os2/datasets"
-TEST_SIM_TIME: 700  #s
+SAVE_TEST_SOLUTION_STEPSIZE: 100  #every .. steps the solution to the test case is calculated and saved
+DATASET_DIR: "Sim_data/height_control_PID/moving_bias"
+TEST_SIM_TIME: 100  #s
 
 TEST_DATA_FILE: "test_dataset"
-ALTERNATIVE_INPUT_COLUMN: [3]
-ALTERNATIVE_TARGET_COLUMN: [7]
+ALTERNATIVE_INPUT_COLUMN: [1]
+ALTERNATIVE_TARGET_COLUMN: [0]
 
 
 LAYER_SETTING:
@@ -53,11 +53,12 @@ LAYER_SETTING:
 
 
 FITNESS_FUNCTION: "mae+p"       #"mse", "mse+p", "mae" or "mae+p"
-TARGET_FITNESS: 1   
+TARGET_FITNESS: 3   
 #1) "pid output"        : NO dynamic system simulated     Fitness: MSE + Pearson
 #2) "system reference"  : Dynamic system simulated        Fitness: MSE
 #3) "pid system output" : Dynamic system simulated        Fitness: MSE + Pearson
 
+wandb_folder: "sim_results"     #"blimp_real_hz" vs sim_results"
 START_DATASETS_IN_MIDDLE: False
 ANTI_OVERFITTING:         True
 DIFFERENT_DATASET_EVERY_GENERATION: 1

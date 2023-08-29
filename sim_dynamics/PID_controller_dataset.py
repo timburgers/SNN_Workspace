@@ -6,7 +6,7 @@ import random
 import yaml
 
 #GLOBAL PARAMS
-TIME_STEP = 0.01	# The sample time per time step [s]
+TIME_STEP = 0.1	# The sample time per time step [s]
 SIM_TIME = 100		# Total length of simulation [s]
 SETPOINT_UPDATE_STEP = 20
 MIMIMAL_HEIGHT_CHANGE = 3
@@ -17,6 +17,7 @@ SETPOINT_Z = 0 		# Setpoint of height [m]
 Z_INITIAL = 0 		# Initial height [m]
 DZ_INITIAL = 0 		# Initial velocity [m/s]
 
+BIAS = 2
 MASS = 1 			# Total mass of drone [kg]
 MAX_THRUST = 1500 	# Max allowed total thrust of drone [N]
 
@@ -24,11 +25,11 @@ antiWindup = False	# If set to true, no windup will take place when the trust li
 
 
 #---PID GAINS--- 
-KP = 5
-KI = 1
-KD = 2
+KP = 10
+KI = 3
+KD = 3.5
 #---------------
-
+idx = 500
 random.seed(RANDOM_SEED)
 
 
@@ -41,7 +42,7 @@ class Simulation_PID(object):
 		with open("configs/config_LIF_DEFAULT.yaml","r") as f:
 			self.config = yaml.safe_load(f)
 			self.config["TIME_STEP"] = TIME_STEP
-		self.states = Blimp(self.config)
+		self.states = Blimp(self.config, BIAS)
 		
 		
 		self.sim = True
@@ -91,8 +92,8 @@ class Simulation_PID(object):
 			self.prev_interval = update_setpoint(SETPOINT_UPDATE_STEP, self.timer, TIME_STEP, self.prev_interval)
 
 
-		graph(self.times,self.z,self.kpe,self.kde,self.kie,self.thrst,self.z_ref)
-		# save_data(self.z,self.z_ref,self.error,self.kpe,self.kde,self.thrst)
+		# graph(self.times,self.z,self.kpe,self.kde,self.kie,self.thrst,self.z_ref)
+		save_data(self.z,self.z_ref,self.error,self.kpe,self.kie,self.kde,self.thrst)
 
 def update_setpoint(freq_update, timer, dt, prev_interval):
 	global SETPOINT_Z
@@ -129,15 +130,16 @@ def graph(x,z1,z2,z3,z4,z5,z_ref):
 	ax5.grid()
 	plt.show()
 
-def save_data(z,z_ref,error,kpe,kde, T):
+def save_data(z,z_ref,error,kpe,kie,kde, T):
 	z.shape = [len(z),1]
 	z_ref.shape= [len(z_ref),1]
 	error.shape=[len(error),1]
 	kpe.shape = [len(kpe),1]
+	kie.shape = [len(kpe),1]
 	kde.shape = [len(kde),1]
 	T.shape = [len(T),1]
 	
-	np.savetxt("Sim_data/height_control_PID/medium_steps/dataset_" + str(idx)+ ".csv",np.concatenate([z,z_ref,error,kpe,kde,T],axis=1) , delimiter=',', header= "timestep = " + str(TIME_STEP)+ ", sim time = "+ str(SIM_TIME)+ ", new_ref_freq = "+ str(SETPOINT_UPDATE_STEP)+ ", minimal_height_change = " + str(MIMIMAL_HEIGHT_CHANGE))
+	np.savetxt("Sim_data/height_control_PID/moving_bias/dataset_" + str(idx)+ ".csv",np.concatenate([z,z_ref,error,kpe,kie,kde,kpe+kde,T],axis=1) , delimiter=',', header= str(BIAS))
 	# np.savetxt("Sim_data/height_control_PID/slow_steps/step_dataset.csv",np.concatenate([z,z_ref,error,kpe,kde,T],axis=1) , delimiter=',', header= "timestep = " + str(TIME_STEP)+ ", sim time = "+ str(SIM_TIME)+ ", new_ref_freq = "+ str(SETPOINT_UPDATE_STEP)+ ", minimal_height_change = " + str(MIMIMAL_HEIGHT_CHANGE))
 
 
@@ -204,9 +206,10 @@ def main():
 	sim.PID_cycle()
 
 # idx = 0
-# for SETPOINT_UPDATE_STEP in [4,5,6,7]:
-# 	for MIMIMAL_HEIGHT_CHANGE in [1,2,3,4]:
+# for SETPOINT_UPDATE_STEP in [15,20.25]:
+# 	for MIMIMAL_HEIGHT_CHANGE in [1,2,3,4,5]:
 # 		for RANDOM_SEED in range(32):
+# 			BIAS = random.uniform(0,4)
 # 			main()
 # 			idx += 1
 

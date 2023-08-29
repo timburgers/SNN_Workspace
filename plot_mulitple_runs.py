@@ -5,10 +5,14 @@ import numpy as np
 plt.rcParams["font.family"] = "Times New Roman"
 plt.rcParams.update({'font.size': 16})
 
-folder_csv = "Results_EA/Simulation/Recurrent_Adaptation/5s_steps/"
+folder_csv = "Results_EA/Simulation/Recurrent_Adaptation/10hz_pos_slope_I2/"
 freq = 100
-start_second = None
-end_second = 80
+start_second = 0
+end_second = 30
+
+plot_ref = False
+plot_meas = False
+plot_u = True
 
 
 # List of CSV files to open
@@ -31,24 +35,36 @@ if start_second ==None: start_second = 0
 if end_second == None: end_second =int(len(time)/freq)
 
 
-meas = np.array([[time]])
-ref = np.array([[time]])
-target = np.array([[time]])
-u = np.array([[time]])
+# meas = np.array([[time]])
+# ref = np.array([[time]])
+# target = np.array([[time]])
+# u = np.array([[time]])
 
 # Loop through each CSV file and read into a DataFrame
 plt.figure()
-
-plt.title("SNNs Controlling Double Integrator With Bias")
+if plot_u:
+    # plt.title("Zero input to SNN (100Hz)")
+    plt.ylabel('Motor commmand [-]')
+else:
+    plt.title("SNNs Controlling Double Integrator With Bias")
+    plt.ylabel('Height [m]')
 plt.xlabel('Time [s]')
-plt.ylabel('Height [m]')
+
 plt.grid()
-plt.plot(time[start_second*freq:end_second*freq],df["ref"][start_second*freq:end_second*freq],color ='r',linestyle = "--", label = "Referece")
-for ind,csv_file in enumerate(all_files):
-    df = pd.read_csv(folder_csv + csv_file)
-    plt.plot(time[start_second*freq:end_second*freq],df["meas"][start_second*freq:end_second*freq], color = colors[ind], label = csv_file)
+if plot_ref:
+    plt.plot(time[start_second*freq:end_second*freq],df["ref"][start_second*freq:end_second*freq],color ='r',linestyle = "--", label = "Referece")
+
+if plot_meas:
+    for ind,csv_file in enumerate(all_files):
+        df = pd.read_csv(folder_csv + csv_file)
+        plt.plot(time[start_second*freq:end_second*freq],df["meas"][start_second*freq:end_second*freq], color = colors[ind], label = csv_file)
+
+if plot_u:
+    for ind,csv_file in enumerate(all_files):
+        df = pd.read_csv(folder_csv + csv_file)
+        plt.plot(time[start_second*freq:end_second*freq],df["u"][start_second*freq:end_second*freq], color = colors[ind], label = csv_file)
     
 
-plt.legend(loc='upper right', frameon=True)
+plt.legend(loc='lower right', frameon=True)
 plt.tight_layout()
 plt.show()

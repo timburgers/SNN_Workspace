@@ -22,14 +22,15 @@ class Drone(object):
 		return self.z
 
 class Blimp():
-	def __init__(self,config):
+	def __init__(self,config,bias):
+		self.bias = bias
 		self.ddz = 0
 		self.dz = config["DZ_INITIAL"]
 		self.z = config["Z_INITIAL"]
 		self.time_step = config["TIME_STEP"]
 
 	def sim_dynamics(self,input):
-		self.ddz = input -2.02
+		self.ddz = input - self.bias
 		self.dz += self.ddz * self.time_step
 		self.z += self.dz * self.time_step
 		

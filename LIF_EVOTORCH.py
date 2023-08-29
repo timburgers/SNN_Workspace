@@ -27,6 +27,7 @@ from sim_dynamics.Dynamics import Blimp
 import copy
 import random
 import pandas as pd
+import csv
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -112,7 +113,10 @@ class LIF_EA_evotorch(Problem):
         if  self.fitness_mode== 1: #Only controller simlation
             fitness_measured = run_controller(controller,self.input_data, save_mode = False)
         elif self.fitness_mode == 2 or self.fitness_mode == 3:#Also simulate the dyanmics
-            fitness_measured = run_controller_dynamics(self.config,controller,self.input_data, save_mode = False)
+            file = self.config["TEST_DATA_FILE"] if self.dataset == None else "dataset_"+str(self.dataset)
+            df = pd.read_csv(self.config["DATASET_DIR"]+ "/"+file+".csv", nrows =0)
+            bias = float(str(df.columns.tolist()[0]).split(" ")[1])
+            fitness_measured = run_controller_dynamics(self.config,controller,self.input_data,bias, save_mode = False)
 
         # Calculate the fitness value
         fitness_value = evaluate_fitness(self.fitness_func, fitness_measured, self.target_data)
@@ -181,6 +185,7 @@ def show_layer_settings(config):
 #     for layer_name, layer_settings in lay_set.items():
 #         for set_name, set_value in layer_settings.items():
 #             if set_value == True:
+
 
 
 def run_controller(controller,input,save_mode):
@@ -252,14 +257,14 @@ def run_controller_double(controller_pd, controller_i,input):
     return state_l2_arr
 
 
-def run_controller_dynamics(config,controller,input, save_mode):
+def run_controller_dynamics(config,controller,input,bias_dyn, save_mode):
     # Initialize neurons states
     if controller.encoding_layer: state_l0 = torch.zeros(controller.l0.neuron.state_size, 1, controller.l1_input)
     state_l1                               = torch.zeros(controller.l1.neuron.state_size, 1, controller.neurons) 
     state_l2                               = torch.zeros(controller.l2.neuron.state_size,1)
 
     #Initilaize dyanmic system
-    dyn_system = Blimp(config)
+    dyn_system = Blimp(config, bias_dyn)
 
     #Initilaize output arrray
     sys_output = np.array([0])
@@ -423,7 +428,10 @@ def test_solution(problem, solution):
     if  problem.fitness_mode== 1: #Only controller simlation
         fitness_measured, state_l1_arr, state_l0_arr = run_controller(controller,input_data, save_mode=True)
     elif problem.fitness_mode == 2 or problem.fitness_mode == 3:#Also simulate the dyanmics
-        fitness_measured, error, state_l0_arr, state_l1_arr, state_l2_arr = run_controller_dynamics(problem.config,controller,input_data, save_mode=True)
+
+        df = pd.read_csv(problem.config["DATASET_DIR"]+ "/"+problem.config["TEST_DATA_FILE"]+".csv", nrows =0)
+        bias = float(str(df.columns.tolist()[0]).split(" ")[1])
+        fitness_measured, error, state_l0_arr, state_l1_arr, state_l2_arr = run_controller_dynamics(problem.config,controller,input_data,bias, save_mode=True)
 
     # Calculate the fitness value
     fitness_value = evaluate_fitness(problem.fitness_func, fitness_measured, fitness_target)
@@ -830,7 +838,7 @@ if __name__ == "__main__":
         searcher.after_step_hook.append(evaluate_manual_dataset)
 
     if problem.config["WANDB_LOG"] == True:
-        _ = WandbLogger(searcher, project = "blimp_real_hz", config=problem.config)
+        _ = WandbLogger(searcher, project = problem.config["wandb_folder"], config=problem.config)
         changes_names_in_table_wandb(problem.config)
         wandb.config.update({"OS": platform.system(),
                              "Fit_Fn": problem.config["FITNESS_FUNCTION"]})
