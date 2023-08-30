@@ -41,3 +41,5 @@ class Blimp():
 		return self.dz
 	def get_z(self):
 		return self.z 
+	def change_bias(self, new_bias):
+		self.bias = new_bias
