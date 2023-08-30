@@ -18,11 +18,12 @@ import copy
 from sim_dynamics.Dynamics import Blimp
 from LIF_EVOTORCH import get_dataset, run_controller, run_controller_dynamics, evaluate_fitness
 import copy
+import pandas as pd
 
 # for dataset_number in range(10):
-sim_time = 120
-dataset_number = 20                                                  # None is the test_dataset
-filename = 1028                                                       #None --> highest number, or int or str (withou .pkl)
+sim_time = 700
+dataset_number = None                                                  # None is the test_dataset
+filename = 655                                                       #None --> highest number, or int or str (withou .pkl)
 folder_of_model = "Blimp"                                               # all folder under the folder Results_EA
 lib_algorithm = "evotorch"                                              # evotorch or pygad
 SNN_TYPE = "LIF"                                                        # either LIF or IZH
@@ -44,8 +45,8 @@ excluded_neurons=[]
 # new_input_column = []
 # new_target_column = []
 
-create_plots                    = True
-create_table                    = True
+create_plots                    = False
+create_table                    = False
 plot_with_best_testrun          = True  #True: solution = best performance on manual dataset      False: solution = best performance overall (can be easy dataset)
 muliple_test_runs_error_plot    = False  
 plot_last_generation            = False
@@ -91,7 +92,10 @@ def run_sim(fitness_mode, config, controller,solution,input_dataset, save=True):
         error_arr = torch.flatten(input_dataset).detach().numpy()
 
     elif fitness_mode == 2 or fitness_mode == 3:#Also simulate the dyanmics
-        fitness_measured, error_arr, state_l0_arr, state_l1_arr, state_l2_arr = run_controller_dynamics(config,controller,input_dataset, save_mode=save)
+        file = config["TEST_DATA_FILE"] if dataset_number == None else "dataset_"+str(dataset_number)
+        df = pd.read_csv(config["DATASET_DIR"]+ "/"+file+".csv", nrows =0)
+        bias = float(str(df.columns.tolist()[0]).split(" ")[1])
+        fitness_measured, error_arr, state_l0_arr, state_l1_arr, state_l2_arr = run_controller_dynamics(config,controller,input_dataset,bias, save_mode=save)
 
     return fitness_measured, error_arr, state_l0_arr ,state_l1_arr ,state_l2_arr, final_parameters
 
@@ -161,7 +165,7 @@ if SNN_TYPE == "LIF":
     # config["LAYER_SETTING"]["l0"]["shared_thres"] = False
     # config["LAYER_SETTING"]["l1"]["shared_2x2_weight_cross"] = False
     # config["LAYER_SETTING"]["l1"]["adapt_share_baseleak_t"] = False
-    # config["LAYER_SETTING"]["l1"]["recurrent_2x2"] = False
+    config["LAYER_SETTING"]["l1"]["recurrent_2x2"] = False
 
     encoding_layer = config["LAYER_SETTING"]["l0"]["enabled"]
 
