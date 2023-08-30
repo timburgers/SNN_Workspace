@@ -14,14 +14,14 @@ import pandas as pd
 # for dataset_number in range(10):
 sim_time = 100
 dataset_number = None                                                  # None is the test_dataset
-file_list = [464,580,505,511]                                                       #None --> highest number, or int or str (withou .pkl)
+file_list = [1028]                                                       #None --> highest number, or int or str (withou .pkl)
 folder_of_model = "Simulation/Recurrent_Adaptation"                                               # all folder under the folder Results_EA
 use_alternative_dataset = "Sim_data/height_control_PID/pos_slope_input"
 only_controller_input = True                                #set the fitness function to 1
 
 show_plots = True
 save_csv = True
-folder_saved_csv = "10hz_pos_slope_I2.5"
+folder_saved_csv = "test"
 plot_with_best_testrun          = True  #True: solution = best performance on manual dataset      False: solution = best performance overall (can be easy dataset)
 plot_last_generation            = False
 
@@ -123,12 +123,12 @@ for filename in file_list:
     config = dict_solutions["config"]
     number_of_neurons = config["NEURONS"]
     #//TODO GET rid of beun fixes here
-    config["LAYER_SETTING"]["l0"]["shared_leak_iv"] = False
-    config["LAYER_SETTING"]["l1"]["shared_leak_iv"] = False
-    config["LAYER_SETTING"]["l0"]["shared_thres"] = False
-    config["LAYER_SETTING"]["l1"]["shared_2x2_weight_cross"] = False
-    config["LAYER_SETTING"]["l1"]["adapt_share_baseleak_t"] = False
-    config["LAYER_SETTING"]["l1"]["recurrent_2x2"] = False
+    # config["LAYER_SETTING"]["l0"]["shared_leak_iv"] = False
+    # config["LAYER_SETTING"]["l1"]["shared_leak_iv"] = False
+    # config["LAYER_SETTING"]["l0"]["shared_thres"] = False
+    # config["LAYER_SETTING"]["l1"]["shared_2x2_weight_cross"] = False
+    # config["LAYER_SETTING"]["l1"]["adapt_share_baseleak_t"] = False
+    # config["LAYER_SETTING"]["l1"]["recurrent_2x2"] = False
     if use_alternative_dataset != None:
         config["DATASET_DIR"]= use_alternative_dataset 
 

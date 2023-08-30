@@ -20,27 +20,32 @@ from LIF_EVOTORCH import get_dataset, run_controller, run_controller_dynamics, e
 import copy
 
 # for dataset_number in range(10):
-sim_time = 700
-dataset_number = None                                                  # None is the test_dataset
-filename = 914                                                       #None --> highest number, or int or str (withou .pkl)
+sim_time = 120
+dataset_number = 20                                                  # None is the test_dataset
+filename = 1028                                                       #None --> highest number, or int or str (withou .pkl)
 folder_of_model = "Blimp"                                               # all folder under the folder Results_EA
 lib_algorithm = "evotorch"                                              # evotorch or pygad
 SNN_TYPE = "LIF"                                                        # either LIF or IZH
 window_size =6      #NOTE: even numbers
-# config["DATASET_DIR"] = "Sim_data/height_control_PID/fast_steps"
+
+new_dataset = None#"Sim_data/height_control_PID/pos_slope_input"
+new_target_column = None
+new_input_column = None
+controller_input = False
+
 
 
 ####################
 exclude_non_spiking_neurons = False
-# excluded_neurons=[1,2,23,24,29,30]
-excluded_neurons =[]
-new_dataset = None
-new_dataset_number = 0
-new_input_column = []
-new_target_column = []
+excluded_neurons=[]
+# excluded_neurons =[]
+# new_dataset = None
+# new_dataset_number = 0
+# new_input_column = []
+# new_target_column = []
 
-create_plots                    = False
-create_table                    = False
+create_plots                    = True
+create_table                    = True
 plot_with_best_testrun          = True  #True: solution = best performance on manual dataset      False: solution = best performance overall (can be easy dataset)
 muliple_test_runs_error_plot    = False  
 plot_last_generation            = False
@@ -156,9 +161,15 @@ if SNN_TYPE == "LIF":
     # config["LAYER_SETTING"]["l0"]["shared_thres"] = False
     # config["LAYER_SETTING"]["l1"]["shared_2x2_weight_cross"] = False
     # config["LAYER_SETTING"]["l1"]["adapt_share_baseleak_t"] = False
-    config["LAYER_SETTING"]["l1"]["recurrent_2x2"] = False
+    # config["LAYER_SETTING"]["l1"]["recurrent_2x2"] = False
 
     encoding_layer = config["LAYER_SETTING"]["l0"]["enabled"]
+
+    if new_dataset != None: config["DATASET_DIR"] = new_dataset
+    if new_input_column != None: config["ALTERNATIVE_INPUT_COLUMN"] = new_input_column
+    if new_target_column != None: config["ALTERNATIVE_TARGET_COLUMN"] = new_target_column
+    if controller_input: config["TARGET_FITNESS"] = 1
+
     if encoding_layer: controller = Encoding_L1_Decoding_SNN(None, config["NEURONS"], config["LAYER_SETTING"])
     else:              controller = L1_Decoding_SNN(None, config["NEURONS"], config["LAYER_SETTING"])
 

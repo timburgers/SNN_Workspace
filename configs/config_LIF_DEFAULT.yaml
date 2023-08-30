@@ -14,7 +14,7 @@ TEST_SIM_TIME: 100  #s
 
 TEST_DATA_FILE: "test_dataset"
 ALTERNATIVE_INPUT_COLUMN: [2]
-ALTERNATIVE_TARGET_COLUMN: [6]
+ALTERNATIVE_TARGET_COLUMN: [4]
 
 
 LAYER_SETTING:
@@ -184,7 +184,7 @@ PARAMETER_BOUNDS: #null if None in python
   l1.ff.weight:     {"low": -3, "high": 3 }  #also negative!
   l1.ff.bias:       {"low": -1,   "high": 1   }  #also negative!
 
-  l2.neuron.leak:   {"low": 0.3, "high": 0.7}
+  l2.neuron.leak:   {"low": 0.001, "high": 0.3}
   l2.ff.weight:     {"low": -1.5,"high": 1.5}  #also negative!
 
 
