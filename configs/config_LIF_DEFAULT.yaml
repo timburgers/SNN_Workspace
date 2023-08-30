@@ -4,13 +4,13 @@ NEURONS: 40
 INDIVIDUALS: 40
 GENERATIONS: 50000
 NUMBER_PROCESSES: 20
-SIM_TIME: 100            # max 40 secs
+SIM_TIME: 115            # max 40 secs
 
 # Dataset loading and saving options
 
 SAVE_TEST_SOLUTION_STEPSIZE: 100  #every .. steps the solution to the test case is calculated and saved
 DATASET_DIR: "Sim_data/blimp/neutral_seperate_os2/datasets"
-TEST_SIM_TIME: 115  #s
+TEST_SIM_TIME: 720  #s
 
 TEST_DATA_FILE: "test_dataset"
 ALTERNATIVE_INPUT_COLUMN: [3]
@@ -58,7 +58,7 @@ TARGET_FITNESS: 1
 #2) "system reference"  : Dynamic system simulated        Fitness: MSE
 #3) "pid system output" : Dynamic system simulated        Fitness: MSE + Pearson
 
-wandb_folder: "sim_results"     #"blimp_real_hz" vs sim_results"
+wandb_folder: "blimp_real_hz"     #"blimp_real_hz" vs sim_results"
 START_DATASETS_IN_MIDDLE: False
 ANTI_OVERFITTING:         True
 DIFFERENT_DATASET_EVERY_GENERATION: 1

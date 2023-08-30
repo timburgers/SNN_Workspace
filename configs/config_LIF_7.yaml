@@ -109,11 +109,11 @@ SAME_FOR_ALL: range
 SAVE_LAST_SOLUTION: true
 SAVE_TEST_SOLUTION_STEPSIZE: 100
 SHOW_PLOTS: false
-SIM_TIME: 100
+SIM_TIME: 115
 START_DATASETS_IN_MIDDLE: false
 TARGET_FITNESS: 1
 TEST_DATA_FILE: test_dataset
-TEST_SIM_TIME: 115
+TEST_SIM_TIME: 720
 TIME_STEP: 0.1
 WANDB_LOG: true
 Z_INITIAL: 0
@@ -175,4 +175,4 @@ range:
   l2.neuron.leak:
   - 0.1
   - 0.2
-wandb_folder: sim_results
+wandb_folder: blimp_real_hz
