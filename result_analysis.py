@@ -21,18 +21,18 @@ import copy
 import pandas as pd
 
 # for dataset_number in range(10):
-sim_time = 700
+sim_time = 500
 dataset_number = None                                                  # None is the test_dataset
-filename = 803                                                       #None --> highest number, or int or str (withou .pkl)
+filename = 75                                                       #None --> highest number, or int or str (withou .pkl)
 folder_of_model = "Blimp"                                               # all folder under the folder Results_EA
 lib_algorithm = "evotorch"                                              # evotorch or pygad
 SNN_TYPE = "LIF"                                                        # either LIF or IZH
 window_size =6      #NOTE: even numbers
 
-new_dataset = None#"Sim_data/height_control_PID/pos_slope_input"
-new_target_column = None
-new_input_column = None
-controller_input = False
+new_dataset = None #"Sim_data/height_control_PID/pos_slope_input"
+new_target_column = None #[0]
+new_input_column =None #[0]
+controller_input = False #True
 
 
 
@@ -46,7 +46,7 @@ excluded_neurons=[]
 # new_target_column = []
 
 create_plots                    = False
-create_table                    = False
+create_table                    = True
 plot_with_best_testrun          = True  #True: solution = best performance on manual dataset      False: solution = best performance overall (can be easy dataset)
 muliple_test_runs_error_plot    = False  
 plot_last_generation            = False
@@ -165,7 +165,7 @@ if SNN_TYPE == "LIF":
     # config["LAYER_SETTING"]["l0"]["shared_thres"] = False
     # config["LAYER_SETTING"]["l1"]["shared_2x2_weight_cross"] = False
     # config["LAYER_SETTING"]["l1"]["adapt_share_baseleak_t"] = False
-    config["LAYER_SETTING"]["l1"]["recurrent_2x2"] = False
+    # config["LAYER_SETTING"]["l1"]["recurrent_2x2"] = False
 
     encoding_layer = config["LAYER_SETTING"]["l0"]["enabled"]
 

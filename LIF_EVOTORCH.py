@@ -12,7 +12,7 @@ import os
 # os.environ["RAY_DEDUP_LOGS"]= "0"
 from random import randint
 from torchmetrics import PearsonCorrCoef
-
+import torch.nn as nn
 from evotorch import Problem
 from evotorch.algorithms import CMAES, PyCMAES
 from evotorch.logging import StdOutLogger,WandbLogger
@@ -119,7 +119,7 @@ class LIF_EA_evotorch(Problem):
             fitness_measured = run_controller_dynamics(self.config,controller,self.input_data,bias, save_mode = False)
 
         # Calculate the fitness value
-        fitness_value = evaluate_fitness(self.fitness_func, fitness_measured, self.target_data)
+        fitness_value = evaluate_fitness(self.fitness_func, fitness_measured, self.target_data, self.config["MOVING_AVERAGE_TARGET"])
 
         print(fitness_value)
         solution.set_evals(fitness_value)
@@ -321,7 +321,7 @@ def run_controller_dynamics(config,controller,input,bias_dyn, save_mode):
         return sys_output[1:], error_arr, state_l0_arr, state_l1_arr, state_l2_arr # Skip the first 0 height input
 
 
-def evaluate_fitness(fitness_func, fitness_measured, fitness_target):
+def evaluate_fitness(fitness_func, fitness_measured, fitness_target, moving_average):
 
     if fitness_func == "mse" or fitness_func == "mse+p": fitt_fn1 = torch.nn.MSELoss()
     if fitness_func == "mae" or fitness_func == "mae+p": fitt_fn1 = torch.nn.L1Loss()
@@ -330,11 +330,16 @@ def evaluate_fitness(fitness_func, fitness_measured, fitness_target):
     #Evaluate fitness using MSE and additionally pearson if there should be a linear correlation between target and output
     fitness_target = torch.flatten(fitness_target)
     fitness_measured = torch.from_numpy(fitness_measured)
+
+    if moving_average:
+        sliding_window = nn.AvgPool1d(kernel_size=4,stride=1)
+        fitness_target = sliding_window(fitness_target.unsqueeze(0))
+        fitness_measured = sliding_window(fitness_measured.unsqueeze(0))
     fitness_value = fitt_fn1(fitness_measured,fitness_target)
 
     if fitness_func == "mse+p" or fitness_func == "mae+p":
         fitt_fn2 = PearsonCorrCoef()
-        fitness_value += (1-fitt_fn2(fitness_measured,fitness_target)) #pearson of 1 means linear correlation
+        fitness_value += (1-fitt_fn2(fitness_measured[0,:],fitness_target[0,:])) #pearson of 1 means linear correlation
     return fitness_value
         
 
@@ -434,7 +439,7 @@ def test_solution(problem, solution):
         fitness_measured, error, state_l0_arr, state_l1_arr, state_l2_arr = run_controller_dynamics(problem.config,controller,input_data,bias, save_mode=True)
 
     # Calculate the fitness value
-    fitness_value = evaluate_fitness(problem.fitness_func, fitness_measured, fitness_target)
+    fitness_value = evaluate_fitness(problem.fitness_func, fitness_measured, fitness_target,problem.config["MOVING_AVERAGE_TARGET"])
 
     # Print the parameters of the best solution to the terminal
     for key, value in final_parameters.items():

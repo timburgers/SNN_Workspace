@@ -16,7 +16,7 @@ CUSTOM:
   l1.rec.weight: range
   l2.ff.weight: range
   l2.neuron.leak: range
-DATASET_DIR: Sim_data/height_control_PID/moving_bias
+DATASET_DIR: Sim_data/height_control_PID/moving_bias_slow_steps
 DATASET_NUMBER: null
 DIFFERENT_DATASET_EVERY_GENERATION: 1
 DZ_INITIAL: 0
@@ -52,12 +52,13 @@ LAYER_SETTING:
     complementary_leak: true
     shared_weight_and_bias: true
 MEAN_SETTING: same for all
+MOVING_AVERAGE_TARGET: true
 NEURONS: 40
 NUMBER_PROCESSES: 20
 PARAMETER_BOUNDS:
   l0.ff.bias:
     high: 1
-    low: -1
+    low: 0
   l0.ff.weight:
     high: 3
     low: -3
@@ -68,11 +69,11 @@ PARAMETER_BOUNDS:
     high: 1
     low: 0
   l0.neuron.thresh:
-    high: 10
-    low: 0.8
+    high: 2
+    low: 0.1
   l1.ff.bias:
     high: 1
-    low: -1
+    low: 0
   l1.ff.weight:
     high: 3
     low: -3
@@ -81,7 +82,7 @@ PARAMETER_BOUNDS:
     low: -1
   l1.neuron.base_t:
     high: 2
-    low: 0
+    low: 0.1
   l1.neuron.leak_i:
     high: 0.99
     low: 0
@@ -92,8 +93,8 @@ PARAMETER_BOUNDS:
     high: 1
     low: 0
   l1.neuron.thresh:
-    high: 10
-    low: 0.8
+    high: 2
+    low: 0.1
   l1.rec.weight:
     high: 0.2
     low: -0.2
@@ -103,17 +104,17 @@ PARAMETER_BOUNDS:
   l2.neuron.leak:
     high: 0.3
     low: 0.001
-PERCENT_INTIIAL_STEPSIZE: 0.005
+PERCENT_INTIIAL_STEPSIZE: 0.05
 PREVIOUS_SOLUTION: 38-smart-blaze
 SAME_FOR_ALL: range
 SAVE_LAST_SOLUTION: true
 SAVE_TEST_SOLUTION_STEPSIZE: 100
 SHOW_PLOTS: false
-SIM_TIME: 100
+SIM_TIME: 200
 START_DATASETS_IN_MIDDLE: false
 TARGET_FITNESS: 1
 TEST_DATA_FILE: test_dataset
-TEST_SIM_TIME: 100
+TEST_SIM_TIME: 1000
 TIME_STEP: 0.1
 WANDB_LOG: true
 Z_INITIAL: 0
@@ -143,7 +144,7 @@ range:
   - 0.8
   - 1.2
   l1.ff.bias:
-  - 0.2
+  - 0.3
   - 0.5
   l1.ff.weight:
   - 1
@@ -173,6 +174,6 @@ range:
   - 0.4
   - 0.5
   l2.neuron.leak:
-  - 0.4
-  - 0.6
+  - 0.1
+  - 0.2
 wandb_folder: sim_results

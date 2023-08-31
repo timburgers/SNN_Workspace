@@ -4,18 +4,19 @@ NEURONS: 40
 INDIVIDUALS: 40
 GENERATIONS: 50000
 NUMBER_PROCESSES: 20
-SIM_TIME: 115            # max 40 secs
+SIM_TIME: 200            # max 40 secs
 
 # Dataset loading and saving options
 
 SAVE_TEST_SOLUTION_STEPSIZE: 100  #every .. steps the solution to the test case is calculated and saved
-DATASET_DIR: "Sim_data/blimp/neutral_seperate_os2/datasets"
-TEST_SIM_TIME: 720  #s
+DATASET_DIR: "Sim_data/height_control_PID/moving_bias_slow_steps"
+TEST_SIM_TIME: 1000  #s
 
 TEST_DATA_FILE: "test_dataset"
-ALTERNATIVE_INPUT_COLUMN: [3]
-ALTERNATIVE_TARGET_COLUMN: [5]
-
+ALTERNATIVE_INPUT_COLUMN: [2]
+ALTERNATIVE_TARGET_COLUMN: [4]
+MOVING_AVERAGE_TARGET: True       # Apply a moving average of 4 over the signal to correct for the oscilation due to spikes
+wandb_folder: "sim_results"     #"blimp_real_hz" vs sim_results"
 
 LAYER_SETTING:
   l0:
@@ -58,7 +59,6 @@ TARGET_FITNESS: 1
 #2) "system reference"  : Dynamic system simulated        Fitness: MSE
 #3) "pid system output" : Dynamic system simulated        Fitness: MSE + Pearson
 
-wandb_folder: "blimp_real_hz"     #"blimp_real_hz" vs sim_results"
 START_DATASETS_IN_MIDDLE: False
 ANTI_OVERFITTING:         True
 DIFFERENT_DATASET_EVERY_GENERATION: 1
@@ -146,7 +146,7 @@ range: #keep all positive (NOTE: initilaizing close to zero (in combi with the s
   l1.neuron.thresh: [0.8   , 1.2]
   l1.rec.weight:    [0.001 , 0.002]
   l1.ff.weight:     [1     , 1.5]
-  l1.ff.bias:       [0.2   , 0.5]
+  l1.ff.bias:       [0.3   , 0.5]
   l1.neuron.leak_t: [0.1   , 0.9]
   l1.neuron.base_t: [1     , 2]
   l1.neuron.add_t:  [-0.3 , 0.3]
@@ -155,7 +155,7 @@ range: #keep all positive (NOTE: initilaizing close to zero (in combi with the s
   l2.ff.weight:     [0.4  , 0.5] 
 
 ######## STD
-PERCENT_INTIIAL_STEPSIZE: 0.005
+PERCENT_INTIIAL_STEPSIZE: 0.05
 
 
 
@@ -168,21 +168,21 @@ BOUND_W2_Q2_Q4_NEG: False    #Q1,Q3 postive and Q2,Q4 negative
 BOUNDS_W1_H2_NEG: False      #Second half of neurons w1 is zero
 
 PARAMETER_BOUNDS: #null if None in python
-  l0.ff.weight:     {"low": -3, "high": 3 }  #also negative!
-  l0.ff.bias:       {"low": -1,   "high": 1   }  #also negative!
+  l0.ff.weight:     {"low": -3,   "high": 3 }  #also negative!
+  l0.ff.bias:       {"low": 0,    "high": 1 }  #also negative!
   l0.neuron.leak_i: {"low": 0,    "high": 0.001}
-  l0.neuron.leak_v: {"low": 0,    "high": 1   }
-  l0.neuron.thresh: {"low": 0.8,  "high": 10  }
+  l0.neuron.leak_v: {"low": 0,    "high": 1}
+  l0.neuron.thresh: {"low": 0.1,  "high": 2}
 
   l1.neuron.leak_i: {"low": 0,    "high": 0.99}
-  l1.neuron.leak_v: {"low": 0,    "high": 1   }
-  l1.neuron.thresh: {"low": 0.8,  "high": 10  }
+  l1.neuron.leak_v: {"low": 0,    "high": 1}
+  l1.neuron.thresh: {"low": 0.1,  "high": 2}
   l1.neuron.leak_t: {"low": 0,    "high": 0.99}
-  l1.neuron.base_t: {"low": 0,    "high": 2   }
+  l1.neuron.base_t: {"low": 0.1,  "high": 2   }
   l1.neuron.add_t:  {"low": -1,   "high": 1   }
   l1.rec.weight:    {"low": -0.2, "high": 0.2 }
   l1.ff.weight:     {"low": -3, "high": 3 }  #also negative!
-  l1.ff.bias:       {"low": -1,   "high": 1   }  #also negative!
+  l1.ff.bias:       {"low": 0,   "high": 1   }  #also negative!
 
   l2.neuron.leak:   {"low": 0.001, "high": 0.3}
   l2.ff.weight:     {"low": -1.5,"high": 1.5}  #also negative!
