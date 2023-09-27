@@ -8,4 +8,4 @@ models/spiking/
 *.out
 run_ea.sh
 models/
-Results_EA/
+Results_EA/Blimp/

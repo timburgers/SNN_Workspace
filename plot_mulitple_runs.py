@@ -5,20 +5,20 @@ import numpy as np
 plt.rcParams["font.family"] = "Times New Roman"
 plt.rcParams.update({'font.size': 16})
 
-folder_csv = "Results_EA/Simulation/Recurrent_Adaptation/10hz_pos_slope_I2/"
+folder_csv = "Results_EA/Simulation/Recurrent_Adaptation/10s_steps/"
 freq = 100
 start_second = 0
-end_second = 30
+end_second = 80
 
-plot_ref = False
-plot_meas = False
-plot_u = True
+plot_ref = True
+plot_meas = True
+plot_u = False
 
 
 # List of CSV files to open
 all_files = os.listdir(folder_csv)
 all_files = sorted(all_files)
-all_files = ["R-ALIF.csv","R-LIF.csv","ALIF.csv","LIF.csv"]
+all_files = ["R-IWTA-LIF.csv","R-LIF.csv","IWTA-LIF.csv","LIF.csv"]
 colors = ["tab:blue","tab:orange", "tab:green", "tab:gray"]
 
 num_files = len(all_files)
@@ -46,7 +46,7 @@ if plot_u:
     # plt.title("Zero input to SNN (100Hz)")
     plt.ylabel('Motor commmand [-]')
 else:
-    plt.title("SNNs Controlling Double Integrator With Bias")
+    # plt.title("SNNs Controlling Double Integrator With Bias")
     plt.ylabel('Height [m]')
 plt.xlabel('Time [s]')
 

@@ -12,17 +12,20 @@ import pandas as pd
 
 
 # for dataset_number in range(10):
-sim_time = 100
+sim_time = 500
 dataset_number = None                                                  # None is the test_dataset
-file_list = [1028]                                                       #None --> highest number, or int or str (withou .pkl)
-folder_of_model = "Simulation/Recurrent_Adaptation"                                               # all folder under the folder Results_EA
-use_alternative_dataset = "Sim_data/height_control_PID/pos_slope_input"
+file_list = [119]                                                       #None --> highest number, or int or str (withou .pkl)
+folder_of_model = "Simulation/I"                                               # all folder under the folder Results_EA
+use_alternative_dataset = None #"Sim_data/height_control_PID/pos_slope_then_zero"
+use_alternative_input = None
+use_alternative_target = None
 only_controller_input = True                                #set the fitness function to 1
+add_moving_averge = True
 
 show_plots = True
 save_csv = True
 folder_saved_csv = "test"
-plot_with_best_testrun          = True  #True: solution = best performance on manual dataset      False: solution = best performance overall (can be easy dataset)
+plot_with_best_testrun          = False  #True: solution = best performance on manual dataset      False: solution = best performance overall (can be easy dataset)
 plot_last_generation            = False
 
 for filename in file_list:
@@ -132,6 +135,14 @@ for filename in file_list:
     if use_alternative_dataset != None:
         config["DATASET_DIR"]= use_alternative_dataset 
 
+    if use_alternative_input != None:
+        config["ALTERNATIVE_INPUT_COLUMN"]= use_alternative_input 
+    if use_alternative_target != None:
+        config["ALTERNATIVE_TARGET_COLUMN"]= use_alternative_target 
+    try: _ = config["LAYER_SETTING"]["l1"]["recurrent_2x2"]
+    except: config["LAYER_SETTING"]["l1"]["recurrent_2x2"] = False
+
+
     encoding_layer = config["LAYER_SETTING"]["l0"]["enabled"]
     if encoding_layer: controller = Encoding_L1_Decoding_SNN(None, config["NEURONS"], config["LAYER_SETTING"])
     else:              controller = L1_Decoding_SNN(None, config["NEURONS"], config["LAYER_SETTING"])
@@ -166,7 +177,7 @@ for filename in file_list:
 
 
     # Calculate the fitness value
-    fitness_value = evaluate_fitness(controller.fitness_func, fitness_measured, fitness_target)
+    fitness_value = evaluate_fitness(controller.fitness_func, fitness_measured, fitness_target, True)
     print("Fitness value = ", np.round(fitness_value.item(),5))
     time_test = np.arange(0,sim_time,config["TIME_STEP"])
     if show_plots:
@@ -200,10 +211,10 @@ for filename in file_list:
     if save_csv:
         df_final = pd.DataFrame(columns=["time","ref","meas","u","target_h"])
         df_final["time"] = time_test
-        df_final["ref"] = torch.flatten(input_data)
+        df_final["error"] = torch.flatten(input_data)
         df_final["meas"] = fitness_measured
         df_final["u"] = state_l2_arr
-        df_final["target_h"] = fitness_target
+        df_final["Target"] = fitness_target
 
         df_final.to_csv(path_or_buf= "Results_EA/"+ folder_of_model +"/"+folder_saved_csv+"/" + filename + ".csv", index=False)
 

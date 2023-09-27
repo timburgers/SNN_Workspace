@@ -22,7 +22,7 @@ import copy
 # for dataset_number in range(10):
 sim_time = 300
 dataset_number = None                                                  # None is the test_dataset
-folder_models = "Results_EA/Blimp"                                               # all folder under the folder Results_EA
+folder_models = "Results_EA/Blimp/10Hz"                                               # all folder under the folder Results_EA
 window_size =6      #NOTE: even numbers
 #config["DATASET_DIR"] = "Sim_data/height_control_PID/fast_steps"
 

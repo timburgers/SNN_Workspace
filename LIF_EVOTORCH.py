@@ -267,7 +267,7 @@ def run_controller_dynamics(config,controller,input,bias_dyn, save_mode):
     dyn_system = Blimp(config, bias_dyn)
 
     #Initilaize output arrray
-    sys_output = np.array([0])
+    sys_output = np.array([dyn_system.get_z()])
     
     if save_mode == False:
         for t in range(input.shape[1]):
